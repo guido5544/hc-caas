@@ -44,7 +44,7 @@ To quickly test out CaaS with a simple front-end and scs loading, follow the ste
 ```
 2. Create empty working directory specified above (make sure to provide absolute path!)
 3. Ensure mongoDB is running on localhost:27017
-4. Run CaaS with the following command: **npx ts3d-hc-conversionserver**. It is now accessible on port 3001
+4. Run CaaS with the following command: **npx ts3d.hc.caas**. It is now accessible on port 3001
 5. Run the Basic Demo below on the same machine CaaS is running on.
 
 ## Demos
