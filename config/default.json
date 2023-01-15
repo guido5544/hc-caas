@@ -7,7 +7,7 @@
     "runServer": true,
     "runStreamingManager": true,
     "runStreamingServer": true,
-    "useS3": false,
+    "storageBackend": "filesystem",
     "license": "",
     "fullErrorReporting": false,
     "queue": {

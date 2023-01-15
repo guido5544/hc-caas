@@ -24,6 +24,9 @@
 
 * Linux Testing
 * Support for Azure Blob Storage
+* Module JS API documentation
+* Support for restriction regions for streaming
+* Support for automatic region replication
 * Plugin Support to allow for User Defined Storage Options
 
 ## Quick Start
@@ -69,7 +72,7 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
     "runServer": true,
     "runStreamingManager": true,
     "runStreamingServer": true,
-    "useS3": false,    
+    "storageBackend": "filesystem",
     "license": "",
     "fullErrorReporting": false,
     "queue": {
@@ -129,7 +132,7 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
 10. By default CaaS will assign conversion jobs to all registered conversion queue servers based on their available capacity. If polling is set to true the conversion queue will poll for a newly available job every few seconds. In this case a conversion queue server does not need to be registered with the main server.
 11. If you are uploading SCS or SCZ files, CAAS will use a separate module in order to generate PNG's for those file types. See [here](https://www.npmjs.com/package/ts3d-hc-imageservice) for more information. You can specify the port this module uses for its internal server here.
 12. If you are running CaaS as a node module and use the API directly you can optionally turn off the REST API endpoints. In this case your code needs to handle file uploads and other actions.
-13. If you are planning to use S3 for storaging the converted models you need to set the useS3 field to true and provide a valid AWS region and S3 bucket name. You also need to make sure AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY_ID is set, either via environment variables or throug a config file. (see [AWS Credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html)). If you are using a network of multiple conversion queue instances, you need to specify the same bucket/region for all of them. If you are not using S3, the system will fall back to storing the conversion data locally in the directory provided by workingDirectory.
+13. If you are planning to use S3 for storaging the converted models you need to set the "storageBackend" field to "filesystem" and provide a valid AWS S3 region and S3 bucket name. You also need to make sure AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY_ID is set, either via environment variables or throug a config file. (see [AWS Credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html)). If you are using a network of multiple conversion queue instances, you need to specify the same bucket/region for all of them. If you are not using S3, the system will fall back to storing the conversion data locally in the directory provided by workingDirectory.
 14. If you are planning to support SCZ model streaming, you need to provide at a minimum the path to ts3d_sc_server.exe. Each parallel streaming instance will run on separate consecutive ports, the range specified by startPort and maxStreamingSession, which are proxied from listenPort.
 15. Run CaaS via npm start
 

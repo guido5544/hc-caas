@@ -59,9 +59,8 @@ exports.start = async () => {
   
     scserverpath = config.get('hc-caas.streamingServer.scserverpath');
     tempFileDir = config.get('hc-caas.workingDirectory');
-
-    if (config.get('hc-caas.useS3'))
-    {
+   
+    if (config.get('hc-caas.storageBackend') == 's3') {
         storage = require('./permanentStorageS3');
         storage.initialize();
     }
@@ -194,7 +193,7 @@ async function getFileFromStorage(item, sessionid, itemname, subdirectory) {
         return;
     }
 
-    if (!config.get('hc-caas.useS3') && config.get('hc-caas.streamingServer.useSymLink')) {
+    if (config.get('hc-caas.storageBackend') != 's3' && config.get('hc-caas.streamingServer.useSymLink')) {
         const dir = tempFileDir + "/" + sessionid + subdirectory;
         await storage.createSymLink("conversiondata/" + item.storageID + "/" + itemname, dir + "/" + itemname);
     }
@@ -270,7 +269,8 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
                 }
             }
         }
-        if (config.get('hc-caas.useS3')) {
+        
+        if (config.get('hc-caas.storageBackend') == 's3') {
        //     await someTimeout(300);
         }
         else {

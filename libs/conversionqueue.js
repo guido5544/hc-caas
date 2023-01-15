@@ -61,13 +61,14 @@ exports.start = async () => {
     queueserver.save();
   }
 
-  if (config.get('hc-caas.useS3'))
+  if (config.get('hc-caas.storageBackend') == 's3')
   {
     storage = require('./permanentStorageS3');
     storage.initialize();
   }
-  else  
+  else  {
     storage = require('./permanentStorageFS');
+  }
   
 
   if (!fs.existsSync(tempFileDir)) {
