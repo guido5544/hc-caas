@@ -51,7 +51,7 @@ To quickly test out CaaS with a simple front-end and scs loading, follow the ste
 
 A simple demo application that uses the API directly and which can be used for testing CaaS locally and exploring the REST API usage can be found here: [Basic Demo Github Link](https://github.com/techsoft3d/caas_basic_example)
 
-A more comprehensive demo that aims to demonstrate a more realistic use-case, includes user and project management and accesses CaaS server-side can be found here: [Advanced Demo Github Link](https://github.com/techsoft3d/conversionserver-demo-app)
+A more comprehensive demo that aims to demonstrate a more realistic use-case, includes user and project management and accesses CaaS server-side can be found here: [Advanced Demo Github Link](https://github.com/techsoft3d/caas-demo-app)
 
 ## Install & Run Using GitHub
 1. Clone [GitHub Project](https://github.com/techsoft3d/hc-caas) 
