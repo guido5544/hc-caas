@@ -1,0 +1,54 @@
+{
+  "hc-caas": {
+    "mongodbURI": "mongodb://127.0.0.1:27017/conversions",
+    "workingDirectory": "",
+    "port": "3001",
+    "runQueue": true,
+    "runServer": true,
+    "runStreamingManager": true,
+    "runStreamingServer": true,
+    "useS3": false,
+    "license": "",
+    "fullErrorReporting": false,
+    "queue": {
+      "converterpath": "",
+      "HEimportexportpath": "",
+      "HEInstallPath": "",
+      "maxConversions": 4,
+      "ip": "localhost",
+      "polling": false,
+      "imageServicePort": "3002"
+    },
+    "server": {
+      "listen": true
+    },
+    "streamingServer": {
+      "scserverpath": "",
+      "maxStreamingSessions": 10,
+      "useSymLink": false,
+      "ip": "localhost",
+      "communicatorlicense": "",
+      "startPort": 3006,
+      "listenPort": 3200,
+      "publicAddress": "",
+      "publicPort": ""
+    },
+    "storage": {
+      "s3": {
+        "region": "",
+        "bucket": ""
+      },
+      "filesystem": {
+        "directory": ""
+      }
+    },
+    "localCache": {
+      "directory": "",
+      "maxSize": 0
+    },
+    "proxy": {
+      "keyPath": "",
+      "certPath": ""
+    }
+  }
+}

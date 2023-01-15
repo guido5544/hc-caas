@@ -1,0 +1,8 @@
+node_modules
+hc-caas
+debug.log
+config/local.json
+HE/ImportExport/x64
+HE/ImportExport/.vs
+HE/ImportExport/ImportExport.vcxproj.user
+
