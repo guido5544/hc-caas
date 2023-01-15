@@ -528,6 +528,13 @@ async function getConversionJobFromQueue() {
       }
     }
   }
+  else {
+    if (!config.get('hc-caas.queue.polling')) {
+      setTimeout(async function () {
+        await getConversionJobFromQueue();
+      }, 1000);
+    }
+  }
 }
 
 async function updateConversionStatus(item, files) {
