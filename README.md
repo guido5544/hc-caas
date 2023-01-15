@@ -36,6 +36,8 @@ To quickly test out CaaS with a simple front-end and scs loading, follow the ste
     "hc-caas": {      
       "workingDirectory": "PATH_TO_TEMP_DIRECTORY",
       "license": "HOOPS_COMMUNICATOR_LICENSE_KEY",
+      "runStreamingManager": false,
+      "runStreamingServer": false,
       "queue": {
         "converterpath": "PATH_TO_COMMUNICATOR_DIRECTORY/authoring/converter/bin/win64",
       }   
