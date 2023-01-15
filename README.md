@@ -25,8 +25,8 @@
 * Linux Testing
 * Support for Azure Blob Storage
 * Module JS API documentation
-* Support for restriction regions for streaming
-* Support for automatic region replication
+* Region Restrictions for streaming
+* Automatic region replication
 * Plugin Support to allow for User Defined Storage Options
 
 ## Quick Start
