@@ -3,22 +3,21 @@
 ## Overview
 
 ### Main Features
-* Conversion Queue for multiple simultaneous CAD conversion jobs.
-* Multiple connected conversion queue machines can all pull jobs from the same queue.
+* Conversion Queue for distributed CAD conversions.
+* SC Streaming or SCS Loading
 * S3 Storage option with direct S3 upload via tokens (optional).
 * Local Model Caching for Streaming and SCS loading (optional).
 * Support for multifile upload and ZIP upload (for assemblies) 
 * Support for shattered workflows.
-* Comprehensive REST API for managing the conversion queue and pulling data.
+* Comprehensive REST API.
 * Support for FBX and GLB output formats via HOOPS Exchange.
 * Support for direct SCS upload and image generation from SCS files.
 * Access to all converter command-line options for conversion.
-* Run via NPX directly or embed into your application as a node module.
-* Support for SCS and SC Streaming
+* Run via NPX directly or embed into your Node.js application as a module.
 
 ### Limitations
 * **This library is not an officially supported part of HOOPS Communicator and provided as-is.**
-* No account/user management or security. This is BY DESIGN. CaaS is meant to be accessed behind a firewall from the server-side business logic of your application. A reference application that CaaS in that manner is provided.
+* No account/user management or security. This is BY DESIGN. CaaS is meant to be accessed behind a firewall from the server-side business logic of your application. A reference application that uses CaaS in that manner is provided.
 * Only tested on windows
 
 ### ToDo
