@@ -178,7 +178,7 @@ exports.getOriginal = async (itemid) => {
 exports.appendFromBuffer = async (buffer, itemname, itemid) => {
   let item = await Conversionitem.findOne({ storageID: itemid });
   if (item) {
-    await storage.storeFromBuffer(buffer, "conversiondata/" + itemid + "/" + itemname);
+    await storage.storeFromBuffer(buffer, "conversiondata/" + itemid + "/" + itemname, item);
     let newfile = true;
     for (let i = 0; i < item.files.length; i++) {
       if (item.files[i] == itemname) {
@@ -201,7 +201,7 @@ exports.appendFromBuffer = async (buffer, itemname, itemid) => {
 exports.append = async (directory, itemname, itemid) => {
   let item = await Conversionitem.findOne({ storageID: itemid });
   if (item) {
-    await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname);
+    await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname,item);
     let newfile = true;
     for (let i = 0; i < item.files.length; i++) {
       if (item.files[i] == itemname) {

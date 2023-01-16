@@ -74,10 +74,10 @@ exports.storeFromBuffer = (data, s3target) => {
     });
 };
 
-exports.store = (inputfile, s3target) => {
+exports.store = (inputfile, s3target, item) => {
     return new Promise((resolve, reject) => {
         fs.readFile(inputfile, function (err, data) {
-            _storeInS3(s3target, data).then(() => {
+            _storeInS3(s3target, data, item).then(() => {
                 resolve();
             });
         });
@@ -85,7 +85,13 @@ exports.store = (inputfile, s3target) => {
 };
 
 
-_storeInS3 = (filename, data) => {
+_storeInS3 = (filename, data, item) => {
+
+    let bucket = config.get('hc-caas.storage.s3.bucket');
+    if (item && item.storageAvailability) {
+        bucket = item.storageAvailability[0];
+    }
+
     return new Promise((resolve, reject) => {
 
         var uploadParams = { Bucket: bucket, Key: '', Body: '' };

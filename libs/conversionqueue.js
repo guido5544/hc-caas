@@ -178,7 +178,7 @@ async function conversionComplete(err, item) {
       for (var i = 0; i < files.length; i++) {
         if ((item.name) != files[i] && files[i] != "zip") {
           savedFiles.push(files[i]);          
-          await storage.store(tempFileDir + "/" + item.storageID + "/" + files[i], "conversiondata/" + item.storageID + "/" + files[i]);
+          await storage.store(tempFileDir + "/" + item.storageID + "/" + files[i], "conversiondata/" + item.storageID + "/" + files[i], item);
         }
       }
     }
@@ -198,11 +198,11 @@ async function conversionComplete(err, item) {
 }
 
 async function saveShatteredFilesInStorage(item) {
-  await storage.store(tempFileDir + "/" +  item.storageID + "/shattered.xml", "conversiondata/" + item.storageID + "/shattered.xml");
+  await storage.store(tempFileDir + "/" +  item.storageID + "/shattered.xml", "conversiondata/" + item.storageID + "/shattered.xml", item);
 
   const files = await readDir(tempFileDir + "/" +  item.storageID + "/scs");
   for (var i = 0; i < files.length; i++) {
-    await storage.store(tempFileDir + "/" +  item.storageID + "/scs/" + files[i], "conversiondata/" +  item.storageID + "/scs/" + files[i]);
+    await storage.store(tempFileDir + "/" +  item.storageID + "/scs/" + files[i], "conversiondata/" +  item.storageID + "/scs/" + files[i], item);
 
   }
 }
