@@ -81,7 +81,7 @@ exports.requestDownloadToken = async (itemid,type) => {
   }
   let item = await Conversionitem.findOne({ storageID: itemid });
   if (item) {
-    let token = await storage.requestDownloadToken("conversiondata/" + item.storageID + "/" + item.name + "." + type);
+    let token = await storage.requestDownloadToken("conversiondata/" + item.storageID + "/" + item.name + "." + type, item);
     return { token: token, itemid: itemid };
   }
   else

@@ -31,6 +31,11 @@ exports.readFile = (filename) => {
 };
 
 
+exports.resolveRegionReplication = async (item) => {
+    return;
+};
+
+
 exports.resolveInitialAvailability = () => {
     return undefined;
 };

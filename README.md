@@ -5,8 +5,9 @@
 ### Main Features
 * Conversion Queue for distributed CAD conversions.
 * SC Streaming or SCS Loading
-* S3 Storage option with direct S3 upload via tokens (optional).
-* Local Model Caching for Streaming and SCS loading (optional).
+* S3 Storage option with direct S3 upload via tokens.
+* Local Model Caching for Streaming and SCS loading.
+* Region Replication for S3 storage
 * Support for multifile upload and ZIP upload (for assemblies) 
 * Support for shattered workflows.
 * Comprehensive REST API.
@@ -25,7 +26,6 @@
 * Linux Testing
 * Support for Azure Blob Storage
 * Module JS API documentation
-* Automatic region replication
 * Plugin Support to allow for User Defined Storage Options
 
 ## Quick Start
