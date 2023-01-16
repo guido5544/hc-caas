@@ -11,7 +11,7 @@ var s3 = null;
 exports.initialize = () => {
     if (!s3) {
 
-        s3 = new AWS.S3({ region: config.get('hc-caas.storage.s3.region') });
+        s3 = new AWS.S3();
         bucket = config.get('hc-caas.storage.s3.bucket');
         var params = {
             Bucket: bucket
