@@ -36,7 +36,8 @@
     },
     "storage": {
       "s3": {
-        "bucket": ""
+        "bucket": "",
+        "copyBuckets": []
       },
       "filesystem": {
         "directory": ""

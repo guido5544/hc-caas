@@ -90,7 +90,7 @@ exports.requestDownloadToken = async (itemid,type) => {
   }
 };
 
-async function readFileWithCache(itemid, name) {
+async function readFileWithCache(itemid, name, item) {
   if (name.indexOf(".scs") != -1) {
     if (localCache.isInCache(itemid, name)) {
       console.log("file is in cache");
@@ -98,13 +98,13 @@ async function readFileWithCache(itemid, name) {
       return data;
     }
     else {
-      const data = await storage.readFile("conversiondata/" + itemid + "/" + name);
+      const data = await storage.readFile("conversiondata/" + itemid + "/" + name, item);
       localCache.cacheFile(itemid, name, data);
       return data;
     }
   }
   else {
-    return await storage.readFile("conversiondata/" + itemid + "/" + name);
+    return await storage.readFile("conversiondata/" + itemid + "/" + name, item);
   }
 }
 
@@ -114,10 +114,10 @@ exports.get = async (itemid,type) => {
     let blob;
 
     if (item.name.indexOf("." + type) != -1) {
-      blob = await readFileWithCache(item.storageID,item.name);
+      blob = await readFileWithCache(item.storageID,item.name, item);
     }
     else {
-      blob = await readFileWithCache(item.storageID,item.name + "." + type);
+      blob = await readFileWithCache(item.storageID,item.name + "." + type, item);
     }
     return ({data:blob});
   }
@@ -243,7 +243,8 @@ exports.requestUploadToken = async (itemname, args) => {
     conversionState: startState,
     updated: new Date(),
     created: new Date(),
-    webhook: args.webhook,
+    webhook: args.webhook,  
+    storageAvailability: storage.resolveInitialAvailability(),
   });
   item.save();
 
@@ -307,7 +308,8 @@ exports.create = async (directory, itemname, args) => {
     updated: new Date(),
     created: new Date(),
     webhook: args.webhook,
-    conversionCommandLine: args.conversionCommandLine
+    conversionCommandLine: args.conversionCommandLine,
+    storageAvailability: storage.resolveInitialAvailability()
   });
   
   await item.save();
@@ -349,7 +351,8 @@ exports.createEmpty = async (args) => {
     created: new Date(),
     webhook: args.webhook,
     streamLocation:"",
-    conversionCommandLine: args.conversionCommandLine
+    conversionCommandLine: args.conversionCommandLine,
+    storageAvailability: storage.resolveInitialAvailability()
   });
   
   await item.save();

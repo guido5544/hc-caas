@@ -31,6 +31,10 @@ exports.readFile = (filename) => {
 };
 
 
+exports.resolveInitialAvailability = () => {
+    return undefined;
+};
+
 exports.createSymLink = (filename, target) => {
     return new Promise((resolve, reject) => {
 

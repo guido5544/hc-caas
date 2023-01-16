@@ -4,7 +4,7 @@ const config = require('config');
 const path = require('path');
 
 
-let bucket = "";
+var bucket = "";
 
 var s3 = null;
 
@@ -31,7 +31,18 @@ exports.initialize = () => {
     }
 };
 
-exports.readFile = (filename) => {
+exports.readFile = (filename,item) => {
+    let bucket = config.get('hc-caas.storage.s3.bucket');
+    if (item && item.storageAvailability) {
+        for (let i=0;i<item.storageAvailability.length;i++) {
+            if (item.storageAvailability[i] == config.get('hc-caas.storage.s3.bucket')) {
+                break;
+            }
+            if (i == item.storageAvailability.length - 1) {
+                bucket = item.storageAvailability[0];                    
+            }
+        }
+    }
     return new Promise((resolve, reject) => {
         var s3Params = {
             Bucket: bucket,
@@ -49,6 +60,10 @@ exports.readFile = (filename) => {
 };
 
 
+
+exports.resolveInitialAvailability = () => {
+    return config.get('hc-caas.storage.s3.bucket');
+};
 
 
 exports.storeFromBuffer = (data, s3target) => {

@@ -49,10 +49,13 @@ const conversionitemSchema = new Schema({
     type: Object,
     required: false
   },
-
   files: {
     type: Array,
     required: true
+  },
+  storageAvailability: {
+    type: Array,
+    required: false
   },
   streamLocation: {
     type: String,
