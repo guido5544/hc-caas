@@ -75,6 +75,7 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
     "storageBackend": "filesystem",
     "license": "",
     "fullErrorReporting": false,
+    "region": "",
     "queue": {
       "converterpath": "E:/communicator/HOOPS_Communicator_2022_SP2/authoring/converter/bin/win64",
       "HEimportexportpath": "E:/GitHub/conversionservice/HE/ImportExport/x64/Release",

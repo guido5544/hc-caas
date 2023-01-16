@@ -10,6 +10,10 @@ const queueserveritemSchema = new Schema({
   freeConversionSlots: {
     type: Number,
     required: true
+  },
+  region: {
+    type: String,
+    required: false
   }
   
 });

@@ -25,8 +25,14 @@ let simConversions = 0;
 const maxConversions = config.get('hc-caas.queue.maxConversions');
 
 let storage;
+var queue
+if (config.get('hc-caas.region') == "") {
+   queue = mongooseJobQueue(global.con, 'conversion-queue');
+}
+else {
+  queue = mongooseJobQueue(global.con, 'conversion-queue' + '-' + config.get('hc-caas.region'));
+}
 
-const queue = mongooseJobQueue(global.con, 'conversion-queue');
 
 let queueaddress = "";
 
@@ -51,13 +57,15 @@ exports.start = async () => {
   if (!queueserver) {
       queueserver = new Queueserveritem({
         address: queueaddress,
-        freeConversionSlots:maxConversions
+        freeConversionSlots:maxConversions,
+        region: config.get('hc-caas.region')
     });
     queueserver.save();
   }
   else
   {
     queueserver.freeConversionSlots = maxConversions;
+    queueserver.region = config.get('hc-caas.region');
     queueserver.save();
   }
 

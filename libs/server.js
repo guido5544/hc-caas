@@ -466,7 +466,7 @@ exports.delete = async (itemid, startPath) => {
 };
 
 async function sendConversionRequest() {
-  let queueservers = await Queueserveritem.find();
+  let queueservers = await Queueserveritem.find({region: config.get('hc-caas.region')});
 
   queueservers.sort(function (a, b) {
     if (a.freeConversionSlots > b.freeConversionSlots) {
