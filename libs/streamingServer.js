@@ -78,12 +78,14 @@ exports.start = async () => {
     if (!streamingserver) {
         streamingserver = new Streamingserveritem({
             address: serveraddress,
-            freeStreamingSlots: maxStreamingSessions
+            freeStreamingSlots: maxStreamingSessions,
+            region: config.get('hc-caas.region')
         });
         streamingserver.save();
     }
     else {
         streamingserver.freeStreamingSlots = maxStreamingSessions;
+        streamingserver.region = config.get('hc-caas.region');
         streamingserver.save();
     }
 

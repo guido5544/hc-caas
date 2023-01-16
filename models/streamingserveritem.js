@@ -10,7 +10,11 @@ const streamingserveritemSchema = new Schema({
   freeStreamingSlots: {
     type: Number,
     required: true
-  }  
+  },
+  region: {
+    type: String,
+    required: false
+  }
 });
 
 module.exports = global.con.model('Streamingserveritem', streamingserveritemSchema);
