@@ -36,7 +36,7 @@ exports.resolveRegionReplication = async (item) => {
 };
 
 
-distributeToRegions = async (item) => {
+exports.distributeToRegions = async (item) => {
     return;
 };
 

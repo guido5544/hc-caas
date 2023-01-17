@@ -82,7 +82,7 @@ copyObject = (destination, source, targetname) => {
 };
 
 
-distributeToRegions = async (item) => {
+exports.distributeToRegions = async (item) => {
 
     if (item.storageAvailability && item.conversionState == "SUCCESS") {
         let copyBuckets = config.get('hc-caas.storage.s3.copyBuckets')
@@ -100,12 +100,11 @@ distributeToRegions = async (item) => {
             item.storageAvailability.push({ bucket: copyBuckets[i], inProgress: true });
             await item.save();
             for (let j = 0; j < item.files.length; j++) {
-                await copyObject(copyBuckets[i], "/" + item.storageAvailability[0].bucket + "/" + "conversiondata" + "/" + item.storageID + "/" + item.files[i],"conversiondata" + "/" + item.storageID + "/" + item.files[i]);
+                await copyObject(copyBuckets[i], "/" + item.storageAvailability[0].bucket + "/" + "conversiondata" + "/" + item.storageID + "/" + item.files[j],"conversiondata" + "/" + item.storageID + "/" + item.files[j]);
             }
             item.storageAvailability[item.storageAvailability.length - 1].inProgress = false;
             item.markModified('storageAvailability');
             await item.save();
-
         }
     }
 };
