@@ -192,6 +192,7 @@ async function conversionComplete(err, item) {
     }
 
     await founditem.save();
+    storage.distributeToRegions();
     updateConversionStatus(founditem, savedFiles);
     cleanupDir(tempFileDir + "/", item);
   }

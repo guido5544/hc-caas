@@ -36,6 +36,10 @@ exports.resolveRegionReplication = async (item) => {
 };
 
 
+distributeToRegions = async (item) => {
+    return;
+};
+
 exports.resolveInitialAvailability = () => {
     return undefined;
 };
