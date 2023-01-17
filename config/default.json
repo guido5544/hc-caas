@@ -35,15 +35,10 @@
       "publicPort": ""
     },
     "storage": {
-      "s3": {
-        "bucket": "",
-        "replicate": false,
-        "copyBuckets": [],
-        "externalReplicate": false
-      },
-      "filesystem": {
-        "directory": ""
-      }
+      "destination": "",
+      "copyDestinations": [],      
+      "replicate": false,
+      "externalReplicate": false    
     },
     "localCache": {
       "directory": "",

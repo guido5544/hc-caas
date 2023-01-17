@@ -12,7 +12,7 @@ exports.initialize = () => {
     if (!s3) {
 
         s3 = new AWS.S3();
-        bucket = config.get('hc-caas.storage.s3.bucket');
+        bucket = config.get('hc-caas.storage.destination');
         var params = {
             Bucket: bucket
            };
@@ -55,10 +55,10 @@ readFileIntenal = (bucket,filename) => {
 
 
 exports.readFile = async (filename,item) => {
-    let bucket = config.get('hc-caas.storage.s3.bucket');
+    let bucket = config.get('hc-caas.storage.destination');
     if (item && item.storageAvailability) {
         for (let i=0;i<item.storageAvailability.length;i++) {
-            if (item.storageAvailability[i].bucket == config.get('hc-caas.storage.s3.bucket') && !item.storageAvailability[i].inProgress) {
+            if (item.storageAvailability[i].bucket == config.get('hc-caas.storage.destination') && !item.storageAvailability[i].inProgress) {
                 break;
             }
             if (i == item.storageAvailability.length - 1) {
@@ -73,13 +73,13 @@ exports.readFile = async (filename,item) => {
     }
 
     if (config.get('hc-caas.storage.s3.externalReplicate')) {
-        let buffer = await readFileIntenal(config.get('hc-caas.storage.s3.bucket'), filename);
-        if (!buffer && bucket != config.get('hc-caas.storage.s3.bucket')) {
+        let buffer = await readFileIntenal(config.get('hc-caas.storage.destination'), filename);
+        if (!buffer && bucket != config.get('hc-caas.storage.destination')) {
             buffer = await readFileIntenal(bucket, filename);
         }
         else {
-            if (bucket != config.get('hc-caas.storage.s3.bucket')) {
-                item.storageAvailability.push({ bucket: config.get('hc-caas.storage.s3.bucket'), inProgress: false });
+            if (bucket != config.get('hc-caas.storage.destination')) {
+                item.storageAvailability.push({ bucket: config.get('hc-caas.storage.destination'), inProgress: false });
                 await item.save();
             }
         }
@@ -115,7 +115,7 @@ copyObject = (destination, source, targetname) => {
 exports.distributeToRegions = async (item) => {
 
     if (item.storageAvailability && item.conversionState == "SUCCESS") {
-        let copyBuckets = config.get('hc-caas.storage.s3.copyBuckets');
+        let copyBuckets = config.get('hc-caas.storage.copyDestinations');
         for (let i=0;i<copyBuckets.length;i++) {
             let found = false;
             for (let j = 0; j < item.storageAvailability.length; j++) {
@@ -144,15 +144,15 @@ resolveRegionReplication = async (item) => {
 
     if (item.storageAvailability && item.conversionState == "SUCCESS") {
         for (let i = 0; i < item.storageAvailability.length; i++) {
-            if (item.storageAvailability[i].bucket == config.get('hc-caas.storage.s3.bucket')) {
+            if (item.storageAvailability[i].bucket == config.get('hc-caas.storage.destination')) {
                 return;
             }
         }
-        item.storageAvailability.push({ bucket: config.get('hc-caas.storage.s3.bucket'), inProgress: true });
+        item.storageAvailability.push({ bucket: config.get('hc-caas.storage.destination'), inProgress: true });
         await item.save();
 
         for (let i = 0; i < item.files.length; i++) {
-            await copyObject(config.get('hc-caas.storage.s3.bucket'), "/" + item.storageAvailability[0].bucket + "/" + "conversiondata" + "/" + item.storageID + "/" + item.files[i],"conversiondata" + "/" + item.storageID + "/" + item.files[i]);
+            await copyObject(config.get('hc-caas.storage.destination'), "/" + item.storageAvailability[0].bucket + "/" + "conversiondata" + "/" + item.storageID + "/" + item.files[i],"conversiondata" + "/" + item.storageID + "/" + item.files[i]);
         }
         item.storageAvailability[item.storageAvailability.length - 1].inProgress = false;
         item.markModified('storageAvailability');
@@ -162,7 +162,7 @@ resolveRegionReplication = async (item) => {
 
 
 exports.resolveInitialAvailability = () => {
-    return {bucket: config.get('hc-caas.storage.s3.bucket'), inProgress: false};
+    return {bucket: config.get('hc-caas.storage.destination'), inProgress: false};
 };
 
 
@@ -187,7 +187,7 @@ exports.store = (inputfile, s3target, item) => {
 
 _storeInS3 = (filename, data, item) => {
 
-    let bucket = config.get('hc-caas.storage.s3.bucket');
+    let bucket = config.get('hc-caas.storage.destination');
     if (item && item.storageAvailability) {
         bucket = item.storageAvailability[0].bucket;
     }
@@ -228,10 +228,10 @@ exports.requestUploadToken = async (filename, item) => {
 exports.requestDownloadToken = async (filename, item) => {
 
     
-    let bucket = config.get('hc-caas.storage.s3.bucket');
+    let bucket = config.get('hc-caas.storage.destination');
     if (item && item.storageAvailability) {
         for (let i = 0; i < item.storageAvailability.length; i++) {
-            if (item.storageAvailability[i].bucket == config.get('hc-caas.storage.s3.bucket')) {
+            if (item.storageAvailability[i].bucket == config.get('hc-caas.storage.destination')) {
                 break;
             }
             if (i == item.storageAvailability.length - 1) {
@@ -247,13 +247,13 @@ exports.requestDownloadToken = async (filename, item) => {
 
 
     if (config.get('hc-caas.storage.s3.externalReplicate')) {
-        let url = await _getPresignedUrlS3(config.get('hc-caas.storage.s3.bucket'),filename);
-        if (!url && bucket != config.get('hc-caas.storage.s3.bucket')) {
+        let url = await _getPresignedUrlS3(config.get('hc-caas.storage.destination'),filename);
+        if (!url && bucket != config.get('hc-caas.storage.destination')) {
             url = await _getPresignedUrlS3(bucket,filename);
         }
         else {
-            if (bucket != config.get('hc-caas.storage.s3.bucket')) {
-                item.storageAvailability.push({ bucket: config.get('hc-caas.storage.s3.bucket'), inProgress: false });
+            if (bucket != config.get('hc-caas.storage.destination')) {
+                item.storageAvailability.push({ bucket: config.get('hc-caas.storage.destination'), inProgress: false });
                 await item.save();
             }
         }
@@ -268,7 +268,7 @@ exports.requestDownloadToken = async (filename, item) => {
 
 function _getPresignedUrlPut(filename, item) {
 
-    let bucket = config.get('hc-caas.storage.s3.bucket');
+    let bucket = config.get('hc-caas.storage.destination');
     if (item && item.storageAvailability) {
         bucket = item.storageAvailability[0].bucket;
     }

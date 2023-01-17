@@ -8,8 +8,8 @@ const config = require('config');
 
 let storageDirectory;
 
-if (config.has('hc-caas.storage.filesystem.directory') && config.get('hc-caas.storage.filesystem.directory') != "") {
-    storageDirectory = config.get('hc-caas.storage.filesystem.directory');
+if (config.has('hc-caas.storage.destination') && config.get('hc-caas.storage.destination') != "") {
+    storageDirectory = config.get('hc-caas.storage.destination');
 }
 else {
     storageDirectory = config.get('hc-caas.workingDirectory') + "/permanentStorage";
