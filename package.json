@@ -1,6 +1,6 @@
 {
   "name": "ts3d.hc.caas",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "",
   "main": "app.js",
   "bin": {
@@ -9,7 +9,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon app.js",
-    "clean": "nodemon clean.js",  
+    "clean": "nodemon clean.js",
     "start-proxy": "nodemon proxy.js",
     "start-server": "node app.js"
   },
