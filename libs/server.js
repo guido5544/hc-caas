@@ -44,7 +44,7 @@ exports.start = async (callback) => {
           throw 'Server not found';
         }
         else {
-          console.log("Conversion Queue Active:" + queueservers[i].address);
+          console.log("Conversion Queue found:" + queueservers[i].address);
         }
       }
       catch (e) {

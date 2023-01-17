@@ -314,5 +314,5 @@ exports.getCustom = (req, res, next) => {
 
 
 exports.getVersion = (req, res, next) => {
-    res.send(process.env.npm_package_version);
+    res.send(process.env.caas_version);
 };

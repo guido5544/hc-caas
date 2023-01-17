@@ -48,7 +48,7 @@ exports.start = async () => {
           throw 'Streaming Server not found';
         }
         else {
-          console.log("Streaming Server Active:" + streamingservers[i].address);
+          console.log("Streaming Server found:" + streamingservers[i].address);
         }
       }
       catch (e) {
