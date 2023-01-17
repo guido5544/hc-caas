@@ -63,7 +63,7 @@ exports.readFile = async (filename,item) => {
             }
             if (i == item.storageAvailability.length - 1) {
                 bucket = item.storageAvailability[0].bucket;     
-                if (config.get('hc-caas.storage.s3.replicate')) {
+                if (config.get('hc-caas.storage.replicate')) {
                     setTimeout(() => { 
                     resolveRegionReplication(item);
                     }, 1000);
@@ -72,7 +72,7 @@ exports.readFile = async (filename,item) => {
         }
     }
 
-    if (config.get('hc-caas.storage.s3.externalReplicate')) {
+    if (config.get('hc-caas.storage.externalReplicate')) {
         let buffer = await readFileIntenal(config.get('hc-caas.storage.destination'), filename);
         if (!buffer && bucket != config.get('hc-caas.storage.destination')) {
             buffer = await readFileIntenal(bucket, filename);
@@ -236,7 +236,7 @@ exports.requestDownloadToken = async (filename, item) => {
             }
             if (i == item.storageAvailability.length - 1) {
                 bucket = item.storageAvailability[0].bucket;
-                if (config.get('hc-caas.storage.s3.replicate')) {
+                if (config.get('hc-caas.storage.replicate')) {
                     setTimeout(() => {
                         resolveRegionReplication(item);
                     }, 1000);
@@ -246,7 +246,7 @@ exports.requestDownloadToken = async (filename, item) => {
     }
 
 
-    if (config.get('hc-caas.storage.s3.externalReplicate')) {
+    if (config.get('hc-caas.storage.externalReplicate')) {
         let url = await _getPresignedUrlS3(config.get('hc-caas.storage.destination'),filename);
         if (!url && bucket != config.get('hc-caas.storage.destination')) {
             url = await _getPresignedUrlS3(bucket,filename);
