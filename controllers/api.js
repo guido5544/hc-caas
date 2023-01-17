@@ -311,3 +311,8 @@ exports.getCustom = (req, res, next) => {
     let result = server.executeCustom(args); 
     res.sendStatus(200);   
 };
+
+
+exports.getVersion = (req, res, next) => {
+    res.send(process.env.npm_package_version);
+};

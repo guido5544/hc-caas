@@ -31,6 +31,6 @@ router.get('/shatteredXML/:itemid', apiController.getShatteredXML);
 
 router.get('/streamingSession', apiController.getStreamingSession);
 router.put('/enableStreamAccess/:sessionid', apiController.enableStreamAccess);
-
+router.get('/version', apiController.getVersion);
 
 module.exports = router;
