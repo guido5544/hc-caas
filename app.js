@@ -24,6 +24,7 @@ var streamingManager;
 
 exports.start = async function (mongoose_in, customCallback) {
 
+  console.log("Initializing CAAS. Version: " + process.env.npm_package_version);
   const config = require('config');
   try {
     config.get('hc-caas');
