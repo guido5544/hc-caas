@@ -210,13 +210,20 @@ _storeInS3 = (filename, data, item) => {
 
 };
 
-
-exports.delete = (filename) => {
-    var s3Params = { Bucket: bucket, Key: '', Body: '' };
-    s3Params.Key = filename;
-    s3.deleteObject(s3Params);  
+exports.delete = (name, item) => {
+    if (item && item.storageAvailability) {
+        for (let i = 0; i < item.storageAvailability.length; i++) {
+            let s3Params = { Bucket: item.storageAvailability[i].bucket, Key: '', Body: '' };
+            s3Params.Key = name;
+            s3.deleteObject(s3Params);
+        }
+    }
+    else {
+        let s3Params = { Bucket: bucket, Key: '', Body: '' };
+        s3Params.Key = name;
+        s3.deleteObject(s3Params);
+    }
 };
-
 
 exports.requestUploadToken = async (filename, item) => {
 

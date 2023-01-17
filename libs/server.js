@@ -459,7 +459,7 @@ exports.delete = async (itemid, startPath) => {
 
   let item = await Conversionitem.findOne({ storageID: itemid });
   if (item) {
-    storage.delete("conversiondata/" + item.storageID);
+    storage.delete("conversiondata/" + item.storageID, item);
     lastUpdated = new Date();
     await Conversionitem.deleteOne({ storageID: itemid });
   }
