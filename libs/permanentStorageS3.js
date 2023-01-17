@@ -31,21 +31,12 @@ exports.initialize = () => {
     }
 };
 
-exports.readFile = (filename,item) => {
-    let bucket = config.get('hc-caas.storage.s3.bucket');
-    if (item && item.storageAvailability) {
-        for (let i=0;i<item.storageAvailability.length;i++) {
-            if (item.storageAvailability[i].bucket == config.get('hc-caas.storage.s3.bucket') && !item.storageAvailability[i].inProgress) {
-                break;
-            }
-            if (i == item.storageAvailability.length - 1) {
-                bucket = item.storageAvailability[0].bucket;      
-                setTimeout(() => { 
-                resolveRegionReplication(item);
-                }, 1000);
-            }
-        }
-    }
+
+
+
+
+readFileIntenal = (bucket,filename) => {
+
     return new Promise((resolve, reject) => {
         var s3Params = {
             Bucket: bucket,
@@ -60,6 +51,45 @@ exports.readFile = (filename,item) => {
             }
         });
     });
+};
+
+
+exports.readFile = async (filename,item) => {
+    let bucket = config.get('hc-caas.storage.s3.bucket');
+    if (item && item.storageAvailability) {
+        for (let i=0;i<item.storageAvailability.length;i++) {
+            if (item.storageAvailability[i].bucket == config.get('hc-caas.storage.s3.bucket') && !item.storageAvailability[i].inProgress) {
+                break;
+            }
+            if (i == item.storageAvailability.length - 1) {
+                bucket = item.storageAvailability[0].bucket;     
+                if (config.get('hc-caas.storage.s3.replicate')) {
+                    setTimeout(() => { 
+                    resolveRegionReplication(item);
+                    }, 1000);
+                }
+            }
+        }
+    }
+
+    if (config.get('hc-caas.storage.s3.externalReplicate')) {
+        let buffer = await readFileIntenal(config.get('hc-caas.storage.s3.bucket'), filename);
+        if (!buffer && bucket != config.get('hc-caas.storage.s3.bucket')) {
+            buffer = await readFileIntenal(bucket, filename);
+        }
+        else {
+            if (bucket != config.get('hc-caas.storage.s3.bucket')) {
+                item.storageAvailability.push({ bucket: config.get('hc-caas.storage.s3.bucket'), inProgress: false });
+                await item.save();
+            }
+        }
+        return buffer;
+    }
+    else {
+        let buffer = await readFileIntenal(bucket, filename);
+        return buffer;
+    }
+
 };
 
 
@@ -85,7 +115,7 @@ copyObject = (destination, source, targetname) => {
 exports.distributeToRegions = async (item) => {
 
     if (item.storageAvailability && item.conversionState == "SUCCESS") {
-        let copyBuckets = config.get('hc-caas.storage.s3.copyBuckets')
+        let copyBuckets = config.get('hc-caas.storage.s3.copyBuckets');
         for (let i=0;i<copyBuckets.length;i++) {
             let found = false;
             for (let j = 0; j < item.storageAvailability.length; j++) {
@@ -197,8 +227,42 @@ exports.requestUploadToken = async (filename, item) => {
 
 exports.requestDownloadToken = async (filename, item) => {
 
-    return await _getPresignedUrlGet(filename, item);
+    
+    let bucket = config.get('hc-caas.storage.s3.bucket');
+    if (item && item.storageAvailability) {
+        for (let i = 0; i < item.storageAvailability.length; i++) {
+            if (item.storageAvailability[i].bucket == config.get('hc-caas.storage.s3.bucket')) {
+                break;
+            }
+            if (i == item.storageAvailability.length - 1) {
+                bucket = item.storageAvailability[0].bucket;
+                if (config.get('hc-caas.storage.s3.replicate')) {
+                    setTimeout(() => {
+                        resolveRegionReplication(item);
+                    }, 1000);
+                }
+            }
+        }
+    }
 
+
+    if (config.get('hc-caas.storage.s3.externalReplicate')) {
+        let url = await _getPresignedUrlS3(config.get('hc-caas.storage.s3.bucket'),filename);
+        if (!url && bucket != config.get('hc-caas.storage.s3.bucket')) {
+            url = await _getPresignedUrlS3(bucket,filename);
+        }
+        else {
+            if (bucket != config.get('hc-caas.storage.s3.bucket')) {
+                item.storageAvailability.push({ bucket: config.get('hc-caas.storage.s3.bucket'), inProgress: false });
+                await item.save();
+            }
+        }
+        return url;
+    }
+    else {
+        let url = await _getPresignedUrlS3(bucket,filename);
+        return url;
+    }
 };
 
 
@@ -232,24 +296,7 @@ function _getPresignedUrlPut(filename, item) {
     });
 }
 
-
-function _getPresignedUrlGet(filename, item) {
-
-    let bucket = config.get('hc-caas.storage.s3.bucket');
-    if (item && item.storageAvailability) {
-        for (let i=0;i<item.storageAvailability.length;i++) {
-            if (item.storageAvailability[i].bucket == config.get('hc-caas.storage.s3.bucket')) {
-                break;
-            }
-            if (i == item.storageAvailability.length - 1) {
-                bucket = item.storageAvailability[0].bucket;   
-                setTimeout(() => { 
-                    resolveRegionReplication(item);
-                }, 1000);                 
-            }
-        }
-    }
-
+function _getPresignedUrlS3(bucket,filename) {
     return new Promise(async (resolve, reject) => {
 
         const s3Params = {
@@ -262,12 +309,14 @@ function _getPresignedUrlGet(filename, item) {
         try {
             s3.getSignedUrl('getObject', s3Params, function (err, data) {
                 if (err) {
-                    return reject(err);
+                    resolve (null);
                 }
-                resolve(data);
+                else {
+                    resolve(data);
+                }
             });
         } catch (error) {
-            return reject(error);
+            resolve(null);
         }
     });
 }
