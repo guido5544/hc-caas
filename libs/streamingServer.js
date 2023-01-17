@@ -70,7 +70,6 @@ exports.start = async () => {
     }
 
     let ip = config.get('hc-caas.streamingServer.ip');
-
     
     serveraddress = ip + ":" + config.get('hc-caas.port');
 
