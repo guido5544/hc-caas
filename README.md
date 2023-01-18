@@ -27,13 +27,12 @@
 * Plugin Support to allow for User Defined Storage Options
 
 ## Feedback
-For questions/feedback please send an email to guido@techsoft3d.com or post in our [forum](https://forum.techsoft3d.com/). For a 60 day trial of the HOOPS Web Platform go to (Web Platform)[https://www.techsoft3d.com/products/hoops/web-platform].
-
+For questions/feedback please send an email to guido@techsoft3d.com or post in our [forum](https://forum.techsoft3d.com/). For a 60 day trial of the HOOPS Web Platform go to https://www.techsoft3d.com/products/hoops/web-platform.
 
 ## Quick Start
 To quickly test out CaaS with a simple front-end and scs loading, follow the steps below.
 
-1. Ensure that HOOPS Communicator is installed on your machine. (You can get a 60 day trial license here: https://www.techsoft3d.com/products/hoops/web-platform/)
+1. Ensure that HOOPS Communicator is installed on your machine. 
 2. Create a new directory and create folder called "config" with empty local.json file. Copy content below and add your HOOPS Communicator license, path to a temp directory and path to HOOPS Converter
 ```json
 {
