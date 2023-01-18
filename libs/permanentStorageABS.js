@@ -10,9 +10,8 @@ var blobServiceClient = null;
 
 exports.initialize = () => {
     if (!blobServiceClient) {
-
         blobServiceClient = BlobServiceClient.fromConnectionString(
-            'DefaultEndpointsProtocol=https;AccountName=caastest1;AccountKey=Fz1Sa6TlxJPmDNx/M26J7u81WJ+jmA/EcTf/Yix3h9xnwOy4KG9SNFbLhO4mGohewI6V3Zrgjmjr+AStsSaCnw==;EndpointSuffix=core.windows.net'
+            config.get('hc-caas.storage.ABS_connectionString')
           );
     }
 };
@@ -21,22 +20,13 @@ exports.initialize = () => {
 
 
 
-readFileIntenal = (bucket,filename) => {
+readFileIntenal = async (bucket,filename) => {
 
-    return new Promise((resolve, reject) => {
-        var s3Params = {
-            Bucket: bucket,
-            Key: filename
-        };
+    const containerClient = blobServiceClient.getContainerClient(bucket);
+    const blockBlobClient = containerClient.getBlockBlobClient(filename);
+    const downloadBlockBlobResponse = await blockBlobClient.downloadToBuffer(0);
+    return (downloadBlockBlobResponse);
 
-        s3.getObject(s3Params, function (err, res) {
-            if (err === null) {
-                resolve(res.Body);
-            } else {
-                resolve(null);
-            }
-        });
-    });
 };
 
 
