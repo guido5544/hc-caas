@@ -74,6 +74,11 @@ exports.start = async () => {
     storage = require('./permanentStorageS3');
     storage.initialize();
   }
+  else if (config.get('hc-caas.storageBackend') == 'ABS')
+  {
+    storage = require('./permanentStorageABS');
+    storage.initialize();
+  }
   else  {
     storage = require('./permanentStorageFS');
   }

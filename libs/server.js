@@ -21,14 +21,19 @@ exports.start = async (callback) => {
 
   customCallback = callback;
 
+ 
   if (config.get('hc-caas.storageBackend') == 's3')
   {
     storage = require('./permanentStorageS3');
     storage.initialize();
   }
-  else
+  else if (config.get('hc-caas.storageBackend') == 'ABS')
   {
-    storage = require('./permanentStorageFS');    
+    storage = require('./permanentStorageABS');
+    storage.initialize();
+  }
+  else  {
+    storage = require('./permanentStorageFS');
   }
 
   setTimeout(async function () {

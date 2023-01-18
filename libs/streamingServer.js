@@ -59,14 +59,19 @@ exports.start = async () => {
   
     scserverpath = config.get('hc-caas.streamingServer.scserverpath');
     tempFileDir = config.get('hc-caas.workingDirectory');
-   
-    if (config.get('hc-caas.storageBackend') == 's3') {
-        storage = require('./permanentStorageS3');
-        storage.initialize();
-    }
-    else  
+  
+    if (config.get('hc-caas.storageBackend') == 's3')
     {
-        storage = require('./permanentStorageFS');
+      storage = require('./permanentStorageS3');
+      storage.initialize();
+    }
+    else if (config.get('hc-caas.storageBackend') == 'ABS')
+    {
+      storage = require('./permanentStorageABS');
+      storage.initialize();
+    }
+    else  {
+      storage = require('./permanentStorageFS');
     }
 
     let ip = config.get('hc-caas.streamingServer.ip');
