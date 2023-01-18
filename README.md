@@ -102,7 +102,7 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
       "copyDestinations": [],
       "replicate": false,
       "externalReplicate": false
-    }
+    },
     "localCache": {
       "directory": "",
       "maxSize": 0
@@ -115,7 +115,7 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
 }
 ```
 
-3. CaaS requires a running mongoDB session. If you are planning to run multiple connected CaaS instances, you need to provide a common database session to all instances. We recommend MongoDB Atlas for that purpose. For more information see the links below.  After the database is running you need to provide the connection string in the mongodbURI field. For security reasons it is recommended that you omit the username and password (if any) and instead provide those in the environment variables "DB_USERNAME" and "DB_PASSWORD".
+3. CaaS requires a running mongoDB session. If you are planning to run multiple connected CaaS instances, you need to provide a common database session to all connected instances. We recommend MongoDB Atlas for that purpose but you can of course run your own database server. For more information see the links below. After the database is running you need to provide the connection string in the mongodbURI field. For security reasons it is recommended that you omit the username and password (if any) and instead provide those in the environment variables "DB_USERNAME" and "DB_PASSWORD".
 
     [MongoDB Local Install] (https://www.mongodb.com/try/download/community)  
     [MongoDB Atlas] (https://www.mongodb.com/atlas/database)
@@ -125,12 +125,12 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
 6. Set runQueue to true if you want to run the conversion queue on this machine. As long as the machines running the conversion queue are sharing the same database session, and storage you can run an unlimited number of instances in parallel.
 7. Set runServer to true if you want to run the CaaS Rest API frontend on this machine. The frontend provides the REST API endpoints for the conversion queue and streaming servers. It is possible to have multiple active frontends, all connected to the same storage and database. This could be a desirable configuration in a multi-region setup.  
 8. If you enabled the conversion queue (runQueue:true) you need to provide the path to the directory containing the converter executable of the HOOPS Communicator package/installation. You also need to provide a valid license for HOOPS Communicator.
-9. If the conversion queue is running on a different machine from the server you need to specify the accessible ip address of the queue here. If the ip field is left blank the conversion queue will automatically query the IP address of the machine it is currently running on. This is useful when the queue is started via a scaling server like AWS beanstock.
+9. If the conversion queue is running on a different machine from the server you need to specify the ip address and port of the queue here that is accessible from the server.
 10. By default CaaS will assign conversion jobs to all registered conversion queue servers based on their available capacity. If polling is set to true the conversion queue will poll for a newly available job every few seconds. In this case a conversion queue server does not need to be registered with the main server.
 11. If you are uploading SCS or SCZ files, CAAS will use a separate module in order to generate PNG's for those file types. See [here](https://www.npmjs.com/package/ts3d-hc-imageservice) for more information. You can specify the port this module uses for its internal server here.
-12. If you are running CaaS as a node module and use the API directly you can optionally turn off the REST API endpoints. In this case your code needs to handle file uploads and other actions.
-13. If you are planning to use S3 for storaging the converted models you need to set the "storageBackend" field to "s3" and provide a valid AWS S3 bucket name in the "storage.destination" field. You also need to make sure AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY_ID is set, either via environment variables or through a config file. (see [AWS Credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html)). If you are using a network of multiple conversion queue instances, you need to specify the same bucket for all of them. If you are not using S3, the system will fall back to storing the conversion data locally in the directory provided by workingDirectory.
-14. If you are planning to support SCZ model streaming, you need to provide at a minimum the path to ts3d_sc_server.exe. Each parallel streaming instance will run on separate consecutive ports, the range specified by startPort and maxStreamingSession, which are proxied from listenPort.
+12. If you are running CaaS as a node module and use the API directly you can optionally turn off all REST API endpoints. In this case your code needs to handle file uploads and other actions.
+13. If you are planning to use S3 for storaging the converted models you need to set the "storageBackend" field to "s3" and provide a valid AWS S3 bucket name in the "storage.destination" field. You also need to make sure AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY_ID is set, either via environment variables or through a config file. (see [AWS Credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html)). If you are using a network of multiple conversion queue instances, you need to specify a bucket that is accessible to all instances. If you are not using S3, the system will fall back to storing the conversion data locally in the directory provided by workingDirectory.
+14. If you are planning to support SCZ model streaming, you need to provide the path to ts3d_sc_server.exe. Each parallel streaming session on the same machine will run on separate consecutive ports, the range specified by startPort and maxStreamingSession, which are proxied from listenPort.
 15. Run CaaS via npm start
 
 ## Install & Run Using NPX
@@ -163,8 +163,35 @@ const conversionserver = require('ts3d.hc.caas');
 conversionserver.start();
 ```
 
+## Scaling
+While it is easy to setup CaaS to run on a single machine, it is often desirable to scale the system to multiple machines, in particular for CAD conversions. This can be done by running multiple instances of CaaS on different machines. Each instance can be configured to run the conversion queue, the streaming server or both. As long as all instances are connected to the same database and storage, they will be able to share the load.
+
+[todo: add diagram, configuration examples]
+
+## Multi-Region Support
+To improve performance, it might be desirable to deploy multiple instances of CaaS in different regions. There are a few things to consider when doing this:
+
+*  If you specify a "hc-caas.region", only conversion queues that have the same region tags will be used for conversion. In addition, only streaming servers with that same region tag will be used for viewing. All uploaded and converted models however, will still be stored in the same location. (see next point)
+* With "hc-caas.storage.destination" you can specify the location where converted models will be stored, which corresponds to a bucket in S3 or a local or network path (for filesystem). For multiple regions, you can specify different destinations, which ideally should corrspond to a storage location with fast access in your region. 
+* If a model  that has been converted with a particular destination is requested from a CaaS instance that has a different destination, performance might be affected, though it should still be accessible. However, if "hc-caas.storage.replicate" is set to true, the model will be copied to the requested destination and the copy will be used for the next request. This will improve performance, but will also increase storage costs.
+* In "hc-caas.storage copyDestinations" you can optionally specifiy an array of "destinations". After a model is converted, it will automatically be replicated to those destinations.
+* If you have setup automatic replication via S3 specific functionality outside of CaaS, you should set "hc-caas.storage.externalReplicate" to true. In this case, CaaS will always attempt to access the model from the local destination, and fallback to the original destination if it is not found. 
+* Multi-Region Supported is currently only available for S3 storage.
+
+## Caching
+If "hc-caas.cache.maxSize" is > 0, CaaS will cache a model when it is first accessed. This value is in MB and represents the maximum allowed model cache on disk. You can also specify the directory for the cache, otherwise it will be inside the workingDirectory folder. Caching can greatly improve performance, in particular for large SCZ or SCS files.
+
+## Proxy Considerations when Streaming
+It might be desirable to run the streaming service via a proxy, so that all requested are processed via port 80 or 443. An example of such a setup can be found in proxy.js.  
+[todo: more details]
+
+
+## Presigned URL Upload Flow for S3
+[todo]
+
 ## Node Module API Reference
-(todo)
+[todo]
+
 
 ## REST API Reference
 
@@ -178,7 +205,7 @@ Uploads a new CAD file and places it on the conversion queue.
 ```
 let form = new FormData();
 form.append('file', fs.createReadStream("myfile.stp"));
-let res = await fetch(conversionServerURI + '/api/upload', { method: 'POST', body: form,headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/api/webhook"})}});
+let res = await fetch(caasURI + '/api/upload', { method: 'POST', body: form,headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/api/webhook"})}});
 let data = await res.json();
 ```
 
@@ -215,7 +242,7 @@ Retrieves data about a conversion item.
 
 #### **Example**
 ```
-let res = await fetch(conversionServerURI + '/api/data/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
+let res = await fetch(caasURI + '/api/data/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
 ```
 
 #### **Parameters**
@@ -248,7 +275,7 @@ Retrieves a file from the conversion server.
 
 #### **Example**
 ```
-let res = await fetch(conversionServerURI + '/api/file/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/scs');
+let res = await fetch(caasURI + '/api/file/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/scs');
 let buffer = await res.arrayBuffer();
 ...
 ```
@@ -270,7 +297,7 @@ Retrieves the file that was uploaded to the conversion server.
 
 #### **Example**
 ```
-let res = await fetch(conversionServerURI + '/api/original/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
+let res = await fetch(caasURI + '/api/original/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
 let buffer = await res.arrayBuffer();
 ...
 ```
@@ -292,7 +319,7 @@ Reconverts an existing conversion item.
 
 #### **Example**
 ```
-let res = await fetch(conversionServerURI + '/api/reconvert/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put', headers: {'CS-API-Arg': JSON.stringify({conversionCommandLine:["--output_step",""] })}});
+let res = await fetch(caasURI + '/api/reconvert/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put', headers: {'CS-API-Arg': JSON.stringify({conversionCommandLine:["--output_step",""] })}});
 
 ...
 ```
@@ -324,7 +351,7 @@ Deletes a conversion item including all converted data.
 
 #### **Example**
 ```
- let res = await fetch(conversionServerURI + '/api/delete/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put'});
+ let res = await fetch(caasURI + '/api/delete/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put'});
 ...
 ```
 
@@ -342,7 +369,7 @@ Retrieves a list of all conversion items available on the conversion server.
 
 #### **Example**
 ```
-let res = await fetch(conversionServerURI + '/api/items');
+let res = await fetch(caasURI + '/api/items');
 ...
 ```
 
@@ -360,7 +387,7 @@ Retrieves the time any of the items on the conversion server were last updated (
 
 #### **Example**
 ```
-let res = await fetch(conversionServerURI + '/api/items');
+let res = await fetch(caasURI + '/api/items');
 ...
 ```
 
@@ -381,7 +408,7 @@ Retrieves an upload token for directly uploading a file to S3 storage. After rec
 
 #### **Example**
 ```
-let res = await fetch(conversionServerURI + '/api/uploadToken', {headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/api/webhook"})}});
+let res = await fetch(caasURI + '/api/uploadToken', {headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/api/webhook"})}});
 
 ```
 
@@ -407,7 +434,7 @@ Retrieves a download token for directly downloading a file from S3 storage.
 
 #### **Example**
 ```
-  let res = await fetch(conversionServerURI + '/api/downloadToken/c79dd99e-cbbd-4b6d-ba43-15986b1adc1/scs');     
+  let res = await fetch(caasURI + '/api/downloadToken/c79dd99e-cbbd-4b6d-ba43-15986b1adc1/scs');     
 ```
 
 #### **Parameters**
@@ -432,7 +459,7 @@ Retrieves a shattered part for a conversion item converted with the *processShat
 
 #### **Example**
 ```
-let res = await fetch(conversionServerURI + '/api/shattered/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/part.scs');
+let res = await fetch(caasURI + '/api/shattered/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/part.scs');
 let buffer = await res.arrayBuffer();
 ...
 ```
@@ -455,7 +482,7 @@ Retrieves the shattered XML file for a conversion item converted with the *proce
 
 #### **Example**
 ```
-let res = await fetch(conversionServerURI + '/api/shatteredXML/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
+let res = await fetch(caasURI + '/api/shatteredXML/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
 let shatteredData = await res.text();
 ...
 ```
@@ -468,3 +495,73 @@ let shatteredData = await res.text();
 
 #### **Returns**
 XML data
+
+
+### **/api/streamingSession**
+
+#### **Description**
+Request a new streaming session
+
+#### **Example**
+```
+let res = await fetch(caasURI + '/api/streamingSession');
+let data = await res.json();
+viewer = new Communicator.WebViewer({
+      containerId: "viewerContainer",
+      endpointUri: 'ws://' + data.serverurl + ":" + data.port + '?token=' + data.sessionid,
+      model: "_empty",
+      rendererType: Communicator.RendererType.Client
+    });
+...
+```
+
+#### **Parameters**
+None
+ 
+
+#### **Returns**
+JSON Object 
+
+```
+{ serverurl: url of streaming server,
+  port: port of streaming server,
+  sessionid: session id for streaming session };
+```
+
+
+### **/api/enableStreamAccess**
+
+#### **Description**
+Makes an scz file available for streaming
+
+#### **Example**
+```
+await fetch(caasURI + '/api/enableStreamAccess/' + sessionid, { method: 'put', headers: { 'items': JSON.stringify([modelid]) } });
+...
+```
+
+#### **Parameters**
+*As specified in URL string:*
+
+* Session id of the streaming session.
+
+*CS-API-Arg:*
+
+*items* - Array of model ids to make available for streaming.
+
+ 
+#### **Returns**
+None
+
+
+### **/api/version**
+
+#### **Description**
+Retrieves CaaS Version String 
+
+
+#### **Parameters**
+None
+ 
+#### **Returns**
+CaaS Version

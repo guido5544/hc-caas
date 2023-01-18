@@ -19,9 +19,6 @@ var conversionQueue;
 var streamingServer;
 var streamingManager;
 
-
-
-
 exports.start = async function (mongoose_in, customCallback) {
 
   var versioninfo = require('./package.json');
@@ -137,7 +134,6 @@ exports.start = async function (mongoose_in, customCallback) {
       console.error('UNCAUGHT FATAL EXCEPTION:' + error.message);
       if (error.message.indexOf("Mongoose") > -1) {
         console.error('Issue with MongoDB. Is MongoDB running and mongodbURI in config set correctly?');
-        return;
       }
       if (config.get("hc-caas.fullErrorReporting")) {
           console.error(error);
