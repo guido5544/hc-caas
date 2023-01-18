@@ -1,8 +1,6 @@
 # CaaS (Communicator as a Service): Conversion and Streaming Server Backend for HOOPS Communicator
 
-## Overview
-
-### Main Features
+## Main Features
 * Conversion Queue for distributed CAD conversions.
 * SC Streaming or SCS Loading
 * S3 Storage option with direct S3 upload via tokens.
@@ -16,17 +14,21 @@
 * Access to all converter command-line options for conversion.
 * Run via NPX directly or embed into your Node.js application as a module.
 
-### Limitations
+## Limitations
 * **This library is not an officially supported part of HOOPS Communicator and provided as-is.**
 * No account/user management or security. This is BY DESIGN. CaaS is meant to be accessed behind a firewall from the server-side business logic of your application. A reference application that uses CaaS in that manner is provided.
 * Only tested on windows
 
-### ToDo
+## ToDo
 
 * Linux Testing
 * Support for Azure Blob Storage
 * Module JS API documentation
 * Plugin Support to allow for User Defined Storage Options
+
+## Feedback
+For questions/feedback please send an email to guido@techsoft3d.com or post in our [forum](https://forum.techsoft3d.com/). For a 60 day trial of the HOOPS Web Platform go to (Web Platform)[https://www.techsoft3d.com/products/hoops/web-platform].
+
 
 ## Quick Start
 To quickly test out CaaS with a simple front-end and scs loading, follow the steps below.
