@@ -9,7 +9,7 @@ const fetch = require('node-fetch');
 
 const localCache = require('./localCache');
 
-let storage;
+var storage;
 
 let lastUpdated  = new Date();
 
@@ -20,21 +20,8 @@ var customCallback;
 exports.start = async (callback) => {
 
   customCallback = callback;
-
  
-  if (config.get('hc-caas.storageBackend') == 's3')
-  {
-    storage = require('./permanentStorageS3');
-    storage.initialize();
-  }
-  else if (config.get('hc-caas.storageBackend') == 'ABS')
-  {
-    storage = require('./permanentStorageABS');
-    storage.initialize();
-  }
-  else  {
-    storage = require('./permanentStorageFS');
-  }
+  storage = require('./permanentStorage').getStorage();
 
   setTimeout(async function () {
     var queueservers = await Queueserveritem.find();

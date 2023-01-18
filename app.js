@@ -143,7 +143,12 @@ exports.start = async function (mongoose_in, customCallback) {
     });
 
   } catch (e) {
-    console.log("CSErrror:" + e.message);
+    if (config.get("hc-caas.fullErrorReporting")) {
+      console.log(e);
+    }
+    else {
+      console.log("CSErrror:" + e.message);
+    }
     exit(0);
   }
 };
