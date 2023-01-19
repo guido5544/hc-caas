@@ -58,7 +58,7 @@ To quickly test out CaaS with a simple front-end and scs loading, follow the ste
 
 ## Demos
 
-A simple demo application that uses the API directly and which can be used for testing CaaS locally and exploring the REST API usage can be found here: [Basic Demo Github Link](https://github.com/techsoft3d/caas_basic_example)
+A simple demo application that uses the API directly and which can be used for testing CaaS locally and exploring the REST API usage can be found here: [Basic Demo Github Link](https://github.com/techsoft3d/caas_basic_example). **This demo is the perfect starting point for understanding how to use CaaS in your own application via its REST API.**
 
 A more comprehensive demo that aims to demonstrate a more realistic use-case, includes user and project management and accesses CaaS server-side can be found here: [Advanced Demo Github Link](https://github.com/techsoft3d/caas-demo-app)
 
@@ -130,7 +130,7 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
     [MongoDB Atlas] (https://www.mongodb.com/atlas/database)
 
 4. Create a folder for temporary data and provide the path in the workingDirectory field.
-5. Specify desired port. CaaS is meant to run **behind** a firewall and should not be accessible from the web directly but you need to still ensure that the port is accessible if CaaS runs on a different machine from the main application. 
+5. Specify desired port. In production, CaaS is meant to run **behind** a firewall and should not be accessible from the web directly but you need to still ensure that the port is accessible if CaaS runs on a different machine from the main application. 
 6. Set runQueue to true if you want to run the conversion queue on this machine. As long as the machines running the conversion queue are sharing the same database session, and storage you can run an unlimited number of instances in parallel.
 7. Set runServer to true if you want to run the CaaS Rest API frontend on this machine. The frontend provides the REST API endpoints for the conversion queue and streaming servers. It is possible to have multiple active frontends, all connected to the same storage and database. This could be a desirable configuration in a multi-region setup.  
 8. If you enabled the conversion queue (runQueue:true) you need to provide the path to the directory containing the converter executable of the HOOPS Communicator package/installation. You also need to provide a valid license for HOOPS Communicator.
@@ -138,7 +138,7 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
 10. By default CaaS will assign conversion jobs to all registered conversion queue servers based on their available capacity. If polling is set to true the conversion queue will poll for a newly available job every few seconds. In this case a conversion queue server does not need to be registered with the main server.
 11. If you are uploading SCS or SCZ files, CAAS will use a separate module in order to generate PNG's for those file types. See [here](https://www.npmjs.com/package/ts3d-hc-imageservice) for more information. You can specify the port this module uses for its internal server here.
 12. If you are running CaaS as a node module and use the API directly you can optionally turn off all REST API endpoints. In this case your code needs to handle file uploads and other actions.
-13. If you are planning to use S3 or Azure Blob Storage for storaging the converted models you need to set storage.type" field to "S3" or "ABS" and provide a valid bucket/container name in the "storage.destination" field. For S3 you also need to make sure AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY_ID is set, either via environment variables or through a config file. (see [AWS Credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html)). For ABS you need to provide either a connection string or your authorized account (see [here](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-nodejs?tabs=managed-identity%2Croles-azure-portal%2Csign-in-azure-cli#authenticate-to-azure-and-authorize-access-to-blob-data)). If you are using a network of multiple conversion queue instances, you need to specify a bucket/container that is accessible to all instances. 
+13. If you are planning to use S3 or Azure Blob Storage for storing the converted models you need to set the "storage.type" field to "S3" or "ABS" and provide a valid bucket/container name in the "storage.destination" field. For S3 you also need to make sure AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY_ID is set, either via environment variables or through a config file. (see [AWS Credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html)). For ABS you need to provide either a connection string or your authorized account name (see [here](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-nodejs?tabs=managed-identity%2Croles-azure-portal%2Csign-in-azure-cli#authenticate-to-azure-and-authorize-access-to-blob-data)). If you are using a network of multiple conversion queue instances, you need to specify a bucket/container that is accessible to all instances. 
 14. If you are planning to support SCZ model streaming, you need to provide the path to ts3d_sc_server.exe. Each parallel streaming session on the same machine will run on separate consecutive ports, the range specified by startPort and maxStreamingSession, which are proxied from listenPort.
 15. Run CaaS via npm start
 
@@ -197,6 +197,10 @@ It might be desirable to run the streaming service via a proxy, so that all requ
 
 ## Presigned URL Upload Flow for S3
 [todo]
+
+## Building the HE executable
+[todo]
+
 
 ## Node Module API Reference
 [todo]
