@@ -5,10 +5,13 @@ const mongooseJobQueue = require('fast-mongoose-job-queue');
 const unzipper = require('unzipper');
 const del = require('del');
 const fetch = require('node-fetch');
-const FormData = require('form-data');
 
 const Conversionitem = require('../models/conversionitem');
 const Queueserveritem = require('../models/queueserveritem');
+
+
+var storage;
+
 const e = require('express');
 
 const execFile = require('child_process').execFile;
@@ -24,7 +27,6 @@ let tempFileDir = "E:/GitHub/conversionservice/hc-caas/tempfiles";
 let simConversions = 0;
 const maxConversions = config.get('hc-caas.queue.maxConversions');
 
-let storage;
 var queue
 if (config.get('hc-caas.region') == "") {
    queue = mongooseJobQueue(global.con, 'conversion-queue');
@@ -40,6 +42,11 @@ let imageservice = null;
 
 
 exports.start = async () => {
+
+  
+
+  storage = require('./permanentStorage').getStorage();
+
   queue.cleanup();
   
   let ip = config.get('hc-caas.queue.ip');
@@ -68,16 +75,6 @@ exports.start = async () => {
     queueserver.region = config.get('hc-caas.region');
     queueserver.save();
   }
-
-  if (config.get('hc-caas.storageBackend') == 's3')
-  {
-    storage = require('./permanentStorageS3');
-    storage.initialize();
-  }
-  else  {
-    storage = require('./permanentStorageFS');
-  }
-  
 
   if (!fs.existsSync(tempFileDir)) {
     fs.mkdirSync(tempFileDir);

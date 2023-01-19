@@ -1,13 +1,12 @@
 {
   "hc-caas": {
-    "mongodbURI": "mongodb://127.0.0.1:27017/conversions",
+    "mongodbURI": "mongodb://127.0.0.1:27018/conversions",
     "workingDirectory": "",
     "port": "3001",
     "runQueue": true,
     "runServer": true,
     "runStreamingManager": true,
     "runStreamingServer": true,
-    "storageBackend": "filesystem",
     "license": "",
     "fullErrorReporting": false,
     "region": "",
@@ -34,10 +33,15 @@
       "publicPort": ""
     },
     "storage": {
+      "type": "filesystem",
       "destination": "",
       "copyDestinations": [],      
       "replicate": false,
-      "externalReplicate": false    
+      "externalReplicate": false,
+      "ABS": {
+        "connectionString":"",
+        "accountName": ""
+      }
     },
     "localCache": {
       "directory": "",

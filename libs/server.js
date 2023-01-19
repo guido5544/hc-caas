@@ -9,7 +9,7 @@ const fetch = require('node-fetch');
 
 const localCache = require('./localCache');
 
-let storage;
+var storage;
 
 let lastUpdated  = new Date();
 
@@ -20,16 +20,8 @@ var customCallback;
 exports.start = async (callback) => {
 
   customCallback = callback;
-
-  if (config.get('hc-caas.storageBackend') == 's3')
-  {
-    storage = require('./permanentStorageS3');
-    storage.initialize();
-  }
-  else
-  {
-    storage = require('./permanentStorageFS');    
-  }
+ 
+  storage = require('./permanentStorage').getStorage();
 
   setTimeout(async function () {
     var queueservers = await Queueserveritem.find();
@@ -93,7 +85,7 @@ exports.requestDownloadToken = async (itemid,type) => {
 async function readFileWithCache(itemid, name, item) {
   if (name.indexOf(".scs") != -1) {
     if (localCache.isInCache(itemid, name)) {
-      console.log("file is in cache");
+      console.log("file loaded from cache");
       const data = await localCache.readFile(itemid, name);
       return data;
     }

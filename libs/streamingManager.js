@@ -13,15 +13,7 @@ let started = false;
 
 exports.start = async () => {
 
-  if (config.get('hc-caas.storageBackend') == 's3') {
-    storage = require('./permanentStorageS3');
-    storage.initialize();
-  }
-  else
-  {
-    storage = require('./permanentStorageFS');    
-  }
-
+  storage = require('./permanentStorage').getStorage();
 
   setTimeout(async function () {
 

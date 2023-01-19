@@ -1,11 +1,15 @@
 # CaaS (Communicator as a Service): Conversion and Streaming Server Backend for HOOPS Communicator
 
+## Version Update (0.9.0) 
+*  Azure Blob Storage Support (beta)
+
 ## Main Features
 * Conversion Queue for distributed CAD conversions.
 * SC Streaming or SCS Loading
-* S3 Storage option with direct S3 upload via tokens.
+* S3/Azure ABS Storage option 
+* Direct S3 upload via signedURL.
 * Local Model Caching for Streaming and SCS loading.
-* Region Replication for S3 storage
+* Region Replication (S3 only for now)
 * Support for multifile upload and ZIP upload (for assemblies) 
 * Support for shattered workflows.
 * Comprehensive REST API.
@@ -22,7 +26,7 @@
 ## ToDo
 
 * Linux Testing
-* Support for Azure Blob Storage
+* Azure Blob Storage Region Support
 * Module JS API documentation
 * Plugin Support to allow for User Defined Storage Options
 
@@ -72,7 +76,6 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
     "runServer": true,
     "runStreamingManager": true,
     "runStreamingServer": true,
-    "storageBackend": "filesystem",
     "license": "",
     "fullErrorReporting": false,
     "region": "",
@@ -98,11 +101,16 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
       "publicAddress": "",
       "publicPort": ""     
     },      
-    "storage": {
+    "storage": {      
+      "type": "filesystem",
       "destination": "",
       "copyDestinations": [],
       "replicate": false,
-      "externalReplicate": false
+      "externalReplicate": false,
+        "ABS": {
+        "connectionString":"",
+        "accountName": ""
+      }
     },
     "localCache": {
       "directory": "",
@@ -130,7 +138,7 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
 10. By default CaaS will assign conversion jobs to all registered conversion queue servers based on their available capacity. If polling is set to true the conversion queue will poll for a newly available job every few seconds. In this case a conversion queue server does not need to be registered with the main server.
 11. If you are uploading SCS or SCZ files, CAAS will use a separate module in order to generate PNG's for those file types. See [here](https://www.npmjs.com/package/ts3d-hc-imageservice) for more information. You can specify the port this module uses for its internal server here.
 12. If you are running CaaS as a node module and use the API directly you can optionally turn off all REST API endpoints. In this case your code needs to handle file uploads and other actions.
-13. If you are planning to use S3 for storaging the converted models you need to set the "storageBackend" field to "s3" and provide a valid AWS S3 bucket name in the "storage.destination" field. You also need to make sure AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY_ID is set, either via environment variables or through a config file. (see [AWS Credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html)). If you are using a network of multiple conversion queue instances, you need to specify a bucket that is accessible to all instances. If you are not using S3, the system will fall back to storing the conversion data locally in the directory provided by workingDirectory.
+13. If you are planning to use S3 or Azure Blob Storage for storaging the converted models you need to set storage.type" field to "S3" or "ABS" and provide a valid bucket/container name in the "storage.destination" field. For S3 you also need to make sure AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY_ID is set, either via environment variables or through a config file. (see [AWS Credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html)). For ABS you need to provide either a connection string or your authorized account (see [here](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-nodejs?tabs=managed-identity%2Croles-azure-portal%2Csign-in-azure-cli#authenticate-to-azure-and-authorize-access-to-blob-data)). If you are using a network of multiple conversion queue instances, you need to specify a bucket/container that is accessible to all instances. 
 14. If you are planning to support SCZ model streaming, you need to provide the path to ts3d_sc_server.exe. Each parallel streaming session on the same machine will run on separate consecutive ports, the range specified by startPort and maxStreamingSession, which are proxied from listenPort.
 15. Run CaaS via npm start
 
@@ -169,7 +177,7 @@ While it is easy to setup CaaS to run on a single machine, it is often desirable
 
 [todo: add diagram, configuration examples]
 
-## Multi-Region Support
+## Multi-Region Support (currently only supported for S3 storage)
 To improve performance, it might be desirable to deploy multiple instances of CaaS in different regions. There are a few things to consider when doing this:
 
 *  If you specify a "hc-caas.region", only conversion queues that have the same region tags will be used for conversion. In addition, only streaming servers with that same region tag will be used for viewing. All uploaded and converted models however, will still be stored in the same location. (see next point)
