@@ -33,11 +33,12 @@
 ## Feedback
 For questions/feedback please send an email to guido@techsoft3d.com or post in our [forum](https://forum.techsoft3d.com/). For a 60 day trial of the HOOPS Web Platform go to https://www.techsoft3d.com/products/hoops/web-platform.
 
-## Quick Start
-To quickly test out CaaS with a simple front-end and scs loading, follow the steps below.
+## Quick Start 
+To quickly test out CaaS, follow the steps below.
 
 1. Ensure that HOOPS Communicator is installed on your machine. 
-2. Create a new directory and create folder called "config" with empty local.json file. Copy content below and add your HOOPS Communicator license, path to a temp directory and path to HOOPS Converter
+2. Create a new directory and create folder called "config" with empty local.json file. Copy content below into local.json and edit your HOOPS Communicator license, path to an existing empty working directory and path to HOOPS Converter.
+- for simple SCS Loading using the filesystem for storage:
 ```json
 {
     "hc-caas": {      
@@ -49,16 +50,38 @@ To quickly test out CaaS with a simple front-end and scs loading, follow the ste
         "converterpath": "PATH_TO_COMMUNICATOR_DIRECTORY/authoring/converter/bin/win64",
       }   
     }
-  }  
+}  
 ```
-2. Create empty working directory specified above (make sure to provide absolute path!)
-3. Ensure mongoDB is running on localhost:27017
-4. Run CaaS with the following command: **npx ts3d.hc.caas**. It is now accessible on port 3001
-5. Run the Basic Demo below on the same machine CaaS is running on.
+- for Streaming and S3/Azure storage you also need to provide the path to ts3d_sc_server.exe as well as the storage destination (existing S3 bucket or ABS container name). For Azure please provide your connection string or account name (see below). For S3, please see further below for authorization info.
+```json
+{
+    "hc-caas": {      
+      "workingDirectory": "PATH_TO_TEMP_DIRECTORY",
+      "license": "HOOPS_COMMUNICATOR_LICENSE_KEY",
+      "queue": {
+        "converterpath": "PATH_TO_COMMUNICATOR_DIRECTORY/authoring/converter/bin/win64",
+      },
+      "streamingServer": {
+        "scserverpath": "PATH_TO_COMMUNICATOR_DIRECTORY/server/bin/win64",      
+    },
+     "storage": {
+      "type": "S3",                 //...or ABS for Azure Blob Storage
+      "destination": "mydestination",   // Either S3 Bucket or Azure Container name
+      "ABS": {
+        "connectionString": "YOUR AZURE CONNECTION STRING"
+      }
+    }
+   }
+}  
+```
+3. Create empty working directory specified above (make sure to provide absolute path!)
+4. Ensure mongoDB is running on localhost:27017
+5. Run CaaS with the following command: **npx ts3d.hc.caas**. It is now accessible on port 3001
+6. Run the Basic Demo below on the same machine CaaS is running on.
 
 ## Demos
 
-A simple demo application that uses the API directly and which can be used for testing CaaS locally and exploring the REST API usage can be found here: [Basic Demo Github Link](https://github.com/techsoft3d/caas_basic_example). **This demo is the perfect starting point for understanding how to use CaaS in your own application via its REST API.**
+A basic demo application that uses the API directly from JS and which can be used for testing CaaS locally and exploring the REST API usage can be found here: [Basic Demo Github Link](https://github.com/techsoft3d/caas_basic_example). **This demo is the perfect starting point for understanding how to use CaaS in your own application via its REST API.**
 
 A more comprehensive demo that aims to demonstrate a more realistic use-case, includes user and project management and accesses CaaS server-side can be found here: [Advanced Demo Github Link](https://github.com/techsoft3d/caas-demo-app)
 
@@ -70,7 +93,7 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
 {
   "hc-caas": {
     "mongodbURI": "mongodb://localhost:27017/conversions",
-    "workingDirectory": "E:/temp/conversionservicetemp",
+    "workingDirectory": "ABSOLUTE_PATH_TO_WORKINGDIRECTORY",
     "port": "3001",
     "runQueue": true,
     "runServer": true,
@@ -80,9 +103,9 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
     "fullErrorReporting": false,
     "region": "",
     "queue": {
-      "converterpath": "E:/communicator/HOOPS_Communicator_2022_SP2/authoring/converter/bin/win64",
-      "HEimportexportpath": "E:/GitHub/conversionservice/HE/ImportExport/x64/Release",
-      "HEInstallPath": "E:/communicator/HOOPS_Exchange_Publish_2022_SP2/bin/win64_v140",
+      "converterpath": "ABSOLUTE_PATH_TO_COMMUNICATOR/authoring/converter/bin/win64",
+      "HEimportexportpath": "ABSOLUTE_PATH_TO_CAAS/HE/ImportExport/x64/Release",
+      "HEInstallPath": "ABSOLUTE_PATH_TO_EXCHANGE/bin/win64_v140",
       "maxConversions": 4,
       "ip": "localhost",
       "polling": false,
@@ -92,7 +115,7 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
       "listen": true
     },
     "streamingServer": {
-      "scserverpath": "E:/communicator/HOOPS_Communicator_2022_SP2/server/bin/win64",
+      "scserverpath": "ABSOLUTE_PATH_TO_COMMUNICATOR/server/bin/win64",
       "maxStreamingSessions" : 10,
       "useSymLink": false,
       "ip": "localhost",
