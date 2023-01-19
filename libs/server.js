@@ -85,7 +85,7 @@ exports.requestDownloadToken = async (itemid,type) => {
 async function readFileWithCache(itemid, name, item) {
   if (name.indexOf(".scs") != -1) {
     if (localCache.isInCache(itemid, name)) {
-      console.log("file is in cache");
+      console.log("file loaded from cache");
       const data = await localCache.readFile(itemid, name);
       return data;
     }

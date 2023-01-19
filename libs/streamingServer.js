@@ -172,7 +172,7 @@ exports.startStreamingServer = async (args) => {
 async function getFileFromStorage(item, sessionid, itemname, subdirectory) {
 
     if (localCache.isInCache(item.storageID,itemname)) {
-        console.log("file is in cache");
+        console.log("file loaded from cache");
         if (config.get('hc-caas.streamingServer.useSymLink')) {            
             const dir = tempFileDir + "/" + sessionid + subdirectory;
             await localCache.createSymLink(item.storageID,itemname, dir + "/" + itemname);
@@ -187,7 +187,7 @@ async function getFileFromStorage(item, sessionid, itemname, subdirectory) {
         return;
     }
 
-    if (config.get('hc-caas.storageBackend') != 's3' && config.get('hc-caas.streamingServer.useSymLink')) {
+    if (config.get('hc-caas.storage.type') == 'filesystem' && config.get('hc-caas.streamingServer.useSymLink')) {
         const dir = tempFileDir + "/" + sessionid + subdirectory;
         await storage.createSymLink("conversiondata/" + item.storageID + "/" + itemname, dir + "/" + itemname);
     }
@@ -264,7 +264,7 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
             }
         }
         
-        if (config.get('hc-caas.storageBackend') == 's3') {
+        if (config.get('hc-caas.storage.type') == 'S3') {
        //     await someTimeout(300);
         }
         else {

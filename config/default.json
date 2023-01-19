@@ -7,7 +7,6 @@
     "runServer": true,
     "runStreamingManager": true,
     "runStreamingServer": true,
-    "storageBackend": "filesystem",
     "license": "",
     "fullErrorReporting": false,
     "region": "",
@@ -34,10 +33,15 @@
       "publicPort": ""
     },
     "storage": {
+      "type": "filesystem",
       "destination": "",
       "copyDestinations": [],      
       "replicate": false,
-      "externalReplicate": false    
+      "externalReplicate": false,
+      "ABS": {
+        "connectionString":"",
+        "accountName": ""
+      }
     },
     "localCache": {
       "directory": "",

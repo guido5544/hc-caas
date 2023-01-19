@@ -1,4 +1,5 @@
 const { BlobServiceClient } = require("@azure/storage-blob");
+const { DefaultAzureCredential } = require('@azure/identity');
 const fs = require('fs');
 const config = require('config');
 const path = require('path');
@@ -10,14 +11,22 @@ var blobServiceClient = null;
 
 exports.initialize = () => {
     if (!blobServiceClient) {
-        blobServiceClient = BlobServiceClient.fromConnectionString(
-            config.get('hc-caas.storage.ABS_connectionString')
-          );
+        bucket = config.get('hc-caas.storage.destination');
+        if (config.get('hc-caas.storage.ABS.accountName') != "") {
+            blobServiceClient = new BlobServiceClient(
+                'https://${' + config.get('hc-caas.storage.ABS.accountName') + '}.blob.core.windows.net',
+                new DefaultAzureCredential()
+            );
+        }
+        else {
+
+            blobServiceClient = BlobServiceClient.fromConnectionString(
+                config.get('hc-caas.storage.ABS.connectionString')
+            );
+        }
+        console.log("ABS Storage initialized.");
     }
 };
-
-
-
 
 
 readFileIntenal = async (bucket,filename) => {
@@ -70,21 +79,35 @@ exports.readFile = async (filename,item) => {
 
 
 
-copyObject = (destination, source, targetname) => {
-    return new Promise((resolve, reject) => {
-        var params = {
-            Bucket: destination,
-            CopySource: source,
-            Key: targetname
-        };
-        s3.copyObject(params, function (err, res) {
-            if (err === null) {
-                resolve();
-            } else {
-                resolve();
-            }
-        });
-    });
+copyObject = async (destination, source, targetname) => {
+
+    const sourceContainerClient = blobServiceClient.getContainerClient(source); 
+    const destinationContainerClient = blobServiceClient.getContainerClient(destination);  
+
+    const sourceBlobClient = await sourceContainerClient.getBlobClient(sourceBlobName);
+    const destinationBlobClient = await destinationContainerClient.getBlobClient(destinationBlobName);
+
+    const copyPoller = await destinationBlobClient.beginCopyFromURL(sourceBlobClient.url);
+    console.log('start copy from A to B');
+
+    // wait until done
+    await copyPoller.pollUntilDone();
+
+
+    // return new Promise((resolve, reject) => {
+    //     var params = {
+    //         Bucket: destination,
+    //         CopySource: source,
+    //         Key: targetname
+    //     };
+    //     s3.copyObject(params, function (err, res) {
+    //         if (err === null) {
+    //             resolve();
+    //         } else {
+    //             resolve();
+    //         }
+    //     });
+    // });
 };
 
 
@@ -142,19 +165,19 @@ exports.resolveInitialAvailability = () => {
 };
 
 
-exports.storeFromBuffer = (data, s3target) => {
+exports.storeFromBuffer = (data, target) => {
     return new Promise((resolve, reject) => {
-            _storeInS3(s3target, data).then(() => {
+            _storeInAzure(target, data).then(() => {
                 resolve();
             });
     });
 };
 
-exports.store = (inputfile, s3target, item) => {
+exports.store = (inputfile, target, item) => {
     
     return new Promise((resolve, reject) => {
         fs.readFile(inputfile, function (err, data) {
-            _storeInAzure(s3target, data, item).then(() => {
+            _storeInAzure(target, data, item).then(() => {
                 resolve();
             });
         });
@@ -176,18 +199,24 @@ _storeInAzure = (filename, data, item) => {
 
 };
 
-exports.delete = (name, item) => {
+exports.delete = async (name, item) => {
+
+    const options = {
+        deleteSnapshots: 'include' // or 'only'
+      };
+
     if (item && item.storageAvailability) {
         for (let i = 0; i < item.storageAvailability.length; i++) {
-            let s3Params = { Bucket: item.storageAvailability[i].bucket, Key: '', Body: '' };
-            s3Params.Key = name;
-            s3.deleteObject(s3Params);
+
+            const containerClient = blobServiceClient.getContainerClient(item.storageAvailability[i].bucket);
+            const blockBlobClient = await containerClient.getBlockBlobClient(name);
+            await blockBlobClient.delete(options);
         }
     }
     else {
-        let s3Params = { Bucket: bucket, Key: '', Body: '' };
-        s3Params.Key = name;
-        s3.deleteObject(s3Params);
+        const containerClient = blobServiceClient.getContainerClient(bucket);
+        const blockBlobClient = await containerClient.getBlockBlobClient(name);
+        await blockBlobClient.delete(options);
     }
 };
 
@@ -220,9 +249,9 @@ exports.requestDownloadToken = async (filename, item) => {
 
 
     if (config.get('hc-caas.storage.externalReplicate')) {
-        let url = await _getPresignedUrlS3(config.get('hc-caas.storage.destination'),filename);
+        let url = await _getPresignedUrlABS(config.get('hc-caas.storage.destination'),filename);
         if (!url && bucket != config.get('hc-caas.storage.destination')) {
-            url = await _getPresignedUrlS3(bucket,filename);
+            url = await _getPresignedUrlABS(bucket,filename);
         }
         else {
             if (bucket != config.get('hc-caas.storage.destination')) {
@@ -233,63 +262,63 @@ exports.requestDownloadToken = async (filename, item) => {
         return url;
     }
     else {
-        let url = await _getPresignedUrlS3(bucket,filename);
+        let url = await _getPresignedUrlABS(bucket,filename);
         return url;
     }
 };
 
 
-function _getPresignedUrlPut(filename, item) {
+async function _getPresignedUrlPut(filename, item) {
 
-    let bucket = config.get('hc-caas.storage.destination');
-    if (item && item.storageAvailability) {
-        bucket = item.storageAvailability[0].bucket;
-    }
+    // let bucket = config.get('hc-caas.storage.destination');
+    // if (item && item.storageAvailability) {
+    //     bucket = item.storageAvailability[0].bucket;
+    // }
 
-    return new Promise(async (resolve, reject) => {
+    // return new Promise(async (resolve, reject) => {
 
-        let contentType = "";
-        if (path.extname(filename) == ".zip") {
-            contentType = "application/x-zip-compressed";
-        }
-        const s3Params = {
-            Bucket: bucket,
-            Key: filename,
-            Expires: 60 * 60 * 60,
-            ContentType: contentType
-        };
+    //     let contentType = "";
+    //     if (path.extname(filename) == ".zip") {
+    //         contentType = "application/x-zip-compressed";
+    //     }
+    //     const s3Params = {
+    //         Bucket: bucket,
+    //         Key: filename,
+    //         Expires: 60 * 60 * 60,
+    //         ContentType: contentType
+    //     };
 
-        try {
-            s3.getSignedUrl('putObject', s3Params, function (err, data) {
-                resolve(data);
-            });
-        } catch (error) {
-            return reject(error);
-        }
-    });
+    //     try {
+    //         s3.getSignedUrl('putObject', s3Params, function (err, data) {
+    //             resolve(data);
+    //         });
+    //     } catch (error) {
+    //         return reject(error);
+    //     }
+    // });
 }
 
-function _getPresignedUrlS3(bucket,filename) {
-    return new Promise(async (resolve, reject) => {
+async function _getPresignedUrlABS(bucket,filename) {
+    // return new Promise(async (resolve, reject) => {
 
-        const s3Params = {
-            Bucket: bucket,
-            Key: filename,
-            Expires: 60 * 60 * 60,
-            ContentType:null
-            };
+    //     const s3Params = {
+    //         Bucket: bucket,
+    //         Key: filename,
+    //         Expires: 60 * 60 * 60,
+    //         ContentType:null
+    //         };
 
-        try {
-            s3.getSignedUrl('getObject', s3Params, function (err, data) {
-                if (err) {
-                    resolve (null);
-                }
-                else {
-                    resolve(data);
-                }
-            });
-        } catch (error) {
-            resolve(null);
-        }
-    });
+    //     try {
+    //         s3.getSignedUrl('getObject', s3Params, function (err, data) {
+    //             if (err) {
+    //                 resolve (null);
+    //             }
+    //             else {
+    //                 resolve(data);
+    //             }
+    //         });
+    //     } catch (error) {
+    //         resolve(null);
+    //     }
+    // });
 }
