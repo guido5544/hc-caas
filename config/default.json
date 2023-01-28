@@ -1,7 +1,7 @@
 {
   "hc-caas": {
-    "mongodbURI": "mongodb://127.0.0.1:27018/conversions",
-    "workingDirectory": "",
+    "mongodbURI": "mongodb://127.0.0.1:27017/conversions",
+    "workingDirectory": "temp",
     "port": "3001",
     "runQueue": true,
     "runServer": true,

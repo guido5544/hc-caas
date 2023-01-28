@@ -21,17 +21,24 @@ var streamingManager;
 
 exports.start = async function (mongoose_in, customCallback) {
 
-  var versioninfo = require('./package.json');
-  process.env.caas_version = versioninfo.version;
-  console.log("Initializing CAAS. Version: " + process.env.caas_version);
 
   const config = require('config');
+
   try {
     config.get('hc-caas');
   } catch (e) {
     console.log("Error: Can't find configuration data. Make sure you have a config folder with a default.json file and a hc-caas object in the root directory of the project.");
     exit(0);
   }
+
+  if (!fs.existsSync(config.get('hc-caas.workingDirectory'))) {
+    fs.mkdirSync(config.get('hc-caas.workingDirectory'));
+  }
+
+  var versioninfo = require('./package.json');
+  process.env.caas_version = versioninfo.version;
+  console.log("Initializing CAAS. Version: " + process.env.caas_version);
+
 
   if (mongoose_in == undefined || !mongoose_in) {
     mongoose = require('mongoose');
