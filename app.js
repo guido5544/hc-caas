@@ -19,19 +19,29 @@ var conversionQueue;
 var streamingServer;
 var streamingManager;
 
+process.env.ALLOW_CONFIG_MUTATIONS = "true";
+process.env.SUPPRESS_NO_CONFIG_WARNING = 'y';
+const config = require('config');
+
+
 exports.start = async function (mongoose_in, customCallback) {
+  handleInitialConfiguration();
 
-  var versioninfo = require('./package.json');
-  process.env.caas_version = versioninfo.version;
-  console.log("Initializing CAAS. Version: " + process.env.caas_version);
-
-  const config = require('config');
   try {
     config.get('hc-caas');
   } catch (e) {
     console.log("Error: Can't find configuration data. Make sure you have a config folder with a default.json file and a hc-caas object in the root directory of the project.");
     exit(0);
   }
+
+  if (!fs.existsSync(config.get('hc-caas.workingDirectory'))) {
+    fs.mkdirSync(config.get('hc-caas.workingDirectory'));
+  }
+
+  var versioninfo = require('./package.json');
+  process.env.caas_version = versioninfo.version;
+  console.log("Initializing CAAS. Version: " + process.env.caas_version);
+
 
   if (mongoose_in == undefined || !mongoose_in) {
     mongoose = require('mongoose');
@@ -158,3 +168,65 @@ exports.start = async function (mongoose_in, customCallback) {
 if (require.main === module) {
   this.start();
 } 
+
+
+
+
+function handleInitialConfiguration() {
+  let configs = {
+      "mongodbURI": "mongodb://127.0.0.1:27017/conversions",
+      "workingDirectory": "temp",
+      "port": "3001",
+      "runQueue": true,
+      "runServer": true,
+      "runStreamingManager": true,
+      "runStreamingServer": true,
+      "license": "",
+      "fullErrorReporting": false,
+      "region": "",
+      "queue": {
+        "converterpath": "",
+        "HEimportexportpath": "",
+        "HEInstallPath": "",
+        "maxConversions": 4,
+        "ip": "localhost",
+        "polling": false,
+        "imageServicePort": "3002"
+      },
+      "server": {
+        "listen": true
+      },
+      "streamingServer": {
+        "scserverpath": "",
+        "maxStreamingSessions": 10,
+        "useSymLink": false,
+        "ip": "localhost",
+        "startPort": 3006,
+        "listenPort": 3200,
+        "publicAddress": "",
+        "publicPort": ""
+      },
+      "storage": {
+        "type": "filesystem",
+        "destination": "",
+        "copyDestinations": [],      
+        "replicate": false,
+        "externalReplicate": false,
+        "ABS": {
+          "connectionString":"",
+          "accountName": ""
+        }
+      },
+      "localCache": {
+        "directory": "",
+        "maxSize": 0
+      },
+      "proxy": {
+        "keyPath": "",
+        "certPath": ""
+      }
+  };
+
+  config.util.setModuleDefaults('hc-caas', configs);
+
+}

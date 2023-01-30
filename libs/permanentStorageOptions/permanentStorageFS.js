@@ -15,7 +15,7 @@ else {
     storageDirectory = config.get('hc-caas.workingDirectory') + "/permanentStorage";
 }
 
-console.log(storageDirectory);
+console.log("Filesystem Storage Initalized at: " + storageDirectory);
 
 exports.readFile = (filename) => {
     return new Promise((resolve, reject) => {
