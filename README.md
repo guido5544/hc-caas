@@ -1,5 +1,9 @@
 # CaaS (Communicator as a Service): Conversion and Streaming Server Backend for HOOPS Communicator
 
+## Version Update (0.9.7) 
+* Improved configuration management
+* Various bugfixes 
+
 ## Version Update (0.9.0) 
 *  Azure Blob Storage Support (beta)
 
