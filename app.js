@@ -26,7 +26,6 @@ const config = require('config');
 
 exports.start = async function (mongoose_in, customCallback) {
   handleInitialConfiguration();
-
   try {
     config.get('hc-caas');
   } catch (e) {
@@ -175,7 +174,7 @@ if (require.main === module) {
 function handleInitialConfiguration() {
   let configs = {
       "mongodbURI": "mongodb://127.0.0.1:27017/conversions",
-      "workingDirectory": "temp",
+      "workingDirectory": "caasTemp",
       "port": "3001",
       "runQueue": true,
       "runServer": true,
