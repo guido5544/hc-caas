@@ -403,6 +403,11 @@ function setupCommandLine(inputPath, dir, item) {
   }
   let commandLine;
 
+  if (!path.isAbsolute(inputPath)) {
+    inputPath = path.join(process.cwd(), inputPath);
+    dir = path.join(process.cwd(), dir);
+  }
+
   if (!item.conversionCommandLine) {
     commandLine = ['--license', config.get('hc-caas.license'),
       '--input', inputPath,
