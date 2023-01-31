@@ -1,5 +1,9 @@
 # CaaS (Communicator as a Service): Conversion and Streaming Server Backend for HOOPS Communicator
 
+## Version Update (0.9.10) 
+* Support for new user management module (see [here](https://github.com/techsoft3d/hc-caas-usermanagement))
+* Support for relative workingDirectory paths
+
 ## Version Update (0.9.7) 
 * Improved configuration management
 * Various bugfixes 
@@ -24,7 +28,7 @@
 
 ## Limitations
 * **This library is not an officially supported part of HOOPS Communicator and provided as-is.**
-* No account/user management or security. This is BY DESIGN. CaaS is meant to be accessed behind a firewall from the server-side business logic of your application. A reference application that uses CaaS in that manner is provided.
+* No account/user management or security. This is BY DESIGN. CaaS is meant to be accessed behind a firewall from the server-side business logic of your application. An optional seperate node module for user management is available as well. See [here](https://github.com/techsoft3d/hc-caas-usermanagement) for more information.
 * Only tested on windows
 
 ## ToDo
@@ -46,7 +50,6 @@ To quickly test out CaaS, follow the steps below.
 ```json
 {
     "hc-caas": {      
-      "workingDirectory": "PATH_TO_TEMP_DIRECTORY",
       "license": "HOOPS_COMMUNICATOR_LICENSE_KEY",
       "runStreamingManager": false,
       "runStreamingServer": false,
@@ -60,7 +63,6 @@ To quickly test out CaaS, follow the steps below.
 ```json
 {
     "hc-caas": {      
-      "workingDirectory": "PATH_TO_TEMP_DIRECTORY",
       "license": "HOOPS_COMMUNICATOR_LICENSE_KEY",
       "queue": {
         "converterpath": "PATH_TO_COMMUNICATOR_DIRECTORY/authoring/converter/bin/win64",
@@ -89,6 +91,8 @@ A basic demo application that uses the API directly from JS and which can be use
 
 A more comprehensive demo that aims to demonstrate a more realistic use-case, includes user and project management and accesses CaaS server-side can be found here: [Advanced Demo Github Link](https://github.com/techsoft3d/caas-demo-app)
 
+Please see here for the User Management Module that includes a demo application: [User Management Module](https://github.com/techsoft3d/hc-caas-usermanagement).
+
 ## Install & Run Using GitHub
 1. Clone [GitHub Project](https://github.com/techsoft3d/hc-caas) 
 2. Create a local.json file in config directory. This file will contain any local configuration overrides. See the defaults below or in config/default.json. 
@@ -97,7 +101,7 @@ A more comprehensive demo that aims to demonstrate a more realistic use-case, in
 {
   "hc-caas": {
     "mongodbURI": "mongodb://localhost:27017/conversions",
-    "workingDirectory": "ABSOLUTE_PATH_TO_WORKINGDIRECTORY",
+    "workingDirectory": "PATH_TO_WORKINGDIRECTORY",
     "port": "3001",
     "runQueue": true,
     "runServer": true,
