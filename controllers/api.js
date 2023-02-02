@@ -25,8 +25,15 @@ exports.postFileUpload = async (req, res, next) => {
         res.json(data);
     }
     else {
-        let data = await server.create(req.file.destination, req.file.originalname, args);
-        res.json(data);
+        let item = await server.createDatabaseEntry(req.file.originalname, args);
+        if (args.waitUntilConversionDone) {
+            await server.create(item, req.file.destination, req.file.originalname, args);
+        }
+        else {
+             server.create(item, req.file.destination, req.file.originalname, args);
+        }
+
+        res.json({itemid:item.storageID});
     }
 
 };

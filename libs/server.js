@@ -266,15 +266,18 @@ exports.createMultiple = async (files, args) => {
     }
   }
 
-  let res = await this.create(files[rootFileIndex].destination, files[rootFileIndex].originalname, args);
-  let itemid = res.itemid;
+  let item = await this.createDatabaseEntry(files[rootFileIndex].originalname, args);
+  await this.create(item, files[rootFileIndex].destination, files[rootFileIndex].originalname, args);
+  let itemid = item.storageID;
+  let proms= [];
   for (let i = 0; i < files.length; i++) {
     if (rootFileIndex == i) {
       continue;
     }
-    await this.append(files[i].destination, files[i].originalname, itemid);
+    proms.push(this.append(files[i].destination, files[i].originalname, itemid));
   }
 
+  await Promise.all(proms);
   if (!skipConversion) {
     await this.reconvert(itemid, args);
   }
@@ -282,11 +285,10 @@ exports.createMultiple = async (files, args) => {
 };
 
 
-exports.create = async (directory, itemname, args) => {
-  var itemid = uuidv4();
 
-  await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname);
+exports.createDatabaseEntry = async (itemname, args) => {
 
+  let itemid = uuidv4();
   let startState = "PENDING";
 
   if (args.skipConversion)
@@ -303,7 +305,16 @@ exports.create = async (directory, itemname, args) => {
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability()
   });
-  
+  await item.save();
+  return item;
+};
+
+
+exports.create = async (item, directory, itemname, args) => {
+ 
+
+  await storage.store(directory + "/" + itemname, "conversiondata/" + item.storageID + "/" + itemname);
+ 
   await item.save();
 
   if (!args.skipConversion) {
@@ -311,7 +322,7 @@ exports.create = async (directory, itemname, args) => {
     
     sendConversionRequest();
     if (args.waitUntilConversionDone) {
-      await waitUntilConversionDone(itemid);
+      await waitUntilConversionDone(item.storageID);
     }
   }
 
@@ -322,7 +333,6 @@ exports.create = async (directory, itemname, args) => {
   });
   console.log("File Uploaded:" + itemname);
 
-  return { itemid: itemid };
 };
 
 
