@@ -315,10 +315,8 @@ exports.create = async (item, directory, itemname, args) => {
 
   await storage.store(directory + "/" + itemname, "conversiondata/" + item.storageID + "/" + itemname);
  
-  await item.save();
-
   if (!args.skipConversion) {
-    let job = await conversionQueue.getQueue().add({ item: item });
+    await conversionQueue.getQueue().add({ item: item });
     
     sendConversionRequest();
     if (args.waitUntilConversionDone) {
