@@ -211,7 +211,6 @@ function someTimeout(to) {
     });
 }
 
-
 exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = false) => {
 
     let session = await Streamingsessionitem.findOne({ _id: sessionid });
@@ -317,13 +316,16 @@ async function runStreamingServer(slot,sessionid, streamingLocation) {
     
   }
 
-
-
 function setupCommandLine(port,sessionid, streamingLocation) {
 
     let commandLine;
-
+    
     let dirs = tempFileDir + "/" + sessionid;
+
+    if (!path.isAbsolute(dirs)) {
+        dirs = path.join(process.cwd(), dirs);    
+    }
+   
     if (streamingLocation) {
         dirs += ";" + streamingLocation;
     }
@@ -336,5 +338,3 @@ function setupCommandLine(port,sessionid, streamingLocation) {
 
     return commandLine;
 }
-
-
