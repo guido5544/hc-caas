@@ -3,6 +3,7 @@ const Conversionitem = require('../models/conversionitem');
 const fs = require('fs');
 const conversionQueue = require('./conversionqueue');
 const { v4: uuidv4 } = require('uuid');
+const path = require('path');
 
 const Queueserveritem = require('../models/queueserveritem');
 const fetch = require('node-fetch');
@@ -308,6 +309,27 @@ exports.createDatabaseEntry = async (itemname, args) => {
   await item.save();
   return item;
 };
+
+
+
+exports.convertSingle = async (filepath, inargs) => {
+
+  let args = {};
+  if (inargs) {
+    args = inargs;
+  }
+ 
+  let item = await this.createDatabaseEntry(path.basename(filepath), args);
+
+  await storage.store(filepath, "conversiondata/" + item.storageID + "/" + path.basename(filepath));
+ 
+  await conversionQueue.getQueue().add({ item: item });
+    
+  sendConversionRequest();
+  await waitUntilConversionDone(item.storageID);
+  return { itemid: item.storageID};
+};
+
 
 
 exports.create = async (item, directory, itemname, args) => {

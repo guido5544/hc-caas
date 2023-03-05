@@ -1,5 +1,8 @@
 # CaaS (Communicator as a Service): Conversion and Streaming Server Backend for HOOPS Communicator
 
+## Version Update (0.9.14) 
+* `convertSingle` function added to server to simplify direct single file conversion via API
+
 ## Version Update (0.9.10) 
 * Support for new user management module (see [here](https://github.com/techsoft3d/hc-caas-usermanagement))
 * Support for relative workingDirectory paths
@@ -15,16 +18,16 @@
 * Conversion Queue for distributed CAD conversions.
 * SC Streaming or SCS Loading
 * S3/Azure ABS Storage option 
-* Direct S3 upload via signedURL.
+* Direct S3 upload via signedURL
 * Local Model Caching for Streaming and SCS loading.
 * Region Replication (S3 only for now)
 * Support for multifile upload and ZIP upload (for assemblies) 
-* Support for shattered workflows.
-* Comprehensive REST API.
-* Support for FBX and GLB output formats via HOOPS Exchange.
-* Support for direct SCS upload and image generation from SCS files.
-* Access to all converter command-line options for conversion.
-* Run via NPX directly or embed into your Node.js application as a module.
+* Support for shattered workflows
+* Comprehensive REST API
+* Support for FBX and GLB output formats via HOOPS Exchange
+* Support for direct SCS upload and image generation from SCS files
+* Access to all converter command-line options for conversion
+* Run via NPX directly or embed into your Node.js application as a module
 
 ## Limitations
 * **This library is not an officially supported part of HOOPS Communicator and provided as-is.**
