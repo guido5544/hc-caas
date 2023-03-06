@@ -112,7 +112,12 @@ exports.get = async (itemid,type) => {
     else {
       blob = await readFileWithCache(item.storageID,item.name + "." + type, item);
     }
-    return ({data:blob});
+    if (!blob) {
+      return { ERROR: "File not found" };
+    }
+    else {
+      return ({data:blob});
+    }
   }
   else
   {
@@ -312,22 +317,41 @@ exports.createDatabaseEntry = async (itemname, args) => {
 
 
 
-exports.convertSingle = async (filepath, inargs) => {
+exports.convertSingle = async (inpath,outpath,type, inargs) => {
 
   let args = {};
   if (inargs) {
     args = inargs;
   }
  
-  let item = await this.createDatabaseEntry(path.basename(filepath), args);
+  let filename = path.basename(inpath);
+  let item = await this.createDatabaseEntry(filename, args);
 
-  await storage.store(filepath, "conversiondata/" + item.storageID + "/" + path.basename(filepath));
- 
+  try {
+    await storage.store(inpath, "conversiondata/" + item.storageID + "/" + filename);
+  }
+  catch (err) {
+    this.delete(item.storageID);
+    return err;
+  }
   await conversionQueue.getQueue().add({ item: item });
     
   sendConversionRequest();
   await waitUntilConversionDone(item.storageID);
-  return { itemid: item.storageID};
+  
+  let res = await this.get(item.storageID,type);
+  
+  this.delete(item.storageID);
+  
+  if (res.ERROR) {
+    return res;
+  }
+  else {
+    if (outpath) {
+      fs.writeFileSync(outpath, res.data);
+    }
+    return { itemid: item.storageID, buffer:res.data};
+  }
 };
 
 
@@ -477,7 +501,7 @@ function waitUntilConversionDone(itemid) {
 
 
 
-exports.delete = async (itemid, startPath) => {
+exports.delete = async (itemid) => {
 
   let item = await Conversionitem.findOne({ storageID: itemid });
   if (item) {

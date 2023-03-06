@@ -21,7 +21,7 @@ exports.readFile = (filename) => {
     return new Promise((resolve, reject) => {
 
         fs.readFile(storageDirectory + "/" + filename, function (err, data) {
-            if (err)
+            if (err) 
                 resolve(null);
             else
                 resolve(data);
@@ -95,6 +95,11 @@ exports.storeFromBuffer = (data, s3target) => {
 exports.store = (inputfile, s3target) => {
     return new Promise((resolve, reject) => {
         fs.readFile(inputfile, function (err, data) {
+            if (err) {
+                console.log(err);
+                reject({ERROR: "Error reading file " + inputfile});
+                return;
+            }
             _storeInFS(s3target, data).then(() => {
                 resolve();
             });
