@@ -197,6 +197,7 @@ function handleInitialConfiguration() {
       },
       "streamingServer": {
         "scserverpath": "",
+        "renderType": "client",
         "maxStreamingSessions": 10,
         "useSymLink": false,
         "ip": "localhost",

@@ -59,7 +59,12 @@ exports.getStreamingSession = async (args) => {
   if (!started) {
     return { ERROR: "Streaming Manager not started" };
   }
-  let streamingservers = await Streamingserveritem.find({region: config.get('hc-caas.region')});
+
+  let renderType = "client";
+  if (args && args.renderType) {
+    renderType = args.renderType;
+  }
+  let streamingservers = await Streamingserveritem.find({renderType: { $in: ['mixed', renderType] },region: config.get('hc-caas.region')});
 
   streamingservers.sort(function (a, b) {
     if (a.freeStreamingSlots > b.freeStreamingSlots) {

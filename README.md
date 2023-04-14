@@ -1,5 +1,8 @@
 # CaaS (Communicator as a Service): Conversion and Streaming Server Backend for HOOPS Communicator
 
+## Version Update (0.9.18) 
+* SSR support
+
 ## Version Update (0.9.14) 
 * `convertSingle` function added to server to simplify direct single file conversion via API
 

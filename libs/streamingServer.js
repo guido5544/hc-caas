@@ -71,7 +71,8 @@ exports.start = async () => {
         streamingserver = new Streamingserveritem({
             address: serveraddress,
             freeStreamingSlots: maxStreamingSessions,
-            region: config.get('hc-caas.region')
+            region: config.get('hc-caas.region'),
+            renderType: config.get('hc-caas.streamingServer.renderType')
         });
         streamingserver.save();
     }
@@ -149,7 +150,7 @@ exports.startStreamingServer = async (args) => {
 
     let sessiondir = tempFileDir + "/" + item.id;
     fs.mkdirSync(sessiondir);
-    await runStreamingServer(slot, item.id, streamingLocation);
+    await runStreamingServer(slot, item.id, streamingLocation, args ? args.renderType : null);
 
     let streamingserver = await Streamingserveritem.findOne({ address: serveraddress });
     streamingserver.freeStreamingSlots = maxStreamingSessions - simStreamingSessions;
@@ -277,7 +278,7 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
 };
 
 
-async function runStreamingServer(slot,sessionid, streamingLocation) {
+async function runStreamingServer(slot,sessionid, streamingLocation, renderType) {
  
     simStreamingSessions++;
     totalStreamingSessionsSoFar++;
@@ -286,7 +287,7 @@ async function runStreamingServer(slot,sessionid, streamingLocation) {
     }    
     console.log("Streaming Session Started at " + new Date());
     console.log("Total sessions:" + totalStreamingSessionsSoFar + " Concurrent Sessions:" + simStreamingSessions +" Max Concurrent sessions:" + maxStreamingSessionsSoFar);
-    let commandLine = setupCommandLine(slot + startport,sessionid, streamingLocation);
+    let commandLine = setupCommandLine(slot + startport,sessionid, streamingLocation, renderType);
     execFile(scserverexepath, commandLine, {
       cwd: scserverpath
     }, async function (err, data) {
@@ -316,7 +317,7 @@ async function runStreamingServer(slot,sessionid, streamingLocation) {
     
   }
 
-function setupCommandLine(port,sessionid, streamingLocation) {
+function setupCommandLine(port,sessionid, streamingLocation, renderType) {
 
     let commandLine;
     
@@ -332,9 +333,12 @@ function setupCommandLine(port,sessionid, streamingLocation) {
 
     commandLine = ['--license', config.get('hc-caas.license'),
         '--id', "test123",
-        '--sc-port', port.toString(),
-//        '--ssr', "1",
+        '--sc-port', port.toString(),       
         '--model-search-directories',dirs];
+
+        if (renderType == "server") { 
+            commandLine.push('--ssr', "1");
+        }
 
     return commandLine;
 }
