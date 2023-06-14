@@ -14,6 +14,10 @@ const streamingserveritemSchema = new Schema({
   region: {
     type: String,
     required: false
+  },
+  renderType: {
+    type: String,
+    required: false
   }
 });
 
