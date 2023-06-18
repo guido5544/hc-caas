@@ -21,6 +21,8 @@ var streamingManager;
 
 process.env.ALLOW_CONFIG_MUTATIONS = "true";
 process.env.SUPPRESS_NO_CONFIG_WARNING = 'y';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+
 const config = require('config');
 
 

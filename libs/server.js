@@ -34,7 +34,7 @@ exports.start = async (callback) => {
       try {
         let res = await fetch("http://" + queueservers[i].address + '/api/pingQueue', { signal: controller.signal });
         if (res.status == 404) {
-          throw 'Server not found';
+          throw "Could not ping conversion queue " + queueservers[i].address;
         }
         else {
           console.log("Conversion Queue found:" + queueservers[i].address);
@@ -42,11 +42,11 @@ exports.start = async (callback) => {
       }
       catch (e) {
         await Queueserveritem.deleteOne({ "address": queueservers[i].address });
-        console.log("Could not ping " + queueservers[i].address + ": " + e);
+        console.log("Could not ping conversion queue " + queueservers[i].address + ": " + e);
       }
     }
   }, 1000);
-  console.log('Server started on ' + new Date());
+  console.log('Conversion Server started on ' + new Date());
 };
 
 
