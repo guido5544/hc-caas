@@ -18,6 +18,32 @@ var totalConversions = 0;
 
 var customCallback;
 
+
+
+
+async function refreshServerAvailability() {
+  var queueservers = await Queueserveritem.find();
+
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), 2000);
+
+  for (let i = 0; i < queueservers.length; i++) {
+    try {
+      let res = await fetch("http://" + queueservers[i].address + '/api/pingQueue', { signal: controller.signal });
+      if (res.status == 404) {
+        throw "Could not ping conversion queue " + queueservers[i].address;
+      }
+      else {
+        console.log("Conversion Queue found:" + queueservers[i].address);
+      }
+    }
+    catch (e) {
+      await Queueserveritem.deleteOne({ "address": queueservers[i].address });
+      console.log("Could not ping conversion queue " + queueservers[i].address + ": " + e);
+    }
+  }
+}
+
 exports.start = async (callback) => {
 
   customCallback = callback;
@@ -25,27 +51,13 @@ exports.start = async (callback) => {
   storage = require('./permanentStorage').getStorage();
 
   setTimeout(async function () {
-    var queueservers = await Queueserveritem.find();
-
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 2000);
-
-    for (let i = 0; i < queueservers.length; i++) {
-      try {
-        let res = await fetch("http://" + queueservers[i].address + '/api/pingQueue', { signal: controller.signal });
-        if (res.status == 404) {
-          throw "Could not ping conversion queue " + queueservers[i].address;
-        }
-        else {
-          console.log("Conversion Queue found:" + queueservers[i].address);
-        }
-      }
-      catch (e) {
-        await Queueserveritem.deleteOne({ "address": queueservers[i].address });
-        console.log("Could not ping conversion queue " + queueservers[i].address + ": " + e);
-      }
-    }
+    await refreshServerAvailability();
   }, 1000);
+
+  setInterval(async function () {
+    await refreshServerAvailability();
+  }, 1000 * 60 * 60);
+
   console.log('Conversion Server started on ' + new Date());
 };
 
@@ -528,7 +540,14 @@ async function sendConversionRequest() {
   });
 
   if (queueservers && queueservers.length > 0) {
-    await fetch("http://" + queueservers[0].address + '/api/startConversion', { method: 'PUT' });
+    try {
+      await fetch("http://" + queueservers[0].address + '/api/startConversion', { method: 'PUT' });
+    }
+    catch (e) {
+      console.log("Error sending conversion request to " + queueservers[0].address + ": " + e);
+      await refreshServerAvailability();
+      sendConversionRequest();
+    }
   }
 }
 
