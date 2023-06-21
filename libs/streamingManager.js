@@ -29,13 +29,13 @@ exports.start = async () => {
      
         let ip;
         if (localip == streamingservers[i].address.split(':')[0]) {
-          ip = "localhost" + ":" + streamingservers[i].address.split(':')[1];
+          ip = "http://localhost" + ":" + streamingservers[i].address.split(':')[1];
         }
         else {
           ip = streamingservers[i].address;
         }
 
-        let res = await fetch("http://" + ip + '/api/pingStreamingServer', { signal: controller.signal });
+        let res = await fetch(ip + '/api/pingStreamingServer', { signal: controller.signal });
         if (res.status == 404) {
           throw 'Streaming Server not found';
         }
@@ -92,17 +92,17 @@ exports.getStreamingSession = async (args) => {
     let localip = await getIP();
     let ip;
     if (localip == bestFitServer.address.split(':')[0]) {
-      ip = "localhost" + ":" + bestFitServer.address.split(':')[1];
+      ip = "http://localhost" + ":" + bestFitServer.address.split(':')[1];
     }
     else {
       ip = bestFitServer.address;
     }
     let res;
     if (!args) {
-       res = await fetch("http://" + ip + '/api/startStreamingServer', { method: 'PUT' });
+       res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT' });
     }
     else {
-      res = await fetch("http://" + ip + '/api/startStreamingServer', { method: 'PUT', headers:{'CS-API-Arg': JSON.stringify(args)}});
+      res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT', headers:{'CS-API-Arg': JSON.stringify(args)}});
     }
     let jres = await res.json();
   
@@ -118,17 +118,17 @@ exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) =
     let localip = await getIP();
     let ip;
     if (localip == item.serveraddress.split(':')[0]) {
-      ip = "localhost" + ":" + item.serveraddress.split(':')[1];
+      ip = "http://localhost" + ":" + item.serveraddress.split(':')[1];
     }
     else {
       ip = item.serveraddress;
     }
 
     if (args) {
-      await fetch("http://" + ip + '/api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'CS-API-Arg': JSON.stringify(args),'items':JSON.stringify(itemids), hasNames:hasNames} });
+      await fetch(ip + '/api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'CS-API-Arg': JSON.stringify(args),'items':JSON.stringify(itemids), hasNames:hasNames} });
     }
     else {
-      await fetch("http://" + ip + '/api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'items':JSON.stringify(itemids), hasNames:hasNames} });
+      await fetch(ip + '/api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'items':JSON.stringify(itemids), hasNames:hasNames} });
     }
   }
 

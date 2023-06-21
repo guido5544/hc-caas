@@ -29,6 +29,7 @@ var maxStreamingSessionsSoFar = 0;
 var totalStreamingSessionsSoFar = 0;
 
 var storage;
+
 var serveraddress;
 
 var startport = 4000;
@@ -64,7 +65,7 @@ exports.start = async () => {
 
     let ip = config.get('hc-caas.streamingServer.ip');
     
-    serveraddress = ip + ":" + config.get('hc-caas.port');
+    serveraddress = ip;
 
     let streamingserver = await Streamingserveritem.findOne({ address: serveraddress });
     if (!streamingserver) {

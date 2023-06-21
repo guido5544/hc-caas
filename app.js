@@ -203,7 +203,7 @@ function handleInitialConfiguration() {
         "renderType": "client",
         "maxStreamingSessions": 10,
         "useSymLink": false,
-        "ip": "localhost",
+        "ip": "http://localhost:3001",
         "startPort": 3006,
         "listenPort": 3200,
         "publicAddress": "",
