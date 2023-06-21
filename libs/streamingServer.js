@@ -72,6 +72,7 @@ exports.start = async () => {
             address: serveraddress,
             freeStreamingSlots: maxStreamingSessions,
             region: config.get('hc-caas.region'),
+            streamingRegion: config.get('hc-caas.streamingServer.streamingRegion'),
             renderType: config.get('hc-caas.streamingServer.renderType')
         });
         streamingserver.save();
@@ -79,9 +80,9 @@ exports.start = async () => {
     else {
         streamingserver.freeStreamingSlots = maxStreamingSessions;
         streamingserver.region = config.get('hc-caas.region');
+        streamingserver.streamingRegion =  config.get('hc-caas.streamingServer.streamingRegion'),
         streamingserver.save();
     }
-
 
 
     if (!fs.existsSync(tempFileDir)) {

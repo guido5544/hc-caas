@@ -60,6 +60,8 @@ exports.getStreamingSession = async (args) => {
     return { ERROR: "Streaming Manager not started" };
   }
 
+  console.log("geo:" + (args.geo ? args.geo : ""));
+
   let renderType = "client";
   if (args && args.renderType) {
     renderType = args.renderType;
@@ -76,14 +78,24 @@ exports.getStreamingSession = async (args) => {
     return 0;
   });
 
+  let bestFitServer = streamingservers[0];
+  if (args && args.geo) {
+    for (let i = 0; i < streamingservers.length; i++) {
+      if (args.geo.indexOf(streamingservers[i].streamingRegion) != -1) {
+        bestFitServer = streamingservers[i];
+        break;
+      }
+    }
+  }
+
   if (streamingservers && streamingservers.length > 0) {
     let localip = await getIP();
     let ip;
-    if (localip == streamingservers[0].address.split(':')[0]) {
-      ip = "localhost" + ":" + streamingservers[0].address.split(':')[1];
+    if (localip == bestFitServer.address.split(':')[0]) {
+      ip = "localhost" + ":" + bestFitServer.address.split(':')[1];
     }
     else {
-      ip = streamingservers[0].address;
+      ip = bestFitServer.address;
     }
     let res;
     if (!args) {

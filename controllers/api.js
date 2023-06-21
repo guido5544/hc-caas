@@ -238,7 +238,7 @@ exports.getStreamingSession = async (req, res, next) => {
     if (req.get("CS-API-Arg")) {
         args = JSON.parse(req.get("CS-API-Arg"));
     }
-
+  
     let result = await streamingManager.getStreamingSession(args);
     res.json(result);    
 };

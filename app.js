@@ -198,6 +198,7 @@ function handleInitialConfiguration() {
         "listen": true
       },
       "streamingServer": {
+        "streamingRegion": "",
         "scserverpath": "",
         "renderType": "client",
         "maxStreamingSessions": 10,
