@@ -81,7 +81,7 @@ exports.getStreamingSession = async (args) => {
   let bestFitServer = streamingservers[0];
   if (args && args.geo) {
     for (let i = 0; i < streamingservers.length; i++) {
-      if (streamingservers[i].streamingRegion.indexOf(args.geo) != -1) {
+      if (args.geo.indexOf(streamingservers[i].streamingRegion) != -1) {
         bestFitServer = streamingservers[i];
         break;
       }
