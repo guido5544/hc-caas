@@ -526,7 +526,7 @@ exports.delete = async (itemid) => {
   }
 };
 
-async function sendConversionRequest() {
+async function sendConversionRequest(extraCheck = true) {
   let queueservers = await Queueserveritem.find({region: config.get('hc-caas.region')});
 
   queueservers.sort(function (a, b) {
@@ -548,6 +548,12 @@ async function sendConversionRequest() {
       await refreshServerAvailability();
       sendConversionRequest();
     }
+  }
+  else {
+      await refreshServerAvailability();
+      if (extraCheck) {
+        sendConversionRequest(false);
+      }
   }
 }
 
