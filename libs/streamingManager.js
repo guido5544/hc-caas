@@ -113,7 +113,15 @@ exports.getStreamingSession = async (args) => {
 
 exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) => {
 
-  let item = await Streamingsessionitem.findOne({ _id:sessionid });
+  let item;
+  try {
+    item = await Streamingsessionitem.findOne({ _id:sessionid });
+  }
+  catch (e) {
+    console.log(e);
+    return;
+  }
+
   if (item) {
     let localip = await getIP();
     let ip;

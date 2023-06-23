@@ -112,7 +112,14 @@ exports.start = async () => {
     proxyServer.on('upgrade', async function (req, socket, head) {
         let s = req.url.split("=");
 
-        let item = await Streamingsessionitem.findOne({ _id: s[1] });
+        let item;
+        try {
+            item = await Streamingsessionitem.findOne({ _id: s[1] });
+        }
+        catch (e) {
+            console.log(e);
+            return;
+        }
         if (item && (item.slot != undefined)) {
             let port = item.slot + startport;
             setTimeout(function () {
@@ -216,8 +223,16 @@ function someTimeout(to) {
 
 exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = false) => {
 
-    let session = await Streamingsessionitem.findOne({ _id: sessionid });
-    var starttime = new Date();
+    let session;
+
+    try {
+        session = await Streamingsessionitem.findOne({ _id: sessionid });
+    }
+    catch (e) {
+        console.log(e);
+        return;
+    }
+
     if (session && itemids) {
 
         let items;
