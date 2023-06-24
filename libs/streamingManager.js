@@ -11,51 +11,55 @@ let storage;
 let started = false;
 
 
+
+async function queryStreamingServers() {
+  let streamingservers = await Streamingserveritem.find();
+
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), 2000);
+  let localip = await getIP();
+
+  for (let i = 0; i < streamingservers.length; i++) {
+    try {
+   
+      let ip;
+      if (localip == streamingservers[i].address.split(':')[0]) {
+        ip = "http://localhost" + ":" + streamingservers[i].address.split(':')[1];
+      }
+      else {
+        ip = streamingservers[i].address;
+      }
+
+      let res = await fetch(ip + '/api/pingStreamingServer', { signal: controller.signal });
+      if (res.status == 404) {
+        throw 'Streaming Server not found';
+      }
+      else {
+        console.log("Streaming Server found:" + streamingservers[i].address);
+      }
+    }
+    catch (e) {
+      await Streamingserveritem.deleteOne({ "address": streamingservers[i].address });
+      console.log("Could not ping streaming server at " + streamingservers[i].address + ": " + e);
+    }
+  }
+}
+
 exports.start = async () => {
 
   storage = require('./permanentStorage').getStorage();
 
   setTimeout(async function () {
-
-    
-    let streamingservers = await Streamingserveritem.find();
-
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 2000);
-    let localip = await getIP();
-
-    for (let i = 0; i < streamingservers.length; i++) {
-      try {
-     
-        let ip;
-        if (localip == streamingservers[i].address.split(':')[0]) {
-          ip = "http://localhost" + ":" + streamingservers[i].address.split(':')[1];
-        }
-        else {
-          ip = streamingservers[i].address;
-        }
-
-        let res = await fetch(ip + '/api/pingStreamingServer', { signal: controller.signal });
-        if (res.status == 404) {
-          throw 'Streaming Server not found';
-        }
-        else {
-          console.log("Streaming Server found:" + streamingservers[i].address);
-        }
-      }
-      catch (e) {
-        await Streamingserveritem.deleteOne({ "address": streamingservers[i].address });
-        console.log("Could not ping streaming server at " + streamingservers[i].address + ": " + e);
-      }
-    }
+    await queryStreamingServers();  
   }, 1000);
+  
   console.log('streaming manager started');
   started = true;
 };
 
 
 
-exports.getStreamingSession = async (args) => {
+exports.getStreamingSession = async (args, extraCheck = true) => {
   if (!started) {
     return { ERROR: "Streaming Manager not started" };
   }
@@ -68,6 +72,9 @@ exports.getStreamingSession = async (args) => {
   }
   let streamingservers = await Streamingserveritem.find({renderType: { $in: ['mixed', renderType] },region: config.get('hc-caas.region')});
 
+  if (streamingservers.length == 0) {
+    return;
+  }
   streamingservers.sort(function (a, b) {
     if (a.freeStreamingSlots > b.freeStreamingSlots) {
       return -1;
@@ -88,26 +95,35 @@ exports.getStreamingSession = async (args) => {
     }
   }
 
-  if (streamingservers && streamingservers.length > 0) {
-    let localip = await getIP();
-    let ip;
-    if (localip == bestFitServer.address.split(':')[0]) {
-      ip = "http://localhost" + ":" + bestFitServer.address.split(':')[1];
-    }
-    else {
-      ip = bestFitServer.address;
-    }
-    let res;
-    if (!args) {
-       res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT' });
-    }
-    else {
-      res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT', headers:{'CS-API-Arg': JSON.stringify(args)}});
-    }
-    let jres = await res.json();
-  
-    return jres;
+  let localip = await getIP();
+  let ip;
+  if (localip == bestFitServer.address.split(':')[0]) {
+    ip = "http://localhost" + ":" + bestFitServer.address.split(':')[1];
   }
+  else {
+    ip = bestFitServer.address;
+  }
+  let res;
+  console.log("Best Fit Server:" +  bestFitServer.address);
+  try {
+    if (!args) {
+      res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT' });
+    }
+    else {
+      res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT', headers: { 'CS-API-Arg': JSON.stringify(args) } });
+    }
+  }
+  catch(e) {
+    console.log("Error requesting streaming session from o " + ip + ": " + e);
+    await queryStreamingServers();
+    if (extraCheck) {
+      return await this.getStreamingSession(args,false);
+    }
+    return { ERROR: "NO Streaming Server Available" };
+  }
+  let jres = await res.json();
+
+  return jres;
 };
 
 
