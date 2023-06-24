@@ -60,6 +60,7 @@ exports.start = async () => {
 
 
 exports.getStreamingSession = async (args, extraCheck = true) => {
+  
   if (!started) {
     return { ERROR: "Streaming Manager not started" };
   }
@@ -73,7 +74,7 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
   let streamingservers = await Streamingserveritem.find({renderType: { $in: ['mixed', renderType] },region: config.get('hc-caas.region')});
 
   if (streamingservers.length == 0) {
-    return;
+    return { ERROR: "No Streaming Server Available" };;
   }
   streamingservers.sort(function (a, b) {
     if (a.freeStreamingSlots > b.freeStreamingSlots) {
@@ -114,7 +115,7 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
     }
   }
   catch(e) {
-    console.log("Error requesting streaming session from o " + ip + ": " + e);
+    console.log("Error requesting streaming session from " + ip + ": " + e);
     await queryStreamingServers();
     if (extraCheck) {
       return await this.getStreamingSession(args,false);
