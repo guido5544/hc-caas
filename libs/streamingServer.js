@@ -122,9 +122,12 @@ exports.start = async () => {
         }
         if (item && (item.slot != undefined)) {
             let port = item.slot + startport;
-            setTimeout(function () {
+            try {
                 proxy.ws(req, socket, head, { target: 'ws://127.0.0.1:' + port });
-            }, 200);
+            }
+            catch (e) {
+                console.log("proxy issue:" + e);
+            }
         }
     });
 
