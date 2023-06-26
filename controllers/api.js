@@ -4,6 +4,17 @@ const streamingManager = require('../libs/streamingManager');
 const streamingServer = require('../libs/streamingServer');
 
 const config = require('config');
+const status = require('../libs/status');
+
+
+exports.getStatus = async (req, res, next) => {
+    if (req.params.json) {
+        res.json(await status.generateJSON());
+    }
+    else {
+        res.send(await status.generateHTML());
+    }
+};
 
 exports.postFileUpload = async (req, res, next) => {
 

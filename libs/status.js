@@ -2,11 +2,12 @@ const Streamingserveritem = require('../models/streamingserveritem');
 const Queueserveritem = require('../models/queueserveritem');
 
   // Generate the HTML page
- const generateHTML2 = (serverData) => {
+ const makeHTML = (serverData) => {
     const tableRows = serverData.map(row => {
       return `
         <tr>
           <td>${row.servername}</td>
+          <td>${row.serveraddress}</td>
           <td>${row.type}</td>
           <td>${row.status}</td>
         </tr>
@@ -24,6 +25,7 @@ const Queueserveritem = require('../models/queueserveritem');
             <thead>
               <tr>
                 <th>Server Name</th>
+                <th>Server Address</th>
                 <th>Type</th>
                 <th>Status</th>
               </tr>
@@ -40,19 +42,26 @@ const Queueserveritem = require('../models/queueserveritem');
   };
 
 
-  exports.generateHTML = async () => {
+exports.generateJSON = async () => {
+  let servers = [];
+  let streamingservers = await Streamingserveritem.find();
+  for (let i = 0; i < streamingservers.length; i++) {
+    servers.push({ servername: streamingservers[i].name ? streamingservers[i].name : "", serveraddress: streamingservers[i].address, 
+      type: 'Streaming Server', status: 'Online' });
+  }
 
-    let servers = [];
-    let streamingservers = await Streamingserveritem.find();
-    for (let i = 0; i < streamingservers.length; i++) {
-        servers.push({ servername: streamingservers[i].address, type: 'Streaming Server', status: 'Online' });
-    }
+  var queueservers = await Queueserveritem.find();
+  for (let i = 0; i < queueservers.length; i++) {
+    servers.push({ servername: queueservers[i].name ?  queueservers[i].name : "",  serveraddress: queueservers[i].address, type: 'Conversion Server', status: 'Online' });
+  }
+  return servers;
+};
 
-    var queueservers = await Queueserveritem.find();
-    for (let i = 0; i < queueservers.length; i++) {
-        servers.push({ servername: queueservers[i].address, type: 'Queue Server', status: 'Online' });
-    }
 
-    return generateHTML2(servers);
+exports.generateHTML = async () => {
 
-  };
+  let json = await this.generateJSON();
+
+  return makeHTML(json);
+
+};

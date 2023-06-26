@@ -70,6 +70,7 @@ exports.start = async () => {
     let streamingserver = await Streamingserveritem.findOne({ address: serveraddress });
     if (!streamingserver) {
         streamingserver = new Streamingserveritem({
+            name: config.get('hc-caas.streamingServer.name'),
             address: serveraddress,
             freeStreamingSlots: maxStreamingSessions,
             region: config.get('hc-caas.region'),

@@ -25,7 +25,6 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 const config = require('config');
 
-var status;
 
 
 exports.start = async function (mongoose_in, customCallback) {
@@ -128,14 +127,7 @@ exports.start = async function (mongoose_in, customCallback) {
         streamingserverapiRoutes = require('./routes/streamingserverapi');
         app.use("/api", streamingserverapiRoutes);
       }
-      const status = require('./libs/status');
-
-
-      app.get('/status.html',async  (req, res) => {
-        const html = await status.generateHTML();
-        res.send(html);
-      });
-
+      
       app.listen(config.get('hc-caas.port'));
       console.log("listening on port " + config.get('hc-caas.port'));
     }
@@ -195,6 +187,7 @@ function handleInitialConfiguration() {
       "fullErrorReporting": false,
       "region": "",
       "queue": {
+        "name" : "",
         "converterpath": "",
         "HEimportexportpath": "",
         "HEInstallPath": "",
@@ -216,7 +209,8 @@ function handleInitialConfiguration() {
         "startPort": 3006,
         "listenPort": 3200,
         "publicAddress": "",
-        "publicPort": ""
+        "publicPort": "",
+        "name" : "",
       },
       "storage": {
         "type": "filesystem",

@@ -63,6 +63,7 @@ exports.start = async () => {
   let queueserver = await Queueserveritem.findOne({ address: queueaddress });
   if (!queueserver) {
       queueserver = new Queueserveritem({
+        name: config.get('hc-caas.queue.name'),
         address: queueaddress,
         freeConversionSlots:maxConversions,
         region: config.get('hc-caas.region')

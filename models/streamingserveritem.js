@@ -22,7 +22,11 @@ const streamingserveritemSchema = new Schema({
   renderType: {
     type: String,
     required: false
-  }
+  },
+  name: {
+    type: String,
+    required: false
+  },
 });
 
 module.exports = global.con.model('Streamingserveritem', streamingserveritemSchema);

@@ -14,7 +14,12 @@ const queueserveritemSchema = new Schema({
   region: {
     type: String,
     required: false
-  }
+  },
+  name: {
+    type: String,
+    required: false
+  },
+
   
 });
 

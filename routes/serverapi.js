@@ -33,4 +33,6 @@ router.get('/streamingSession', apiController.getStreamingSession);
 router.put('/enableStreamAccess/:sessionid', apiController.enableStreamAccess);
 router.get('/version', apiController.getVersion);
 
+router.get('/status/:json?', apiController.getStatus);
+
 module.exports = router;

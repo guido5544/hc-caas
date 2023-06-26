@@ -14,7 +14,7 @@ const streamingsessionitemSchema = new Schema({
   streamLocation: {
     type: String,
     required: false
-  },
+  }
 });
 
 module.exports = global.con.model('Streamingsessionitem', streamingsessionitemSchema);
