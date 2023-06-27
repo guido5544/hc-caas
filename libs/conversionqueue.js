@@ -16,10 +16,13 @@ const e = require('express');
 
 const execFile = require('child_process').execFile;
 
-const converterexepath = './converter';   
+let  converterexepath = '';
+
+
 const HEimportexportexepath = './ImportExport';   
 
-var converterpath = 'hc-caas/converter';
+var converterpath = '';
+
 var HEimportexportpath = '';
 
 let tempFileDir = "E:/GitHub/conversionservice/hc-caas/tempfiles";
@@ -52,6 +55,14 @@ exports.start = async () => {
   let ip = config.get('hc-caas.queue.ip');
 
   converterpath = config.get('hc-caas.queue.converterpath');
+
+  if (process.platform == "win32") {
+    converterexepath = './converter';
+  }
+  else {
+    converterexepath = converterpath + '/converter';
+  }
+
   HEimportexportpath = config.get('hc-caas.queue.HEimportexportpath');
   tempFileDir = config.get('hc-caas.workingDirectory');
   if (ip == "") {
