@@ -40,10 +40,9 @@ exports.start = async function (mongoose_in, customCallback) {
     fs.mkdirSync(config.get('hc-caas.workingDirectory'));
   }
 
-  var versioninfo = require('./package.json');
+  let versioninfo = require('./package.json');
   process.env.caas_version = versioninfo.version;
   console.log("Initializing CaaS. Version: " + process.env.caas_version);
-
 
   if (!mongoose_in) {
     mongoose = require('mongoose');
@@ -130,7 +129,7 @@ exports.start = async function (mongoose_in, customCallback) {
       }
       
       app.listen(config.get('hc-caas.port'));
-      console.log("listening on port " + config.get('hc-caas.port'));
+      console.log("caas listening on port " + config.get('hc-caas.port'));
     }
 
     process.on('uncaughtException', (error, origin) => {
