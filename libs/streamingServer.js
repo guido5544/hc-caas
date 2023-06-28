@@ -170,14 +170,17 @@ exports.startStreamingServer = async (args) => {
     await streamingserver.save();
 
     let port = config.get('hc-caas.streamingServer.listenPort');
-    let address = config.get('hc-caas.streamingServer.ip');
+    let address;
     
     if (config.has('hc-caas.streamingServer.publicPort') && config.get('hc-caas.streamingServer.publicPort') != "") {
         port = config.get('hc-caas.streamingServer.publicPort');
-      }
-      if (config.has('hc-caas.streamingServer.publicAddress') && config.get('hc-caas.streamingServer.publicAddress') != "") { 
         address = config.get('hc-caas.streamingServer.publicAddress');
-      }
+    }
+    else {
+        address = config.get('hc-caas.streamingServer.ip');
+        address = address.replace(/(https?:\/\/)/gi, '').split(":")[0];
+
+    }
     return {serverurl:address, sessionid:item.id, port:port};
 
 };
@@ -334,8 +337,7 @@ async function runStreamingServer(slot,sessionid, streamingLocation, renderType)
         console.error("ERROR: Could not start streaming server. Check license and scserverpath path in config. Are required redistributables installed?");
       }
     });
- //   await someTimeout(500);
-    
+    await someTimeout(500);    
   }
 
 function setupCommandLine(port,sessionid, streamingLocation, renderType) {

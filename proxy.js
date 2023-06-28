@@ -20,11 +20,7 @@ app.use(express.urlencoded({ limit: "25mb", extended: false }));
 
 
 const conversionservice = require('./app');
-
-
 var server;
-
-
 
 var util = require('util');
 var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'a'});
@@ -34,7 +30,6 @@ console.log = function(d) { //
   log_file.write(util.format(d) + '\n');
   log_stdout.write(util.format(d) + '\n');
 };
-
 
 var httpProxy = require('http-proxy');
 
@@ -74,4 +69,4 @@ function callback(args) {
     console.log(args);
 }
 
-conversionservice.start(undefined, callback);
+conversionservice.start(null, callback);

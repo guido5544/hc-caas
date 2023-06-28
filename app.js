@@ -45,7 +45,7 @@ exports.start = async function (mongoose_in, customCallback) {
   console.log("Initializing CaaS. Version: " + process.env.caas_version);
 
 
-  if (mongoose_in == undefined || !mongoose_in) {
+  if (!mongoose_in) {
     mongoose = require('mongoose');
     let mongouri = config.get('hc-caas.mongodbURI');
     let connectionstring;
@@ -58,8 +58,9 @@ exports.start = async function (mongoose_in, customCallback) {
       connectionstring = mongouri;
     global.con = mongoose.createConnection(connectionstring);
   }
-  else
+  else {
     global.con = mongoose_in;
+  }
 
  
   streamingManager = require('./libs/streamingManager');
