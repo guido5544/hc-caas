@@ -14,7 +14,8 @@ const localCache = require('./localCache');
 
 const execFile = require('child_process').execFile;
 
-const scserverexepath = './ts3d_sc_server';   
+var scserverexepath = "";   
+
 var scserverpath = '';
 
 let tempFileDir = "";
@@ -50,7 +51,6 @@ function findFreeSlot()
 }
 
 exports.start = async () => {
-
     maxStreamingSessions = config.get('hc-caas.streamingServer.maxStreamingSessions');
     startport = config.get('hc-caas.streamingServer.startPort');
 
@@ -59,6 +59,15 @@ exports.start = async () => {
     }
   
     scserverpath = config.get('hc-caas.streamingServer.scserverpath');
+
+
+    if (process.platform == "win32") {
+        scserverexepath = './ts3d_sc_server';
+    }
+    else {
+        scserverexepath = scserverpath + '/ts3d_sc_server';
+    }
+
     tempFileDir = config.get('hc-caas.workingDirectory');
   
     storage = require('./permanentStorage').getStorage();
