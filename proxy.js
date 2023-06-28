@@ -35,10 +35,10 @@ var httpProxy = require('http-proxy');
 
 var proxy = httpProxy.createProxyServer({});
 
-if (config.has("hc-caas.proxy.keyPath") && config.get("hc-caas.proxy.keyPath") != "") {
+if (config.has("proxy.keyPath") && config.get("proxy.keyPath") != "") {
     const options = {
-        key: fs.readFileSync(config.get("hc-caas.proxy.keyPath")),
-        cert: fs.readFileSync(config.get("hc-caas.proxy.certPath"))
+        key: fs.readFileSync(config.get("proxy.keyPath")),
+        cert: fs.readFileSync(config.get("proxy.certPath"))
       };
 
     var server = https.createServer(options, function (req, res) {

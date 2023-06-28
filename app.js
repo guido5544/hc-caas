@@ -226,10 +226,6 @@ function handleInitialConfiguration() {
       "localCache": {
         "directory": "",
         "maxSize": 0
-      },
-      "proxy": {
-        "keyPath": "",
-        "certPath": ""
       }
   };
 
