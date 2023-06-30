@@ -18,16 +18,13 @@ var totalConversions = 0;
 
 var customCallback;
 
-
-
-
 async function refreshServerAvailability() {
   var queueservers = await Queueserveritem.find();
 
-  const controller = new AbortController();
-  setTimeout(() => controller.abort(), 2000);
-
   for (let i = 0; i < queueservers.length; i++) {
+    const controller = new AbortController();
+    let to = setTimeout(() => controller.abort(), 2000);
+
     try {
       let res = await fetch("http://" + queueservers[i].address + '/api/pingQueue', { signal: controller.signal });
       if (res.status == 404) {
@@ -41,6 +38,7 @@ async function refreshServerAvailability() {
       await Queueserveritem.deleteOne({ "address": queueservers[i].address });
       console.log("Could not ping conversion queue " + queueservers[i].address + ": " + e);
     }
+    clearTimeout(to);
   }
 }
 

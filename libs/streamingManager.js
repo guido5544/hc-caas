@@ -12,16 +12,19 @@ let started = false;
 
 
 
+
+
 async function queryStreamingServers() {
   let streamingservers = await Streamingserveritem.find();
 
-  const controller = new AbortController();
-  setTimeout(() => controller.abort(), 2000);
+
   let localip = await getIP();
 
   for (let i = 0; i < streamingservers.length; i++) {
-    try {
-   
+    const controller = new AbortController();
+    let to = setTimeout(() => controller.abort(), 2000);
+    
+    try {   
       let ip;
       if (localip == streamingservers[i].address.split(':')[0]) {
         ip = "http://localhost" + ":" + streamingservers[i].address.split(':')[1];
@@ -42,6 +45,7 @@ async function queryStreamingServers() {
       await Streamingserveritem.deleteOne({ "address": streamingservers[i].address });
       console.log("Could not ping streaming server at " + streamingservers[i].address + ": " + e);
     }
+    clearTimeout(to);
   }
 }
 
