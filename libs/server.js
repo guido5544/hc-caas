@@ -18,6 +18,9 @@ var totalConversions = 0;
 
 var customCallback;
 
+
+
+
 async function refreshServerAvailability() {
   var queueservers = await Queueserveritem.find();
 
