@@ -35,11 +35,20 @@ async function refreshServerAvailability() {
       }
       else {
         console.log("Conversion Queue found:" + queueservers[i].address);
+        queueservers[i].lastPing = new Date();
+        queueservers[i].save();
       }
     }
     catch (e) {
-      await Queueserveritem.deleteOne({ "address": queueservers[i].address });
-      console.log("Could not ping conversion queue " + queueservers[i].address + ": " + e);
+      let timeDiff = Math.abs(new Date() - queueservers[i].lastPing);
+      let diffHours = Math.ceil(timeDiff / (1000 * 60 * 60));
+      if (diffHours > 24) {
+        await Queueserveritem.deleteOne({ "address": queueservers[i].address });
+        console.log("Conversion Queue " + queueservers[i].address + " not reachable for more than 24 hours. Removed from database");
+      }
+      else {
+        console.log("Could not ping conversion queue " + queueservers[i].address + ": " + e);
+      }
     }
     clearTimeout(to);
   }
@@ -527,8 +536,8 @@ exports.delete = async (itemid) => {
   }
 };
 
-async function sendConversionRequest(extraCheck = true) {
-  let queueservers = await Queueserveritem.find({region: config.get('hc-caas.region')});
+async function sendConversionRequest() {
+  let queueservers = await Queueserveritem.find({ region: config.get('hc-caas.region') });
 
   queueservers.sort(function (a, b) {
     if (a.freeConversionSlots > b.freeConversionSlots) {
@@ -541,20 +550,24 @@ async function sendConversionRequest(extraCheck = true) {
   });
 
   if (queueservers && queueservers.length > 0) {
-    try {
-      await fetch("http://" + queueservers[0].address + '/api/startConversion', { method: 'PUT' });
-    }
-    catch (e) {
-      console.log("Error sending conversion request to " + queueservers[0].address + ": " + e);
-      await refreshServerAvailability();
-      sendConversionRequest();
-    }
-  }
-  else {
-      await refreshServerAvailability();
-      if (extraCheck) {
-        sendConversionRequest(false);
+    for (let i = 0; i < queueservers.length; i++) {
+      const controller = new AbortController();
+      let to = setTimeout(() => controller.abort(), 2000);
+      
+      if (queueservers[i].freeConversionSlots > 0) {
+        try {
+          await fetch("http://" + queueservers[i].address +"x" + '/api/startConversion', { method: 'PUT',signal: controller.signal });
+        }
+        catch (e) {
+          console.log("Error sending conversion request to " + queueservers[0].address + ": " + e);
+          continue;
+        }
+        queueservers[i].lastPing = new Date();
+        queueservers[i].save();
+        break;
       }
+      clearTimeout(to);
+    }
   }
 }
 

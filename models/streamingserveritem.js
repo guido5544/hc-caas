@@ -27,6 +27,14 @@ const streamingserveritemSchema = new Schema({
     type: String,
     required: false
   },
+  lastPing: {
+    type: Date,
+    required: false
+  },
+  pingFailed: {
+    type: Boolean,
+    required: false
+  }  
 });
 
 module.exports = global.con.model('Streamingserveritem', streamingserveritemSchema);

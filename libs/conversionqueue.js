@@ -77,7 +77,8 @@ exports.start = async () => {
         name: config.get('hc-caas.queue.name'),
         address: queueaddress,
         freeConversionSlots:maxConversions,
-        region: config.get('hc-caas.region')
+        region: config.get('hc-caas.region'),
+        lastPing: new Date()
     });
     queueserver.save();
   }

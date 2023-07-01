@@ -19,6 +19,10 @@ const queueserveritemSchema = new Schema({
     type: String,
     required: false
   },
+  lastPing: {
+    type: Date,
+    required: false
+  }
 
   
 });

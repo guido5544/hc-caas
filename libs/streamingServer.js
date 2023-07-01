@@ -84,7 +84,9 @@ exports.start = async () => {
             freeStreamingSlots: maxStreamingSessions,
             region: config.get('hc-caas.region'),
             streamingRegion: config.get('hc-caas.streamingServer.streamingRegion'),
-            renderType: config.get('hc-caas.streamingServer.renderType')
+            renderType: config.get('hc-caas.streamingServer.renderType'),
+            lastPing: new Date(),
+            pingFailed: false
         });
         streamingserver.save();
     }

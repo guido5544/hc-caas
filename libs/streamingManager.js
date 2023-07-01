@@ -16,9 +16,6 @@ let started = false;
 async function queryStreamingServers() {
   let streamingservers = await Streamingserveritem.find();
 
-
-  let localip = await getIP();
-
   for (let i = 0; i < streamingservers.length; i++) {
     const controller = new AbortController();
     let to = setTimeout(() => controller.abort(), 2000);
@@ -37,12 +34,25 @@ async function queryStreamingServers() {
         throw 'Streaming Server not found';
       }
       else {
+        streamingservers[i].lastPing = new Date();
+        streamingservers[i].pingFailed = false;
+        streamingservers[i].save();
         console.log("Streaming Server found:" + streamingservers[i].address);
       }
     }
     catch (e) {
-      await Streamingserveritem.deleteOne({ "address": streamingservers[i].address });
-      console.log("Could not ping streaming server at " + streamingservers[i].address + ": " + e);
+      
+      let timeDiff = Math.abs(new Date() - streamingservers[i].lastPing);
+      let diffHours = Math.ceil(timeDiff / (1000 * 60 * 60));
+      if (diffHours > 24) {
+        await streamingservers.deleteOne({ "address": streamingservers[i].address });
+        console.log("Streaming Server " + streamingservers[i].address + " not reachable for more than 24 hours. Removed from database");
+      }
+      else {
+        streamingservers[i].pingFailed = true;
+        streamingservers[i].save();
+        console.log("Could not ping streaming server at " + streamingservers[i].address + ": " + e);
+      }
     }
     clearTimeout(to);
   }
@@ -55,6 +65,11 @@ exports.start = async () => {
   setTimeout(async function () {
     await queryStreamingServers();  
   }, 1000);
+
+  setInterval(async function () {
+    await queryStreamingServers();
+  }, 1000 * 60 * 60);
+
   
   console.log('streaming manager started');
   started = true;
@@ -80,26 +95,19 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
     return { ERROR: "No Streaming Server Available" };;
   }
   streamingservers.sort(function (a, b) {
-    if (a.freeStreamingSlots > b.freeStreamingSlots) {
-      return -1;
-    }
-    else if (a.freeStreamingSlots < b.freeStreamingSlots) {
-      return 1;
-    }
-    return 0;
+    return a.pingFailed - b.pingFailed || a.freeStreamingSlots - b.freeStreamingSlots;
   });
 
   let bestFitServer = streamingservers[0];
   if (args && args.geo) {
     for (let i = 0; i < streamingservers.length; i++) {
-      if (args.geo.indexOf(streamingservers[i].streamingRegion) != -1) {
+      if (args.geo.indexOf(streamingservers[i].streamingRegion) != -1 && !streamingservers[i].pingFailed) {
         bestFitServer = streamingservers[i];
         break;
       }
     }
   }
 
-  let localip = await getIP();
   let ip;
   if (config.get('hc-caas.streamingServer.ip') == bestFitServer.address) {
       ip = "http://localhost" + ":" + config.get('hc-caas.port');
@@ -109,22 +117,32 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
   }
   let res;
   console.log("Best Fit Server:" +  bestFitServer.address);
+  const controller = new AbortController();
+  let to = setTimeout(() => controller.abort(), 2000);
+
   try {
     if (!args) {
-      res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT' });
+      res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT',signal: controller.signal });
     }
     else {
-      res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT', headers: { 'CS-API-Arg': JSON.stringify(args) } });
+      res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT', signal: controller.signal,headers: { 'CS-API-Arg': JSON.stringify(args) } });
     }
   }
   catch(e) {
+    clearTimeout(to);
     console.log("Error requesting streaming session from " + ip + ": " + e);
-    await queryStreamingServers();
+    bestFitServer.pingFailed = true;
+    bestFitServer.save();
     if (extraCheck) {
       return await this.getStreamingSession(args,false);
     }
     return { ERROR: "NO Streaming Server Available" };
   }
+  clearTimeout(to);
+  bestFitServer.pingFailed = false;
+  bestFitServer.lastPing = new Date();
+  bestFitServer.save();
+
   let jres = await res.json();
 
   return jres;
