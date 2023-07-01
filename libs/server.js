@@ -556,7 +556,7 @@ async function sendConversionRequest() {
       
       if (queueservers[i].freeConversionSlots > 0) {
         try {
-          await fetch("http://" + queueservers[i].address +"x" + '/api/startConversion', { method: 'PUT',signal: controller.signal });
+          await fetch("http://" + queueservers[i].address + '/api/startConversion', { method: 'PUT',signal: controller.signal });
         }
         catch (e) {
           console.log("Error sending conversion request to " + queueservers[0].address + ": " + e);
