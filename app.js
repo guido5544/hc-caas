@@ -194,7 +194,8 @@ function handleInitialConfiguration() {
         "maxConversions": 4,
         "ip": "localhost",
         "polling": false,
-        "imageServicePort": "3002"
+        "imageServicePort": "3002",
+        "priority": 0,
       },
       "server": {
         "listen": true
@@ -211,6 +212,7 @@ function handleInitialConfiguration() {
         "publicAddress": "",
         "publicPort": "",
         "name" : "",
+        "priority": 0,
       },
       "storage": {
         "type": "filesystem",

@@ -78,14 +78,17 @@ exports.start = async () => {
         address: queueaddress,
         freeConversionSlots:maxConversions,
         region: config.get('hc-caas.region'),
-        lastPing: new Date()
+        lastPing: new Date(),
+        priority: config.get('hc-caas.queue.priority')
     });
     queueserver.save();
   }
   else
   {
+    queueserver.name = config.get('hc-caas.queue.name'),
     queueserver.freeConversionSlots = maxConversions;
     queueserver.region = config.get('hc-caas.region');
+    queueserver.priority =  config.get('hc-caas.queue.priority')
     queueserver.save();
   }
 

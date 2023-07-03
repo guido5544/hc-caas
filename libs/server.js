@@ -538,15 +538,11 @@ exports.delete = async (itemid) => {
 
 async function sendConversionRequest() {
   let queueservers = await Queueserveritem.find({ region: config.get('hc-caas.region') });
+  
 
   queueservers.sort(function (a, b) {
-    if (a.freeConversionSlots > b.freeConversionSlots) {
-      return -1;
-    }
-    else if (a.freeConversionSlots < b.freeConversionSlots) {
-      return 1;
-    }
-    return 0;
+    return  b.priority - a.priority || b.freeConversionSlots - a.freeConversionSlots;
+
   });
 
   if (queueservers && queueservers.length > 0) {

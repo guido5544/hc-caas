@@ -86,13 +86,16 @@ exports.start = async () => {
             streamingRegion: config.get('hc-caas.streamingServer.streamingRegion'),
             renderType: config.get('hc-caas.streamingServer.renderType'),
             lastPing: new Date(),
+            priority: config.get('hc-caas.streamingServer.priority'),
             pingFailed: false
         });
         streamingserver.save();
     }
     else {
+        streamingserver.name = config.get('hc-caas.streamingServer.name');
         streamingserver.freeStreamingSlots = maxStreamingSessions;
         streamingserver.region = config.get('hc-caas.region');
+        streamingserver.priority =  config.get('hc-caas.streamingServer.priority'),
         streamingserver.streamingRegion =  config.get('hc-caas.streamingServer.streamingRegion'),
         streamingserver.save();
     }

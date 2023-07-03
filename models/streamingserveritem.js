@@ -34,7 +34,11 @@ const streamingserveritemSchema = new Schema({
   pingFailed: {
     type: Boolean,
     required: false
-  }  
+  },
+  priority: {
+    type: Number,
+    required: false
+  }
 });
 
 module.exports = global.con.model('Streamingserveritem', streamingserveritemSchema);

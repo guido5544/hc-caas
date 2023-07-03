@@ -22,8 +22,11 @@ const queueserveritemSchema = new Schema({
   lastPing: {
     type: Date,
     required: false
+  },
+  priority: {
+    type: Number,
+    required: false
   }
-
   
 });
 

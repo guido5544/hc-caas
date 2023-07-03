@@ -95,7 +95,7 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
     return { ERROR: "No Streaming Server Available" };;
   }
   streamingservers.sort(function (a, b) {
-    return a.pingFailed - b.pingFailed || a.freeStreamingSlots - b.freeStreamingSlots;
+    return a.pingFailed - b.pingFailed || b.priority - a.priority || b.freeStreamingSlots - a.freeStreamingSlots;
   });
 
   let bestFitServer = streamingservers[0];
