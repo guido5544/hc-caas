@@ -2,13 +2,12 @@ const fs = require('fs');
 const config = require('config');
 const path = require('path');
 const mongooseJobQueue = require('fast-mongoose-job-queue');
-const unzipper = require('unzipper');
 const del = require('del');
 const fetch = require('node-fetch');
 
 const Conversionitem = require('../models/conversionitem');
 const Queueserveritem = require('../models/queueserveritem');
-
+const decompress = require('decompress');
 
 var storage;
 
@@ -484,12 +483,15 @@ function setupCommandLine(inputPath, dir, item) {
 async function runZip(item) {
 
   const dir = tempFileDir + "/";
-  fs.createReadStream(dir + item.storageID + "/" + item.name)
-    .pipe(unzipper.Extract({ path: dir + item.storageID + "/" + "zip" })).on('finish', () => {
-      console.log(item.name + " unzipped");
-      runConverter(item);
-    }
-    ).on('error', async (err) => {
+
+  try {
+    await decompress(dir + item.storageID + "/" + item.name, dir + item.storageID + "/" + "zip");
+    console.log(item.name + " unzipped");
+    runConverter(item);
+    return;
+  }
+  catch (err) {
+
       console.log(err);
       cleanupDir(item);
       let founditem = await Conversionitem.findOne({ storageID: item.storageID });
@@ -498,7 +500,7 @@ async function runZip(item) {
       await founditem.save();
       updateConversionStatus(founditem);
 
-    });
+  };
 }
 
 async function sendToWebHook(item, files) {
