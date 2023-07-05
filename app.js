@@ -112,20 +112,20 @@ exports.start = async function (mongoose_in, customCallback) {
 
         var upload = multer({ storage: fileStorage });
 
-        app.post('/api/upload',upload.single('file'));
-        app.post('/api/uploadArray',upload.array('files'));
+        app.post('/caas_api/upload',upload.single('file'));
+        app.post('/caas_api/uploadArray',upload.array('files'));
 
         serverapiRoutes = require('./routes/serverapi');
-        app.use("/api", serverapiRoutes);
+        app.use("/caas_api", serverapiRoutes);
       }
       if (config.get('hc-caas.runQueue')) {
         queueapiRoutes = require('./routes/queueapi');
-        app.use("/api", queueapiRoutes);
+        app.use("/caas_api", queueapiRoutes);
       }
 
       if (config.get('hc-caas.runStreamingServer')) {
         streamingserverapiRoutes = require('./routes/streamingserverapi');
-        app.use("/api", streamingserverapiRoutes);
+        app.use("/caas_api", streamingserverapiRoutes);
       }
       
       app.listen(config.get('hc-caas.port'));

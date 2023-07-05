@@ -246,7 +246,7 @@ It might be desirable to run the streaming service via a proxy, so that all requ
 ## REST API Reference
 
 
-### **/api/upload**
+### **/caas_api/upload**
 
 #### **Description**
 Uploads a new CAD file and places it on the conversion queue.
@@ -255,7 +255,7 @@ Uploads a new CAD file and places it on the conversion queue.
 ```
 let form = new FormData();
 form.append('file', fs.createReadStream("myfile.stp"));
-let res = await fetch(caasURI + '/api/upload', { method: 'POST', body: form,headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/api/webhook"})}});
+let res = await fetch(caasURI + '/caas_api/upload', { method: 'POST', body: form,headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/caas_api/webhook"})}});
 let data = await res.json();
 ```
 
@@ -263,7 +263,7 @@ let data = await res.json();
 *CS-API-Arg:*
 ```
 {
-  webhook: "http://localhost:3000/api/webhook",
+  webhook: "http://localhost:3000/caas_api/webhook",
   startPath: "micro_engine/_micro engine.CATProduct",
   conversionCommandLine:["--output_scs","","--output_png","","background_color","0,0,0","--output_step",""],
   itemid: "c79dd99e-cbbd-4b6d-ba43-15986b1adc14",
@@ -285,14 +285,14 @@ ID of newly created item
 ```
 
 
-### **/api/data**
+### **/caas_api/data**
 
 #### **Description**
 Retrieves data about a conversion item.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/data/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
+let res = await fetch(caasURI + '/caas_api/data/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
 ```
 
 #### **Parameters**
@@ -309,7 +309,7 @@ Information about the requested item.
   conversionState: "SUCCESS",
   updated: "2022-05-29T12:52:02.787Z",
   created: "2022-05-29T12:51:55.697Z",
-  webhook: "http://localhost:3000/api/webhook",
+  webhook: "http://localhost:3000/caas_api/webhook",
   files: [
     "landinggearmainshaftwithpmi_fullpmi.catpart.png",
     "landinggearmainshaftwithpmi_fullpmi.catpart.scs",
@@ -318,14 +318,14 @@ Information about the requested item.
 ```
 
 
-### **/api/file**
+### **/caas_api/file**
 
 #### **Description**
 Retrieves a file from the conversion server.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/file/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/scs');
+let res = await fetch(caasURI + '/caas_api/file/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/scs');
 let buffer = await res.arrayBuffer();
 ...
 ```
@@ -340,14 +340,14 @@ let buffer = await res.arrayBuffer();
 Binary Data
 
   
-### **/api/original**
+### **/caas_api/original**
 
 #### **Description**
 Retrieves the file that was uploaded to the conversion server.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/original/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
+let res = await fetch(caasURI + '/caas_api/original/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
 let buffer = await res.arrayBuffer();
 ...
 ```
@@ -362,14 +362,14 @@ Binary Data
 
 
   
-### **/api/reconvert**
+### **/caas_api/reconvert**
 
 #### **Description**
 Reconverts an existing conversion item.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/reconvert/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put', headers: {'CS-API-Arg': JSON.stringify({conversionCommandLine:["--output_step",""] })}});
+let res = await fetch(caasURI + '/caas_api/reconvert/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put', headers: {'CS-API-Arg': JSON.stringify({conversionCommandLine:["--output_step",""] })}});
 
 ...
 ```
@@ -394,14 +394,14 @@ let res = await fetch(caasURI + '/api/reconvert/c79dd99e-cbbd-4b6d-ba43-15986b1a
 NONE
 
 
-### **/api/delete**
+### **/caas_api/delete**
 
 #### **Description**
 Deletes a conversion item including all converted data.
 
 #### **Example**
 ```
- let res = await fetch(caasURI + '/api/delete/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put'});
+ let res = await fetch(caasURI + '/caas_api/delete/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put'});
 ...
 ```
 
@@ -412,14 +412,14 @@ Deletes a conversion item including all converted data.
 NONE
 
  
-### **/api/items**
+### **/caas_api/items**
 
 #### **Description**
 Retrieves a list of all conversion items available on the conversion server.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/items');
+let res = await fetch(caasURI + '/caas_api/items');
 ...
 ```
 
@@ -430,14 +430,14 @@ JSON Array of available conversion items and all their data.
 
 
 
-### **/api/updated**
+### **/caas_api/updated**
 
 #### **Description**
 Retrieves the time any of the items on the conversion server were last updated (or deleted).
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/items');
+let res = await fetch(caasURI + '/caas_api/items');
 ...
 ```
 
@@ -451,14 +451,14 @@ JSON containing last updated time
 
 
 
-### **/api/uploadToken**
+### **/caas_api/uploadToken**
 
 #### **Description**
 Retrieves an upload token for directly uploading a file to S3 storage. After receiving the token and uploading the file directly from the client, *api/reconvert* should be called to start the conversion process.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/uploadToken', {headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/api/webhook"})}});
+let res = await fetch(caasURI + '/caas_api/uploadToken', {headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/caas_api/webhook"})}});
 
 ```
 
@@ -466,7 +466,7 @@ let res = await fetch(caasURI + '/api/uploadToken', {headers: {'CS-API-Arg': JSO
 *CS-API-Arg:*
 ```
 {
-  webhook: "http://localhost:3000/api/webhook" 
+  webhook: "http://localhost:3000/caas_api/webhook" 
 }
 ```
 *webhook* - The ip address to call when the conversion is complete. If not provided polling is required to check the conversion status.  
@@ -477,14 +477,14 @@ JSON containing signed request URL and itemid
 { token: signedRequestURLforS3, itemid: c79dd99e-cbbd-4b6d-ba43-15986b1adc14 };
 ```
 
-### **/api/downloadToken**
+### **/caas_api/downloadToken**
 
 #### **Description**
 Retrieves a download token for directly downloading a file from S3 storage. 
 
 #### **Example**
 ```
-  let res = await fetch(caasURI + '/api/downloadToken/c79dd99e-cbbd-4b6d-ba43-15986b1adc1/scs');     
+  let res = await fetch(caasURI + '/caas_api/downloadToken/c79dd99e-cbbd-4b6d-ba43-15986b1adc1/scs');     
 ```
 
 #### **Parameters**
@@ -502,14 +502,14 @@ JSON containing signed request URL
 
 
 
-### **/api/shattered**
+### **/caas_api/shattered**
 
 #### **Description**
 Retrieves a shattered part for a conversion item converted with the *processShattered* argument.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/shattered/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/part.scs');
+let res = await fetch(caasURI + '/caas_api/shattered/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/part.scs');
 let buffer = await res.arrayBuffer();
 ...
 ```
@@ -525,14 +525,14 @@ Binary Data
 
 
 
-### **/api/shatteredXML**
+### **/caas_api/shatteredXML**
 
 #### **Description**
 Retrieves the shattered XML file for a conversion item converted with the *processShattered* argument.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/shatteredXML/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
+let res = await fetch(caasURI + '/caas_api/shatteredXML/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
 let shatteredData = await res.text();
 ...
 ```
@@ -547,14 +547,14 @@ let shatteredData = await res.text();
 XML data
 
 
-### **/api/streamingSession**
+### **/caas_api/streamingSession**
 
 #### **Description**
 Request a new streaming session
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/streamingSession');
+let res = await fetch(caasURI + '/caas_api/streamingSession');
 let data = await res.json();
 viewer = new Communicator.WebViewer({
       containerId: "viewerContainer",
@@ -579,14 +579,14 @@ JSON Object
 ```
 
 
-### **/api/enableStreamAccess**
+### **/caas_api/enableStreamAccess**
 
 #### **Description**
 Makes an scz file available for streaming
 
 #### **Example**
 ```
-await fetch(caasURI + '/api/enableStreamAccess/' + sessionid, { method: 'put', headers: { 'items': JSON.stringify([modelid]) } });
+await fetch(caasURI + '/caas_api/enableStreamAccess/' + sessionid, { method: 'put', headers: { 'items': JSON.stringify([modelid]) } });
 ...
 ```
 
@@ -604,7 +604,7 @@ await fetch(caasURI + '/api/enableStreamAccess/' + sessionid, { method: 'put', h
 None
 
 
-### **/api/version**
+### **/caas_api/version**
 
 #### **Description**
 Retrieves CaaS Version String 

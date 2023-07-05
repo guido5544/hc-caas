@@ -29,7 +29,7 @@ async function refreshServerAvailability() {
     let to = setTimeout(() => controller.abort(), 2000);
 
     try {
-      let res = await fetch("http://" + queueservers[i].address + '/api/pingQueue', { signal: controller.signal });
+      let res = await fetch("http://" + queueservers[i].address + '/caas_api/pingQueue', { signal: controller.signal });
       if (res.status == 404) {
         throw "Could not ping conversion queue " + queueservers[i].address;
       }
@@ -552,7 +552,7 @@ async function sendConversionRequest() {
       
       if (queueservers[i].freeConversionSlots > 0) {
         try {
-          await fetch("http://" + queueservers[i].address + '/api/startConversion', { method: 'PUT',signal: controller.signal });
+          await fetch("http://" + queueservers[i].address + '/caas_api/startConversion', { method: 'PUT',signal: controller.signal });
         }
         catch (e) {
           console.log("Error sending conversion request to " + queueservers[0].address + ": " + e);

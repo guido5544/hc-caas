@@ -29,7 +29,7 @@ async function queryStreamingServers() {
         ip = streamingservers[i].address;
       }
 
-      let res = await fetch(ip + '/api/pingStreamingServer', { signal: controller.signal });
+      let res = await fetch(ip + '/caas_api/pingStreamingServer', { signal: controller.signal });
       if (res.status == 404) {
         throw 'Streaming Server not found';
       }
@@ -122,10 +122,10 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
 
   try {
     if (!args) {
-      res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT',signal: controller.signal });
+      res = await fetch(ip + '/caas_api/startStreamingServer', { method: 'PUT',signal: controller.signal });
     }
     else {
-      res = await fetch(ip + '/api/startStreamingServer', { method: 'PUT', signal: controller.signal,headers: { 'CS-API-Arg': JSON.stringify(args) } });
+      res = await fetch(ip + '/caas_api/startStreamingServer', { method: 'PUT', signal: controller.signal,headers: { 'CS-API-Arg': JSON.stringify(args) } });
     }
   }
   catch(e) {
@@ -171,10 +171,10 @@ exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) =
     }
 
     if (args) {
-      await fetch(ip + '/api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'CS-API-Arg': JSON.stringify(args),'items':JSON.stringify(itemids), hasNames:hasNames} });
+      await fetch(ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'CS-API-Arg': JSON.stringify(args),'items':JSON.stringify(itemids), hasNames:hasNames} });
     }
     else {
-      await fetch(ip + '/api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'items':JSON.stringify(itemids), hasNames:hasNames} });
+      await fetch(ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'items':JSON.stringify(itemids), hasNames:hasNames} });
     }
   }
 

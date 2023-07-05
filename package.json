@@ -1,6 +1,6 @@
 {
   "name": "ts3d.hc.caas",
-  "version": "0.9.43",
+  "version": "0.9.44",
   "description": "",
   "main": "app.js",
   "bin": {
