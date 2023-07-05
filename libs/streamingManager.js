@@ -132,7 +132,7 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
     clearTimeout(to);
     console.log("Error requesting streaming session from " + ip + ": " + e);
     bestFitServer.pingFailed = true;
-    bestFitServer.save();
+    await bestFitServer.save();
     if (extraCheck) {
       return await this.getStreamingSession(args,false);
     }
@@ -141,7 +141,7 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
   clearTimeout(to);
   bestFitServer.pingFailed = false;
   bestFitServer.lastPing = new Date();
-  bestFitServer.save();
+  await bestFitServer.save();
 
   let jres = await res.json();
 
