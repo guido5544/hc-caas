@@ -18,7 +18,7 @@
 *  Azure Blob Storage Support (beta)
 
 ## Main Features
-* Conversion Queue for distributed CAD conversions.
+* Conversion Queue for distributed CAD Conversions.
 * SC Streaming or SCS Loading
 * S3/Azure ABS Storage option 
 * Direct S3 upload via signedURL
@@ -35,7 +35,7 @@
 ## Limitations
 * **This library is not an officially supported part of HOOPS Communicator and provided as-is.**
 * No account/user management or security. This is BY DESIGN. CaaS is meant to be accessed behind a firewall from the server-side business logic of your application. An optional seperate node module for user management is available as well. See [here](https://github.com/techsoft3d/hc-caas-usermanagement) for more information.
-* Only tested on windows
+* Only tested on Windows
 
 ## ToDo
 

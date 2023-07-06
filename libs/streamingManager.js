@@ -45,7 +45,7 @@ async function queryStreamingServers() {
       let timeDiff = Math.abs(new Date() - streamingservers[i].lastPing);
       let diffHours = Math.ceil(timeDiff / (1000 * 60 * 60));
       if (diffHours > 24) {
-        await streamingservers.deleteOne({ "address": streamingservers[i].address });
+        await Streamingserveritem.deleteOne({ "address": streamingservers[i].address });
         console.log("Streaming Server " + streamingservers[i].address + " not reachable for more than 24 hours. Removed from database");
       }
       else {

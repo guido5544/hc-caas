@@ -78,6 +78,7 @@ exports.start = async () => {
         freeConversionSlots:maxConversions,
         region: config.get('hc-caas.region'),
         lastPing: new Date(),
+        pingFailed: false,
         priority: config.get('hc-caas.queue.priority')
     });
     queueserver.save();
@@ -87,7 +88,9 @@ exports.start = async () => {
     queueserver.name = config.get('hc-caas.queue.name'),
     queueserver.freeConversionSlots = maxConversions;
     queueserver.region = config.get('hc-caas.region');
-    queueserver.priority =  config.get('hc-caas.queue.priority')
+    queueserver.priority =  config.get('hc-caas.queue.priority')    
+    queueserver.lastPing = new Date();
+    queueserver.pingFailed = false;
     queueserver.save();
   }
 

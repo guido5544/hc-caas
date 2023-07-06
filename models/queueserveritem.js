@@ -23,6 +23,10 @@ const queueserveritemSchema = new Schema({
     type: Date,
     required: false
   },
+  pingFailed: {
+    type: Boolean,
+    required: false
+  },
   priority: {
     type: Number,
     required: false

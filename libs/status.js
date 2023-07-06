@@ -47,12 +47,13 @@ exports.generateJSON = async () => {
   let streamingservers = await Streamingserveritem.find();
   for (let i = 0; i < streamingservers.length; i++) {
     servers.push({ servername: streamingservers[i].name ? streamingservers[i].name : "", serveraddress: streamingservers[i].address, 
-      type: 'Streaming Server', status: 'Online' });
+      type: 'Streaming Server', status: (streamingservers[i].pingFailed ? 'Offline' : 'Online') });
   }
 
   var queueservers = await Queueserveritem.find();
   for (let i = 0; i < queueservers.length; i++) {
-    servers.push({ servername: queueservers[i].name ?  queueservers[i].name : "",  serveraddress: queueservers[i].address, type: 'Conversion Server', status: 'Online' });
+
+    servers.push({ servername: queueservers[i].name ?  queueservers[i].name : "",  serveraddress: queueservers[i].address, type: 'Conversion Server', status: (queueservers[i].pingFailed ? 'Offline' : 'Online') });
   }
   return servers;
 };

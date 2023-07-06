@@ -36,11 +36,14 @@ async function refreshServerAvailability() {
       else {
         console.log("Conversion Queue found:" + queueservers[i].address);
         queueservers[i].lastPing = new Date();
+        queueservers[i].pingFailed = false;
         queueservers[i].save();
       }
     }
     catch (e) {
       let timeDiff = Math.abs(new Date() - queueservers[i].lastPing);
+      queueservers[i].pingFailed = true;
+      queueservers[i].save();
       let diffHours = Math.ceil(timeDiff / (1000 * 60 * 60));
       if (diffHours > 24) {
         await Queueserveritem.deleteOne({ "address": queueservers[i].address });
@@ -556,9 +559,12 @@ async function sendConversionRequest() {
         }
         catch (e) {
           console.log("Error sending conversion request to " + queueservers[0].address + ": " + e);
+          queueservers[i].pingFailed = true;
+          queueservers[i].save();
           continue;
         }
         queueservers[i].lastPing = new Date();
+        queueservers[i].pingFailed = false;
         queueservers[i].save();
         break;
       }
