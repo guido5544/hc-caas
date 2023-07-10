@@ -1,20 +1,21 @@
 const Streamingserveritem = require('../models/streamingserveritem');
 const Queueserveritem = require('../models/queueserveritem');
 
-  // Generate the HTML page
- const makeHTML = (serverData) => {
-    const tableRows = serverData.map(row => {
-      return `
+// Generate the HTML page
+const makeHTML = (serverData) => {
+  const tableRows = serverData.map(row => {
+    return `
         <tr>
           <td>${row.servername}</td>
           <td>${row.serveraddress}</td>
           <td>${row.type}</td>
           <td>${row.status}</td>
+          <td>${row.lastAccess}</td>
         </tr>
       `;
-    }).join('');
-  
-    const html = `
+  }).join('');
+
+  const html = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -28,6 +29,7 @@ const Queueserveritem = require('../models/queueserveritem');
                 <th>Server Address</th>
                 <th>Type</th>
                 <th>Status</th>
+                <th>Last Access</th>
               </tr>
             </thead>
             <tbody>
@@ -37,23 +39,30 @@ const Queueserveritem = require('../models/queueserveritem');
         </body>
       </html>
     `;
-  
-    return html;
-  };
 
+  return html;
+};
+
+
+function formatDate(date) {
+  return new Date(date).toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
 
 exports.generateJSON = async () => {
   let servers = [];
   let streamingservers = await Streamingserveritem.find();
   for (let i = 0; i < streamingservers.length; i++) {
-    servers.push({ servername: streamingservers[i].name ? streamingservers[i].name : "", serveraddress: streamingservers[i].address, 
-      type: 'Streaming Server', status: (streamingservers[i].pingFailed ? 'Offline' : 'Online') });
+    servers.push({
+      servername: streamingservers[i].name ? streamingservers[i].name : "", serveraddress: streamingservers[i].address,
+      type: 'Streaming Server', status: (streamingservers[i].pingFailed ? 'Offline' : 'Online'), lastAccess: formatDate(streamingservers[i].lastPing) });
   }
 
   var queueservers = await Queueserveritem.find();
   for (let i = 0; i < queueservers.length; i++) {
 
-    servers.push({ servername: queueservers[i].name ?  queueservers[i].name : "",  serveraddress: queueservers[i].address, type: 'Conversion Server', status: (queueservers[i].pingFailed ? 'Offline' : 'Online') });
+    servers.push({
+      servername: queueservers[i].name ? queueservers[i].name : "", serveraddress: queueservers[i].address, type: 'Conversion Server', status: (queueservers[i].pingFailed ? 'Offline' : 'Online'),
+      lastAccess: formatDate(queueservers[i].lastPing) });
   }
   return servers;
 };
