@@ -247,7 +247,9 @@ exports.appendFromBuffer = async (buffer, itemname, itemid) => {
 exports.append = async (directory, itemname, itemid) => {
   let item = await Conversionitem.findOne({ storageID: itemid });
   if (item) {
-    await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname,item);
+    if (directory) {
+      await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname,item);
+    }
     let newfile = true;
     for (let i = 0; i < item.files.length; i++) {
       if (item.files[i] == itemname) {
@@ -275,29 +277,34 @@ exports.append = async (directory, itemname, itemid) => {
 };
 
 exports.requestUploadToken = async (itemname, args) => {
-  if (!storage.requestUploadToken)
-  {
-    return {ERROR: "Not available for this storage type"};
+  var itemid;
+  if (!storage.requestUploadToken) {
+    return { ERROR: "Not available for this storage type" };
   }
 
-  var itemid = uuidv4();
+  if (args && args.itemid != undefined) {
+    let data = await server.append(null, itemname, args.itemid);
+    itemid = args.itemid;
+  }
+  else {
 
-  let startState = "UPLOADING";
-  const item = new Conversionitem({
-    name: itemname,
-    storageID: itemid,
-    conversionState: startState,
-    updated: new Date(),
-    created: new Date(),
-    webhook: args.webhook,  
-    storageAvailability: storage.resolveInitialAvailability(),
-  });
-  item.save();
+    itemid = uuidv4();
+
+    let startState = "UPLOADING";
+    const item = new Conversionitem({
+      name: itemname,
+      storageID: itemid,
+      conversionState: startState,
+      updated: new Date(),
+      created: new Date(),
+      webhook: args.webhook,
+      storageAvailability: storage.resolveInitialAvailability(),
+    });
+    item.save();
+  }
 
   let token = await storage.requestUploadToken("conversiondata/" + itemid + "/" + itemname);
-
   return { token: token, itemid: itemid };
-
 };
 
 
@@ -429,6 +436,7 @@ exports.create = async (item, directory, itemname, args) => {
 
 
 exports.createEmpty = async (args) => {
+  
   var itemid = uuidv4();
 
   let startState = "PENDING";
