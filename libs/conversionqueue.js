@@ -160,20 +160,24 @@ async function getFileFromStorage(payload) {
   else {
     data = await storage.readFile("conversiondata/" + item.storageID + "/" + item.name);
   }
-  if (!data)
+  if (!data) {
     return false;
+  }
+
   const dir = tempFileDir + "/" + item.storageID;
+  const outputdir = tempFileDir + "/" + item.storageID + "/output";
+
 
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
   }
 
-  if (path.extname(item.name) == ".zip") {
-    fs.writeFileSync(dir + "/" + item.name, data);
+  if (!fs.existsSync(outputdir)) {
+    fs.mkdirSync(outputdir);
   }
-  else {
-    fs.writeFileSync(dir + "/" + item.name, data);
-  }
+
+  fs.writeFileSync(dir + "/" + item.name, data);
+  
   console.log(item.name + " downloaded from storage");
   return true;
 }
@@ -189,11 +193,11 @@ async function conversionComplete(err, item) {
       await saveShatteredFilesInStorage(item);
     }
     else {
-      const files = await readDir(tempFileDir + "/" + item.storageID);
+      const files = await readDir(tempFileDir + "/" + item.storageID + "/output");
       for (var i = 0; i < files.length; i++) {
         if ((item.name) != files[i] && files[i] != "zip") {
           savedFiles.push(files[i]);          
-          await storage.store(tempFileDir + "/" + item.storageID + "/" + files[i], "conversiondata/" + item.storageID + "/" + files[i], item);
+          await storage.store(tempFileDir + "/" + item.storageID + "/output/" + files[i], "conversiondata/" + item.storageID + "/" + files[i], item);
         }
       }
     }
@@ -302,8 +306,8 @@ async function runConverter(item) {
           cwd: converterpath
         }, async function (err, data) {
           if (err == null) {
-            if (fs.existsSync(dir + item.storageID + "/" + item.name + "_.scz")) {
-              fs.renameSync( dir + item.storageID + "/" + item.name + "_.scz",dir + item.storageID + "/" + item.name + ".scz");
+            if (fs.existsSync(dir + item.storageID + "/output/" + item.name + "_.scz")) {
+              fs.renameSync( dir + item.storageID + "/output/" + item.name + "_.scz",dir + item.storageID + "/output/" + item.name + ".scz");
             }
             //      console.log(data);
             console.log(item.name + " converted successfully at " + new Date());
@@ -429,9 +433,9 @@ function setupCommandLine(inputPath, dir, item) {
   if (!item.conversionCommandLine) {
     commandLine = ['--license', config.get('hc-caas.license'),
       '--input', inputPath,
-      '--output_scs', dir + item.storageID + "/" + item.name + ".scs",
-      '--output_sc', dir + item.storageID + "/" + item.name + "_",
-      '--output_png', dir + item.storageID + "/" + item.name + ".png",
+      '--output_scs', dir + item.storageID + "/output/" + item.name + ".scs",
+      '--output_sc', dir + item.storageID + "/output/" + item.name + "_",
+      '--output_png', dir + item.storageID + "/output/" + item.name + ".png",
       '--background_color', "1,1,1",
       '--sc_export_attributes', 'true',
       '--ifc_import_openings', 'false',
@@ -459,13 +463,13 @@ function setupCommandLine(inputPath, dir, item) {
       if (item.conversionCommandLine[i].indexOf("--output_") != -1) {
         let type = item.conversionCommandLine[i].split("_")[1];
         if (item.conversionCommandLine[i+1] != null && item.conversionCommandLine[i+1] != "") {
-          commandLine.push(dir + item.storageID + "/" + item.conversionCommandLine[i+1]);
+          commandLine.push(dir + item.storageID + "/output/" + item.conversionCommandLine[i+1]);
         }
         else {
           if (type == "sc") {
-            commandLine.push(dir + item.storageID + "/" + item.name);
+            commandLine.push(dir + item.storageID + "/output/" + item.name);
           } else {
-            commandLine.push(dir + item.storageID + "/" + item.name + "." + type);
+            commandLine.push(dir + item.storageID + "/output/" + item.name + "." + type);
           }
         }
       }
