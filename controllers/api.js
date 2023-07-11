@@ -216,7 +216,7 @@ exports.getShatteredXML = async (req, res, next) => {
 };
 
 exports.putDelete = (req, res, next) => {
-    let result = server.delete(req.params.itemid); 
+    let result = server.deleteConversionitem(req.params.itemid); 
     if (result) {
         res.json(result);
     }

@@ -21,6 +21,21 @@ var customCallback;
 
 
 
+
+async function purgeFiles() {
+  let files = await Conversionitem.find();
+
+  for (let i = 0; i < files.length; i++) {
+    if (files[i].conversionState != "SUCCESS") {
+      let timeDiff = Math.abs(new Date() - files[i].updated);
+      let diffHours = Math.ceil(timeDiff / (1000 * 60 * 60));
+      if (diffHours > 24) {
+          exports.deleteConversionitem(files[i].storageID);
+      }
+    }
+  }
+}
+
 async function refreshServerAvailability() {
   var queueservers = await Queueserveritem.find();
 
@@ -71,6 +86,14 @@ exports.start = async (callback) => {
     await refreshServerAvailability();
   }, 1000 * 60 * 60);
 
+
+  if (config.get('hc-caas.server.purgeFiles')) {
+    await purgeFiles();
+    setInterval(async function () {
+      await purgeFiles();
+    }, 1000 * 60 * 60 * 24);
+  }
+    
   console.log('Conversion Server started on ' + new Date());
 };
 
@@ -356,7 +379,7 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
     await storage.store(inpath, "conversiondata/" + item.storageID + "/" + filename);
   }
   catch (err) {
-    this.delete(item.storageID);
+    this.deleteConversionitem(item.storageID);
     return err;
   }
   await conversionQueue.getQueue().add({ item: item });
@@ -366,7 +389,7 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
   
   let res = await this.get(item.storageID,type);
   
-  this.delete(item.storageID);
+  this.deleteConversionitem(item.storageID);
   
   if (res.ERROR) {
     return res;
@@ -526,10 +549,11 @@ function waitUntilConversionDone(itemid) {
 
 
 
-exports.delete = async (itemid) => {
+exports.deleteConversionitem = async (itemid) => {
 
   let item = await Conversionitem.findOne({ storageID: itemid });
   if (item) {
+    console.log("Deleting item: " + itemid + " " + item.name);
     storage.delete("conversiondata/" + item.storageID, item);
     lastUpdated = new Date();
     await Conversionitem.deleteOne({ storageID: itemid });

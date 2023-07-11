@@ -198,7 +198,8 @@ function handleInitialConfiguration() {
         "priority": 0,
       },
       "server": {
-        "listen": true
+        "listen": true,
+        "purgeFiles": false,
       },
       "streamingServer": {
         "streamingRegion": "",
