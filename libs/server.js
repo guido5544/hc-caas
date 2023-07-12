@@ -248,7 +248,7 @@ exports.append = async (directory, itemname, itemid) => {
   let item = await Conversionitem.findOne({ storageID: itemid });
   if (item) {
     if (directory) {
-      await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname,item);
+      await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
     }
     let newfile = true;
     for (let i = 0; i < item.files.length; i++) {
@@ -263,11 +263,13 @@ exports.append = async (directory, itemname, itemid) => {
     item.updated = new Date();
     await item.save();
 
-    fs.rm(directory, { recursive: true }, (err) => {
-      if (err) {
-        throw err;
-      }
-    });
+    if (directory) {
+      fs.rm(directory, { recursive: true }, (err) => {
+        if (err) {
+          throw err;
+        }
+      });
+    }
 
     return { itemid: itemid };
   }
@@ -283,7 +285,7 @@ exports.requestUploadToken = async (itemname, args) => {
   }
 
   if (args && args.itemid != undefined) {
-    let data = await server.append(null, itemname, args.itemid);
+    let data = await this.append(null, itemname, args.itemid);
     itemid = args.itemid;
   }
   else {
