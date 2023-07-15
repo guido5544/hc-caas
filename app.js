@@ -27,8 +27,25 @@ const config = require('config');
 
 
 
+function getPublicIP() {
+  return new Promise((resolve, reject) => {
+    var http = require('http');
+
+    http.get({ 'host': 'api.ipify.org', 'port': 80, 'path': '/' }, function (resp) {
+      resp.on('data', function (ip) {
+        resolve(ip);
+      });
+    });
+  });
+}
+
 exports.start = async function (mongoose_in, customCallback) {
   handleInitialConfiguration();
+
+
+  global.caas_publicip = (await getPublicIP()).toString();
+  console.log("CaaS Server IP: " + global.caas_publicip);
+
   try {
     config.get('hc-caas');
   } catch (e) {
@@ -207,11 +224,10 @@ function handleInitialConfiguration() {
         "renderType": "client",
         "maxStreamingSessions": 10,
         "useSymLink": false,
-        "ip": "http://localhost:3001",
+        "serviceIP": "localhost",
+        "publicIP": "",
         "startPort": 3006,
         "listenPort": 3200,
-        "publicAddress": "",
-        "publicPort": "",
         "name" : "",
         "priority": 0,
       },

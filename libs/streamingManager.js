@@ -22,7 +22,7 @@ async function queryStreamingServers() {
     
     try {   
       let ip;
-      if (config.get('hc-caas.streamingServer.ip') == streamingservers[i].address) {
+      if (config.get('hc-caas.streamingServer.serviceIP') == streamingservers[i].address) {
           ip = "http://localhost" + ":" + config.get('hc-caas.port');
       }
       else {
@@ -109,7 +109,7 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
   }
 
   let ip;
-  if (config.get('hc-caas.streamingServer.ip') == bestFitServer.address) {
+  if (config.get('hc-caas.streamingServer.serviceIP') == bestFitServer.address) {
       ip = "http://localhost" + ":" + config.get('hc-caas.port');
   }
   else {
@@ -163,7 +163,7 @@ exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) =
   if (item) {
     let localip = await getIP();
     let ip;
-    if (config.get('hc-caas.streamingServer.ip') == item.serveraddress) {
+    if (config.get('hc-caas.streamingServer.serviceIP') == item.serveraddress) {
       ip = "http://localhost" + ":" + config.get('hc-caas.port');
     }
     else {

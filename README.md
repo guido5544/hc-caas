@@ -132,11 +132,10 @@ Please see here for the User Management Module that includes a demo application:
       "scserverpath": "ABSOLUTE_PATH_TO_COMMUNICATOR/server/bin/win64",
       "maxStreamingSessions" : 10,
       "useSymLink": false,
-      "ip": "localhost",
+      "serviceIP": "localhost",
+      "publicIP": "",
       "startPort": 3006,
-      "listenPort":3200,
-      "publicAddress": "",
-      "publicPort": ""     
+      "listenPort":3200
     },      
     "storage": {      
       "type": "filesystem",
