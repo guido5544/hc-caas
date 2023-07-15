@@ -108,6 +108,7 @@ Please see here for the User Management Module that includes a demo application:
   "hc-caas": {
     "mongodbURI": "mongodb://localhost:27017/conversions",
     "workingDirectory": "PATH_TO_WORKINGDIRECTORY",
+    "serviceIP": "localhost",
     "port": "3001",
     "runQueue": true,
     "runServer": true,
@@ -121,7 +122,6 @@ Please see here for the User Management Module that includes a demo application:
       "HEimportexportpath": "ABSOLUTE_PATH_TO_CAAS/HE/ImportExport/x64/Release",
       "HEInstallPath": "ABSOLUTE_PATH_TO_EXCHANGE/bin/win64_v140",
       "maxConversions": 4,
-      "ip": "localhost",
       "polling": false,
       "imageServicePort": "3002"
     },
@@ -132,7 +132,6 @@ Please see here for the User Management Module that includes a demo application:
       "scserverpath": "ABSOLUTE_PATH_TO_COMMUNICATOR/server/bin/win64",
       "maxStreamingSessions" : 10,
       "useSymLink": false,
-      "serviceIP": "localhost",
       "publicIP": "",
       "startPort": 3006,
       "listenPort":3200

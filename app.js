@@ -195,6 +195,7 @@ function handleInitialConfiguration() {
   let configs = {
       "mongodbURI": "mongodb://127.0.0.1:27017/conversions",
       "workingDirectory": "caasTemp",
+      "serviceIP": "localhost",
       "port": "3001",
       "runQueue": true,
       "runServer": true,
@@ -209,7 +210,6 @@ function handleInitialConfiguration() {
         "HEimportexportpath": "",
         "HEInstallPath": "",
         "maxConversions": 4,
-        "ip": "localhost",
         "polling": false,
         "imageServicePort": "3002",
         "priority": 0,
@@ -224,7 +224,6 @@ function handleInitialConfiguration() {
         "renderType": "client",
         "maxStreamingSessions": 10,
         "useSymLink": false,
-        "serviceIP": "localhost",
         "publicIP": "",
         "startPort": 3006,
         "listenPort": 3200,

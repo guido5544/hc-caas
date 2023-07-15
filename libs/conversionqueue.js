@@ -51,7 +51,7 @@ exports.start = async () => {
 
   queue.cleanup();
   
-  let ip = config.get('hc-caas.queue.ip');
+  let ip = config.get('hc-caas.serviceIP');
 
   converterpath = config.get('hc-caas.queue.converterpath');
 

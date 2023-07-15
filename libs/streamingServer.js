@@ -72,7 +72,7 @@ exports.start = async () => {
   
     storage = require('./permanentStorage').getStorage();
 
-    let ip = config.get('hc-caas.streamingServer.serviceIP');
+    let ip = config.get('hc-caas.serviceIP');
     
     serveraddress = ip;
 
@@ -193,7 +193,7 @@ exports.startStreamingServer = async (args) => {
         address = config.get('hc-caas.streamingServer.publicIP').replace(/(https?:\/\/)/gi, '').split(":")[0];
     }
     else {
-        address = config.get('hc-caas.streamingServer.serviceIP');
+        address = config.get('hc-caas.serviceIP');
         address = address.replace(/(https?:\/\/)/gi, '').split(":")[0];
     }
     return {serverurl:address, sessionid:item.id, port:port};
