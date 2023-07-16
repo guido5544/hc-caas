@@ -43,8 +43,13 @@ exports.start = async function (mongoose_in, customCallback) {
   handleInitialConfiguration();
 
 
-  global.caas_publicip = (await getPublicIP()).toString();
-  console.log("CaaS Server IP: " + global.caas_publicip);
+  if (!config.has('hc-caas.serviceIP') || config.get('hc-caas.serviceIP') == "") {
+    global.caas_publicip = (await getPublicIP()).toString();
+  }
+  else {
+    global.caas_publicip = config.get('hc-caas.serviceIP');
+  }
+  console.log("CaaS Service IP: " + global.caas_publicip);
 
   try {
     config.get('hc-caas');

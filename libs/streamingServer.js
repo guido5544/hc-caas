@@ -72,9 +72,7 @@ exports.start = async () => {
   
     storage = require('./permanentStorage').getStorage();
 
-    let ip = config.get('hc-caas.serviceIP');
-    
-    serveraddress = ip;
+    serveraddress = global.caas_publicip + ":" + config.get('hc-caas.port');
 
     let streamingserver = await Streamingserveritem.findOne({ address: serveraddress });
     if (!streamingserver) {
@@ -188,13 +186,12 @@ exports.startStreamingServer = async (args) => {
     let port = config.get('hc-caas.streamingServer.listenPort');
     let address;
 
-    if (config.has('hc-caas.streamingServer.publicIP') && config.get('hc-caas.streamingServer.publicIP') != "") {
-        port = config.get('hc-caas.streamingServer.publicIP').split(":")[2];
-        address = config.get('hc-caas.streamingServer.publicIP').replace(/(https?:\/\/)/gi, '').split(":")[0];
+    if (config.has('hc-caas.streamingServer.streamingIP') && config.get('hc-caas.streamingServer.streamingIP') != "") {
+        port = config.get('hc-caas.streamingServer.streamingIP').split(":")[2];
+        address = config.get('hc-caas.streamingServer.streamingIP').replace(/(wss?:\/\/)/gi, '').split(":")[0];
     }
-    else {
-        address = config.get('hc-caas.serviceIP');
-        address = address.replace(/(https?:\/\/)/gi, '').split(":")[0];
+    else {   
+        address = global.caas_publicip.replace(/(https?:\/\/)/gi, '').split(":")[0];
     }
     return {serverurl:address, sessionid:item.id, port:port};
 

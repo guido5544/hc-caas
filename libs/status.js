@@ -51,18 +51,45 @@ function formatDate(date) {
 exports.generateJSON = async () => {
   let servers = [];
   let streamingservers = await Streamingserveritem.find();
+  streamingservers.sort((a, b) => {
+    let nameA = a.name ? a.name.toUpperCase() : a.address; // ignore case
+    let nameB = b.name ? b.name.toUpperCase() : b.address; // ignore case
+
+    if (nameA < nameB) {
+      return -1;
+    }
+    if (nameA > nameB) {
+      return 1;
+    }
+  });
+
   for (let i = 0; i < streamingservers.length; i++) {
     servers.push({
       servername: streamingservers[i].name ? streamingservers[i].name : "", serveraddress: streamingservers[i].address,
-      type: 'Streaming Server', status: (streamingservers[i].pingFailed ? 'Offline' : 'Online'), lastAccess: formatDate(streamingservers[i].lastPing) });
+      type: 'Streaming Server', status: (streamingservers[i].pingFailed ? 'Offline' : 'Online'), lastAccess: formatDate(streamingservers[i].lastPing)
+    });
   }
 
-  var queueservers = await Queueserveritem.find();
+  let queueservers = await Queueserveritem.find();
+
+  queueservers.sort((a, b) => {
+    let nameA = a.name ? a.name.toUpperCase() : a.address; // ignore case
+    let nameB = b.name ? b.name.toUpperCase() : b.address; // ignore case
+
+    if (nameA < nameB) {
+      return -1;
+    }
+    if (nameA > nameB) {
+      return 1;
+    }
+  });
+
   for (let i = 0; i < queueservers.length; i++) {
 
     servers.push({
       servername: queueservers[i].name ? queueservers[i].name : "", serveraddress: queueservers[i].address, type: 'Conversion Server', status: (queueservers[i].pingFailed ? 'Offline' : 'Online'),
-      lastAccess: formatDate(queueservers[i].lastPing) });
+      lastAccess: formatDate(queueservers[i].lastPing)
+    });
   }
   return servers;
 };

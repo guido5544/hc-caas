@@ -21,15 +21,8 @@ async function queryStreamingServers() {
     let to = setTimeout(() => controller.abort(), 2000);
     
     try {   
-      let ip;
-      if (config.get('hc-caas.serviceIP') == streamingservers[i].address) {
-          ip = "http://localhost" + ":" + config.get('hc-caas.port');
-      }
-      else {
-        ip = streamingservers[i].address;
-      }
-
-      let res = await fetch(ip + '/caas_api/pingStreamingServer', { signal: controller.signal });
+      ip = streamingservers[i].address;
+      let res = await fetch("http://" + ip + '/caas_api/pingStreamingServer', { signal: controller.signal });
       if (res.status == 404) {
         throw 'Streaming Server not found';
       }
@@ -109,12 +102,8 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
   }
 
   let ip;
-  if (config.get('hc-caas.serviceIP') == bestFitServer.address) {
-      ip = "http://localhost" + ":" + config.get('hc-caas.port');
-  }
-  else {
-    ip = bestFitServer.address;
-  }
+  ip = bestFitServer.address
+
   let res;
   console.log("Best Fit Server:" +  bestFitServer.address);
   const controller = new AbortController();
@@ -122,10 +111,10 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
 
   try {
     if (!args) {
-      res = await fetch(ip + '/caas_api/startStreamingServer', { method: 'PUT',signal: controller.signal });
+      res = await fetch("http://" + ip + '/caas_api/startStreamingServer', { method: 'PUT',signal: controller.signal });
     }
     else {
-      res = await fetch(ip + '/caas_api/startStreamingServer', { method: 'PUT', signal: controller.signal,headers: { 'CS-API-Arg': JSON.stringify(args) } });
+      res = await fetch("http://" + ip + '/caas_api/startStreamingServer', { method: 'PUT', signal: controller.signal,headers: { 'CS-API-Arg': JSON.stringify(args) } });
     }
   }
   catch(e) {
@@ -161,37 +150,14 @@ exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) =
   }
 
   if (item) {
-    let localip = await getIP();
-    let ip;
-    if (config.get('hc-caas.serviceIP') == item.serveraddress) {
-      ip = "http://localhost" + ":" + config.get('hc-caas.port');
-    }
-    else {
-      ip = item.serveraddress;
-    }
+    ip = item.serveraddress;
 
     if (args) {
-      await fetch(ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'CS-API-Arg': JSON.stringify(args),'items':JSON.stringify(itemids), hasNames:hasNames} });
+      await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'CS-API-Arg': JSON.stringify(args),'items':JSON.stringify(itemids), hasNames:hasNames} });
     }
     else {
-      await fetch(ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'items':JSON.stringify(itemids), hasNames:hasNames} });
+      await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'items':JSON.stringify(itemids), hasNames:hasNames} });
     }
   }
 
 };
-
-
-
-async function getIP() {
-  return null;
-  // return new Promise((resolve, reject) => {
-
-  //   var http = require('http');
-
-  //   http.get({ 'host': 'api.ipify.org', 'port': 80, 'path': '/' }, function (resp) {
-  //     resp.on('data', function (ip) {     
-  //       resolve(new TextDecoder().decode(ip));
-  //     });
-  //   });
-  // });
-}

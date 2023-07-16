@@ -51,7 +51,7 @@ exports.start = async () => {
 
   queue.cleanup();
   
-  let ip = config.get('hc-caas.serviceIP');
+  let ip = global.caas_publicip;
 
   converterpath = config.get('hc-caas.queue.converterpath');
 
@@ -64,10 +64,7 @@ exports.start = async () => {
 
   HEimportexportpath = config.get('hc-caas.queue.HEimportexportpath');
   tempFileDir = config.get('hc-caas.workingDirectory');
-  if (ip == "") {
-    ip = await getIP();
-  }
-
+  
   queueaddress = ip + ":" + config.get('hc-caas.port');
 
   let queueserver = await Queueserveritem.findOne({ address: queueaddress });
