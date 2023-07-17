@@ -101,7 +101,7 @@ exports.getData = async (req, res, next) => {
 };
 
 exports.pingQueue = (req, res, next) => {    
-    if (config.get('hc-caas.runQueue')) {
+    if (config.get('hc-caas.runConversionServer')) {
         res.sendStatus(200);
     }
     else {

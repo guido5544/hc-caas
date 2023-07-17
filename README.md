@@ -110,14 +110,14 @@ Please see here for the User Management Module that includes a demo application:
     "workingDirectory": "PATH_TO_WORKINGDIRECTORY",
     "serviceIP": "localhost",
     "port": "3001",
-    "runQueue": true,
-    "runServer": true,
+    "runConversionServer": true,
+    "runModelManager": true,
     "runStreamingManager": true,
     "runStreamingServer": true,
     "license": "",
     "fullErrorReporting": false,
     "region": "",
-    "queue": {
+    "conversionServer": {
       "converterpath": "ABSOLUTE_PATH_TO_COMMUNICATOR/authoring/converter/bin/win64",
       "HEimportexportpath": "ABSOLUTE_PATH_TO_CAAS/HE/ImportExport/x64/Release",
       "HEInstallPath": "ABSOLUTE_PATH_TO_EXCHANGE/bin/win64_v140",
@@ -166,9 +166,9 @@ Please see here for the User Management Module that includes a demo application:
 
 4. Create a folder for temporary data and provide the path in the workingDirectory field.
 5. Specify desired port. In production, CaaS is meant to run **behind** a firewall and should not be accessible from the web directly but you need to still ensure that the port is accessible if CaaS runs on a different machine from the main application. 
-6. Set runQueue to true if you want to run the conversion queue on this machine. As long as the machines running the conversion queue are sharing the same database session, and storage you can run an unlimited number of instances in parallel.
-7. Set runServer to true if you want to run the CaaS Rest API frontend on this machine. The frontend provides the REST API endpoints for the conversion queue and streaming servers. It is possible to have multiple active frontends, all connected to the same storage and database. This could be a desirable configuration in a multi-region setup.  
-8. If you enabled the conversion queue (runQueue:true) you need to provide the path to the directory containing the converter executable of the HOOPS Communicator package/installation. You also need to provide a valid license for HOOPS Communicator.
+6. Set runConversionServer to true if you want to run the conversion queue on this machine. As long as the machines running the conversion queue are sharing the same database session, and storage you can run an unlimited number of instances in parallel.
+7. Set runModelManager to true if you want to run the CaaS Rest API frontend on this machine. The frontend provides the REST API endpoints for the conversion queue and streaming servers. It is possible to have multiple active frontends, all connected to the same storage and database. This could be a desirable configuration in a multi-region setup.  
+8. If you enabled the conversion queue (runConversionServer:true) you need to provide the path to the directory containing the converter executable of the HOOPS Communicator package/installation. You also need to provide a valid license for HOOPS Communicator.
 9. If the conversion queue is running on a different machine from the server you need to specify the ip address and port of the queue here that is accessible from the server.
 10. By default CaaS will assign conversion jobs to all registered conversion queue servers based on their available capacity. If polling is set to true the conversion queue will poll for a newly available job every few seconds. In this case a conversion queue server does not need to be registered with the main server.
 11. If you are uploading SCS or SCZ files, CAAS will use a separate module in order to generate PNG's for those file types. See [here](https://www.npmjs.com/package/ts3d-hc-imageservice) for more information. You can specify the port this module uses for its internal server here.

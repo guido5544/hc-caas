@@ -27,7 +27,7 @@ var HEimportexportpath = '';
 let tempFileDir = "E:/GitHub/conversionservice/hc-caas/tempfiles";
 
 let simConversions = 0;
-const maxConversions = config.get('hc-caas.queue.maxConversions');
+const maxConversions = config.get('hc-caas.conversionServer.maxConversions');
 
 var queue
 if (config.get('hc-caas.region') == "") {
@@ -53,7 +53,7 @@ exports.start = async () => {
   
   let ip = global.caas_publicip;
 
-  converterpath = config.get('hc-caas.queue.converterpath');
+  converterpath = config.get('hc-caas.conversionServer.converterpath');
 
   if (process.platform == "win32") {
     converterexepath = './converter';
@@ -62,7 +62,7 @@ exports.start = async () => {
     converterexepath = converterpath + '/converter';
   }
 
-  HEimportexportpath = config.get('hc-caas.queue.HEimportexportpath');
+  HEimportexportpath = config.get('hc-caas.conversionServer.HEimportexportpath');
   tempFileDir = config.get('hc-caas.workingDirectory');
   
   queueaddress = ip + ":" + config.get('hc-caas.port');
@@ -70,22 +70,22 @@ exports.start = async () => {
   let queueserver = await Queueserveritem.findOne({ address: queueaddress });
   if (!queueserver) {
       queueserver = new Queueserveritem({
-        name: config.get('hc-caas.queue.name'),
+        name: config.get('hc-caas.conversionServer.name'),
         address: queueaddress,
         freeConversionSlots:maxConversions,
         region: config.get('hc-caas.region'),
         lastPing: new Date(),
         pingFailed: false,
-        priority: config.get('hc-caas.queue.priority')
+        priority: config.get('hc-caas.conversionServer.priority')
     });
     queueserver.save();
   }
   else
   {
-    queueserver.name = config.get('hc-caas.queue.name'),
+    queueserver.name = config.get('hc-caas.conversionServer.name'),
     queueserver.freeConversionSlots = maxConversions;
     queueserver.region = config.get('hc-caas.region');
-    queueserver.priority =  config.get('hc-caas.queue.priority')    
+    queueserver.priority =  config.get('hc-caas.conversionServer.priority')    
     queueserver.lastPing = new Date();
     queueserver.pingFailed = false;
     queueserver.save();
@@ -95,7 +95,7 @@ exports.start = async () => {
     fs.mkdirSync(tempFileDir);
   }
 
-  if (config.get('hc-caas.queue.polling')) {
+  if (config.get('hc-caas.conversionServer.polling')) {
     setInterval(async function () {
       await getConversionJobFromQueue();
     }, 1000);
@@ -349,7 +349,7 @@ async function scSpecialHandling(inputPath, dir, item, customImageCode) {
     if (item.name.indexOf(".scz") == -1) {
       if (!imageservice) {
         imageservice = require('ts3d-hc-imageservice');
-        await imageservice.start({ viewerPort: config.get('hc-caas.queue.imageServicePort') });
+        await imageservice.start({ viewerPort: config.get('hc-caas.conversionServer.imageServicePort') });
       }
 
       let width = 640, height = 480;
@@ -376,13 +376,13 @@ function GLTFSpecialHandling(inputPath, dir, item) {
   let found = getCommandLineArgument('--output_glb', item.conversionCommandLine);
   if (found != -1) {
     commandLine = [inputPath, dir + item.storageID + "/" + item.name + "." + "glb","GLB",config.get('hc-caas.license'),
-      config.get('hc-caas.queue.HEInstallPath') ];
+      config.get('hc-caas.conversionServer.HEInstallPath') ];
   }
   else {
      found = getCommandLineArgument('--output_fbx', item.conversionCommandLine);  
      if (found != -1) {
       commandLine = [inputPath, dir + item.storageID + "/" + item.name + "." + "fbx","FBX",config.get('hc-caas.license'),
-      config.get('hc-caas.queue.HEInstallPath') ];
+      config.get('hc-caas.conversionServer.HEInstallPath') ];
      }
   }
 
@@ -562,7 +562,7 @@ async function getConversionJobFromQueue() {
     }
   }
   else {
-    if (!config.get('hc-caas.queue.polling')) {
+    if (!config.get('hc-caas.conversionServer.polling')) {
       setTimeout(async function () {
         await getConversionJobFromQueue();
       }, 1000);

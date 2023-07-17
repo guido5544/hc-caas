@@ -18,10 +18,6 @@ var totalConversions = 0;
 
 var customCallback;
 
-
-
-
-
 async function purgeFiles() {
   let files = await Conversionitem.find();
 
@@ -87,7 +83,7 @@ exports.start = async (callback) => {
   }, 1000 * 60 * 60);
 
 
-  if (config.get('hc-caas.server.purgeFiles')) {
+  if (config.get('hc-caas.modelManager.purgeFiles')) {
     await purgeFiles();
     setInterval(async function () {
       await purgeFiles();

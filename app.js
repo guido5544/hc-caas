@@ -90,14 +90,14 @@ exports.start = async function (mongoose_in, customCallback) {
   exports.server = require('./libs/server');
 
   try {
-    if (config.get('hc-caas.runQueue')) {
+    if (config.get('hc-caas.runConversionServer')) {
       conversionQueue = require('./libs/conversionqueue');
       conversionQueue.start();
     }
 
-    if (config.get('hc-caas.runServer')) {
+    if (config.get('hc-caas.runModelManager')) {
       exports.server.start(customCallback);
-       if (config.get('hc-caas.runStreamingManager')) {
+       if (config.get('hc-caas.modelManager.runStreamingManager')) {
           streamingManager.start();
        }
     }
@@ -108,13 +108,13 @@ exports.start = async function (mongoose_in, customCallback) {
       streamingServer.start();
     }    
 
-    if ((config.get('hc-caas.runServer') && config.get('hc-caas.server.listen')) || config.get('hc-caas.runQueue') ||  config.get('hc-caas.runStreamingServer')) {
+    if ((config.get('hc-caas.runModelManager') && config.get('hc-caas.modelManager.listen')) || config.get('hc-caas.runConversionServer') ||  config.get('hc-caas.runStreamingServer')) {
       app.use(cors());
       app.use(express.json({ limit: '25mb' }));
       app.use(express.urlencoded({ limit: '25mb', extended: false }));
 
      
-      if (config.get('hc-caas.runServer') && config.get('hc-caas.server.listen')) {
+      if (config.get('hc-caas.runModelManager') && config.get('hc-caas.modelManager.listen')) {
         const fileStorage = multer.diskStorage({
           destination: (req, file, cb) => {
             var uv4 = uuidv4();
@@ -140,7 +140,7 @@ exports.start = async function (mongoose_in, customCallback) {
         serverapiRoutes = require('./routes/serverapi');
         app.use("/caas_api", serverapiRoutes);
       }
-      if (config.get('hc-caas.runQueue')) {
+      if (config.get('hc-caas.runConversionServer')) {
         queueapiRoutes = require('./routes/queueapi');
         app.use("/caas_api", queueapiRoutes);
       }
@@ -202,14 +202,13 @@ function handleInitialConfiguration() {
       "workingDirectory": "caasTemp",
       "serviceIP": "localhost",
       "port": "3001",
-      "runQueue": true,
-      "runServer": true,
-      "runStreamingManager": true,
+      "runModelManager": true,
+      "runConversionServer": true,
       "runStreamingServer": true,
       "license": "",
       "fullErrorReporting": false,
       "region": "",
-      "queue": {
+      "conversionServer": {
         "name" : "",
         "converterpath": "",
         "HEimportexportpath": "",
@@ -219,9 +218,10 @@ function handleInitialConfiguration() {
         "imageServicePort": "3002",
         "priority": 0,
       },
-      "server": {
+      "modelManager": {
         "listen": true,
         "purgeFiles": false,
+        "runStreamingManager": true,
       },
       "streamingServer": {
         "streamingRegion": "",
