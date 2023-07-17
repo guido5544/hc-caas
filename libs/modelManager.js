@@ -42,10 +42,10 @@ async function refreshServerAvailability() {
     try {
       let res = await fetch("http://" + queueservers[i].address + '/caas_api/pingQueue', { signal: controller.signal });
       if (res.status == 404) {
-        throw "Could not ping conversion queue " + queueservers[i].address;
+        throw "Could not ping Conversion Server " + queueservers[i].address;
       }
       else {
-        console.log("Conversion Queue found:" + queueservers[i].address);
+        console.log("Conversion Server found:" + queueservers[i].address);
         queueservers[i].lastPing = new Date();
         queueservers[i].pingFailed = false;
         queueservers[i].save();
@@ -58,10 +58,10 @@ async function refreshServerAvailability() {
       let diffHours = Math.ceil(timeDiff / (1000 * 60 * 60));
       if (diffHours > 24) {
         await Queueserveritem.deleteOne({ "address": queueservers[i].address });
-        console.log("Conversion Queue " + queueservers[i].address + " not reachable for more than 24 hours. Removed from database");
+        console.log("Conversion Server " + queueservers[i].address + " not reachable for more than 24 hours. Removed from database");
       }
       else {
-        console.log("Could not ping conversion queue " + queueservers[i].address + ": " + e);
+        console.log("Could not ping Conversion Server " + queueservers[i].address + ": " + e);
       }
     }
     clearTimeout(to);
@@ -90,7 +90,7 @@ exports.start = async (callback) => {
     }, 1000 * 60 * 60 * 24);
   }
     
-  console.log('Conversion Server started on ' + new Date());
+  console.log('Model Manager started');
 };
 
 

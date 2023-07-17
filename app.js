@@ -49,7 +49,6 @@ exports.start = async function (mongoose_in, customCallback) {
   else {
     global.caas_publicip = config.get('hc-caas.serviceIP');
   }
-  console.log("CaaS Service IP: " + global.caas_publicip);
 
   try {
     config.get('hc-caas');
@@ -65,7 +64,7 @@ exports.start = async function (mongoose_in, customCallback) {
   let versioninfo = require('./package.json');
   process.env.caas_version = versioninfo.version;
   console.log("Initializing CaaS. Version: " + process.env.caas_version);
-
+  console.log("CaaS Service IP: " + global.caas_publicip);
   if (!mongoose_in) {
     mongoose = require('mongoose');
     let mongouri = config.get('hc-caas.mongodbURI');

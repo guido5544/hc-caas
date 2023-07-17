@@ -147,7 +147,7 @@ exports.start = async () => {
     });
 
     proxyServer.listen(config.get('hc-caas.streamingServer.listenPort'));
-    console.log('streaming server started');
+    console.log('Streaming Server started');
 
 };
 
