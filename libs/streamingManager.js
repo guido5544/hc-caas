@@ -22,7 +22,8 @@ async function queryStreamingServers() {
     
     try {   
       ip = streamingservers[i].address;
-      let res = await fetch("http://" + ip + '/caas_api/pingStreamingServer', { signal: controller.signal });
+      let res = await fetch("http://" + ip + '/caas_api/pingStreamingServer', { signal: controller.signal,
+      headers: { 'CS-API-Arg': JSON.stringify({accessPassword:config.get('hc-caas.accessPassword') }) }});
       if (res.status == 404) {
         throw 'Streaming Server not found';
       }
@@ -152,11 +153,16 @@ exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) =
   if (item) {
     ip = item.serveraddress;
 
-    if (args) {
-      await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'CS-API-Arg': JSON.stringify(args),'items':JSON.stringify(itemids), hasNames:hasNames} });
+    try {
+      if (args) {
+        await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'CS-API-Arg': JSON.stringify(args), 'items': JSON.stringify(itemids), hasNames: hasNames } });
+      }
+      else {
+        await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'items': JSON.stringify(itemids), hasNames: hasNames } });
+      }
     }
-    else {
-      await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'items':JSON.stringify(itemids), hasNames:hasNames} });
+    catch (e) {
+      console.log("Error enabling stream access on " + ip + ": " + e);
     }
   }
 

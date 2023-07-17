@@ -40,7 +40,8 @@ async function refreshServerAvailability() {
     let to = setTimeout(() => controller.abort(), 2000);
 
     try {
-      let res = await fetch("http://" + queueservers[i].address + '/caas_api/pingQueue', { signal: controller.signal });
+      let res = await fetch("http://" + queueservers[i].address + '/caas_api/pingQueue', { signal: controller.signal, 
+        headers: { 'CS-API-Arg': JSON.stringify({accessPassword:config.get('hc-caas.accessPassword') }) } });
       if (res.status == 404) {
         throw "Could not ping Conversion Server " + queueservers[i].address;
       }
@@ -585,7 +586,8 @@ async function sendConversionRequest() {
       
       if (queueservers[i].freeConversionSlots > 0) {
         try {
-          await fetch("http://" + queueservers[i].address + '/caas_api/startConversion', { method: 'PUT',signal: controller.signal });
+          await fetch("http://" + queueservers[i].address + '/caas_api/startConversion', { method: 'PUT',signal: controller.signal,
+          headers: { 'CS-API-Arg': JSON.stringify({accessPassword:config.get('hc-caas.accessPassword') }) } });
         }
         catch (e) {
           console.log("Error sending conversion request to " + queueservers[0].address + ": " + e);

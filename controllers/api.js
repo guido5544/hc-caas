@@ -7,6 +7,23 @@ const config = require('config');
 const status = require('../libs/status');
 
 
+function setupAPIArgs(req) {
+
+    let args;
+    if (req.get("CS-API-Arg")) {
+        args = JSON.parse(req.get("CS-API-Arg"));
+    }
+    else {
+        args = {};
+    }
+    
+    if (config.get('hc-caas.accessPassword') != "") {
+        args.accessPassword = config.get('hc-caas.accessPassword');
+    }            
+    return args;
+}
+
+
 exports.getStatus = async (req, res, next) => {
     if (req.params.json) {
         res.json(await status.generateJSON());
@@ -25,11 +42,7 @@ exports.postFileUpload = async (req, res, next) => {
         return;
     }
     
-    let args;
-    if (req.get("CS-API-Arg"))
-        args = JSON.parse(req.get("CS-API-Arg"));
-    else
-        args = {};
+    let args = setupAPIArgs(req);
 
     if (args.itemid != undefined) {
         let data = await modelManager.append(req.file.destination, req.file.originalname, args.itemid);     
@@ -52,22 +65,14 @@ exports.postFileUpload = async (req, res, next) => {
 
 
 exports.postFileUploadArray = async (req, res, next) => {
-  
-    let args;
-    if (req.get("CS-API-Arg"))
-        args = JSON.parse(req.get("CS-API-Arg"));
-    else
-        args = {};
-    
-     let data = await modelManager.createMultiple(req.files, args);
-     res.json(data);
+
+    let data = await modelManager.createMultiple(req.files, setupAPIArgs(req));
+    res.json(data);
 };
 
 exports.putCreate = async (req, res, next) => {
-    let args;
     if (req.get("CS-API-Arg")) {
-        args = JSON.parse(req.get("CS-API-Arg"));
-        let data = await modelManager.createEmpty(args);
+        let data = await modelManager.createEmpty(setupAPIArgs(req));
         res.json(data);
     }
     else {
@@ -79,9 +84,8 @@ exports.putCreate = async (req, res, next) => {
 exports.getUploadToken = async (req, res, next) => {
 
     console.log("upload token send");
-    let args = JSON.parse(req.get("CS-API-Arg"));
 
-    let result = await modelManager.requestUploadToken(req.params.name, args);
+    let result = await modelManager.requestUploadToken(req.params.name, setupAPIArgs(req));
     res.json(result);
 };
 
@@ -123,13 +127,7 @@ exports.pingStreamingServer = (req, res, next) => {
 
 exports.putCustomImage = async (req, res, next) => {
 
-    let args;
-    if (req.get("CS-API-Arg"))
-        args = JSON.parse(req.get("CS-API-Arg"));
-    else
-        args = {};
-
-    let result = await modelManager.generateCustomImage(req.params.itemid, args);  
+    let result = await modelManager.generateCustomImage(req.params.itemid, setupAPIArgs(req));  
     if (result) {        
         res.json(result);       
     }
@@ -142,13 +140,7 @@ exports.putCustomImage = async (req, res, next) => {
 
 exports.putReconvert = async (req, res, next) => {
 
-    let args;
-    if (req.get("CS-API-Arg"))
-        args = JSON.parse(req.get("CS-API-Arg"));
-    else
-        args = {};
-
-    let result = await modelManager.reconvert(req.params.itemid, args);  
+    let result = await modelManager.reconvert(req.params.itemid, setupAPIArgs(req));  
     if (result) {        
         res.json(result);       
     }
@@ -229,40 +221,30 @@ exports.startConversion = (req, res, next) => {
 
     conversionQueue.startConversion();
     res.sendStatus(200);
-    
+
 };
 
 
 exports.getItems = async (req, res, next) => {
     let result = await modelManager.getItems();
-    res.json(result);    
+    res.json(result);
 };
 
 exports.getUpdated = async (req, res, next) => {
     let result = await modelManager.getLastUpdated();
-    res.json(result);    
+    res.json(result);
 };
 
 exports.getStreamingSession = async (req, res, next) => {
-
-    let args;
-    if (req.get("CS-API-Arg")) {
-        args = JSON.parse(req.get("CS-API-Arg"));
-    }
-  
-    let result = await streamingManager.getStreamingSession(args);
-    res.json(result);    
+    let result = await streamingManager.getStreamingSession(setupAPIArgs(req));
+    res.json(result);
 };
 
 exports.startStreamingServer = async (req, res, next) => {
 
-    let args;
-    if (req.get("CS-API-Arg")) {
-        args = JSON.parse(req.get("CS-API-Arg"));
-    }
-    let result = await streamingServer.startStreamingServer(args);
-    res.json(result); 
-    
+    let result = await streamingServer.startStreamingServer(setupAPIArgs(req));
+    res.json(result);
+
 };
 
 
@@ -283,30 +265,21 @@ exports.enableStreamAccess = async (req, res, next) => {
                 hasNames = true;
             }        
         }
-
-
-        if (req.get("CS-API-Arg"))
-            args = JSON.parse(req.get("CS-API-Arg"));
-
     }
     catch (e) {
         console.log('Error: Invalid JSON');
         res.sendStatus(200);
         return;
     }
-    await streamingManager.enableStreamAccess(req.params.sessionid,items, args, hasNames);  
+    await streamingManager.enableStreamAccess(req.params.sessionid,items, setupAPIArgs(req), hasNames);  
     res.sendStatus(200);
   
 };
 
 
-
-
 exports.serverEnableStreamAccess = async (req, res, next) => {
-    let args;
-    if (req.get("CS-API-Arg")) {
-        args = JSON.parse(req.get("CS-API-Arg"));
-    }
+    let args = setupAPIArgs(req);
+
     let items  = JSON.parse(req.get("items"));
 
     let hasNames = false;
@@ -322,11 +295,8 @@ exports.serverEnableStreamAccess = async (req, res, next) => {
 
 
 exports.getCustom = (req, res, next) => {   
-    let args;
-    if (req.get("CS-API-Arg")) {
-        args = JSON.parse(req.get("CS-API-Arg"));
-    }
-    let result = modelManager.executeCustom(args); 
+    let args = setupAPIArgs(req);
+    modelManager.executeCustom(args); 
     res.sendStatus(200);   
 };
 

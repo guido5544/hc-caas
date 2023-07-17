@@ -112,7 +112,19 @@ exports.start = async function (mongoose_in, customCallback) {
       app.use(express.json({ limit: '25mb' }));
       app.use(express.urlencoded({ limit: '25mb', extended: false }));
 
-     
+
+      if (config.get('hc-caas.accessPassword') != "") {
+        app.use(function (req, res, next) {
+          if (req.get("CS-API-Arg")) {
+            let args = JSON.parse(req.get("CS-API-Arg"));
+            if (args.accessPassword == config.get('hc-caas.accessPassword')) {
+              return next();
+            }
+          }
+        });
+      }
+
+
       if (config.get('hc-caas.runModelManager') && config.get('hc-caas.modelManager.listen')) {
         const fileStorage = multer.diskStorage({
           destination: (req, file, cb) => {
@@ -198,6 +210,7 @@ if (require.main === module) {
 function handleInitialConfiguration() {
   let configs = {
       "mongodbURI": "mongodb://127.0.0.1:27017/conversions",
+      "accessPassword": "",
       "workingDirectory": "caasTemp",
       "serviceIP": "localhost",
       "port": "3001",
