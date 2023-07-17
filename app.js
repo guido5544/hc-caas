@@ -87,7 +87,7 @@ exports.start = async function (mongoose_in, customCallback) {
   streamingManager = require('./libs/streamingManager');
   exports.streamingManager = streamingManager;
 
-  exports.server = require('./libs/server');
+  exports.modelManager = require('./libs/modelManager');
 
   try {
     if (config.get('hc-caas.runConversionServer')) {
@@ -96,7 +96,7 @@ exports.start = async function (mongoose_in, customCallback) {
     }
 
     if (config.get('hc-caas.runModelManager')) {
-      exports.server.start(customCallback);
+      exports.modelManager.start(customCallback);
        if (config.get('hc-caas.modelManager.runStreamingManager')) {
           streamingManager.start();
        }

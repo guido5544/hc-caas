@@ -1,5 +1,5 @@
 const conversionQueue = require('../libs/conversionqueue');
-const server = require('../libs/server');
+const modelManager = require('../libs/modelManager');
 const streamingManager = require('../libs/streamingManager');
 const streamingServer = require('../libs/streamingServer');
 
@@ -32,16 +32,16 @@ exports.postFileUpload = async (req, res, next) => {
         args = {};
 
     if (args.itemid != undefined) {
-        let data = await server.append(req.file.destination, req.file.originalname, args.itemid);     
+        let data = await modelManager.append(req.file.destination, req.file.originalname, args.itemid);     
         res.json(data);
     }
     else {
-        let item = await server.createDatabaseEntry(req.file.originalname, args);
+        let item = await modelManager.createDatabaseEntry(req.file.originalname, args);
         if (args.waitUntilConversionDone) {
-            await server.create(item, req.file.destination, req.file.originalname, args);
+            await modelManager.create(item, req.file.destination, req.file.originalname, args);
         }
         else {
-             server.create(item, req.file.destination, req.file.originalname, args);
+             modelManager.create(item, req.file.destination, req.file.originalname, args);
         }
 
         res.json({itemid:item.storageID});
@@ -59,7 +59,7 @@ exports.postFileUploadArray = async (req, res, next) => {
     else
         args = {};
     
-     let data = await server.createMultiple(req.files, args);
+     let data = await modelManager.createMultiple(req.files, args);
      res.json(data);
 };
 
@@ -67,7 +67,7 @@ exports.putCreate = async (req, res, next) => {
     let args;
     if (req.get("CS-API-Arg")) {
         args = JSON.parse(req.get("CS-API-Arg"));
-        let data = await server.createEmpty(args);
+        let data = await modelManager.createEmpty(args);
         res.json(data);
     }
     else {
@@ -81,7 +81,7 @@ exports.getUploadToken = async (req, res, next) => {
     console.log("upload token send");
     let args = JSON.parse(req.get("CS-API-Arg"));
 
-    let result = await server.requestUploadToken(req.params.name, args);
+    let result = await modelManager.requestUploadToken(req.params.name, args);
     res.json(result);
 };
 
@@ -90,13 +90,13 @@ exports.getUploadToken = async (req, res, next) => {
 exports.getDownloadToken = async (req, res, next) => {
 
     console.log("download token send");
-    let result = await server.requestDownloadToken(req.params.itemid,req.params.type);
+    let result = await modelManager.requestDownloadToken(req.params.itemid,req.params.type);
     res.json(result);
 };
 
 exports.getData = async (req, res, next) => {
 
-    let data = await server.getData(req.params.itemid);   
+    let data = await modelManager.getData(req.params.itemid);   
     res.json(data);
 };
 
@@ -129,7 +129,7 @@ exports.putCustomImage = async (req, res, next) => {
     else
         args = {};
 
-    let result = await server.generateCustomImage(req.params.itemid, args);  
+    let result = await modelManager.generateCustomImage(req.params.itemid, args);  
     if (result) {        
         res.json(result);       
     }
@@ -148,7 +148,7 @@ exports.putReconvert = async (req, res, next) => {
     else
         args = {};
 
-    let result = await server.reconvert(req.params.itemid, args);  
+    let result = await modelManager.reconvert(req.params.itemid, args);  
     if (result) {        
         res.json(result);       
     }
@@ -159,7 +159,7 @@ exports.putReconvert = async (req, res, next) => {
 };
 
 exports.getFileByType = async (req, res, next) => {
-    let result = await server.get(req.params.itemid, req.params.type);
+    let result = await modelManager.get(req.params.itemid, req.params.type);
 
     if (result.data) {    
         return res.send(Buffer.from(result.data));
@@ -171,7 +171,7 @@ exports.getFileByType = async (req, res, next) => {
 };
 
 exports.getFileByName = async (req, res, next) => {
-    let result = await server.getByName(req.params.itemid, req.params.name);
+    let result = await modelManager.getByName(req.params.itemid, req.params.name);
 
     if (result.data) {    
         return res.send(Buffer.from(result.data));
@@ -184,7 +184,7 @@ exports.getFileByName = async (req, res, next) => {
 
 exports.getOriginal = async (req, res, next) => {
 
-    let result = await server.getOriginal(req.params.itemid);
+    let result = await modelManager.getOriginal(req.params.itemid);
     if (result.data) {
         res.send(Buffer.from(result.data));
     }
@@ -195,7 +195,7 @@ exports.getOriginal = async (req, res, next) => {
 
 exports.getShattered = async (req, res, next) => {
 
-    let result = await server.getShattered(req.params.itemid, req.params.name);
+    let result = await modelManager.getShattered(req.params.itemid, req.params.name);
     if (result.data) {
         res.send(Buffer.from(result.data));
     }
@@ -206,7 +206,7 @@ exports.getShattered = async (req, res, next) => {
 
 exports.getShatteredXML = async (req, res, next) => {
 
-    let result = await server.getShatteredXML(req.params.itemid);
+    let result = await modelManager.getShatteredXML(req.params.itemid);
     if (result.data) {
         res.send(result.data.toString('ascii'));
     }
@@ -216,7 +216,7 @@ exports.getShatteredXML = async (req, res, next) => {
 };
 
 exports.putDelete = (req, res, next) => {
-    let result = server.deleteConversionitem(req.params.itemid); 
+    let result = modelManager.deleteConversionitem(req.params.itemid); 
     if (result) {
         res.json(result);
     }
@@ -234,12 +234,12 @@ exports.startConversion = (req, res, next) => {
 
 
 exports.getItems = async (req, res, next) => {
-    let result = await server.getItems();
+    let result = await modelManager.getItems();
     res.json(result);    
 };
 
 exports.getUpdated = async (req, res, next) => {
-    let result = await server.getLastUpdated();
+    let result = await modelManager.getLastUpdated();
     res.json(result);    
 };
 
@@ -326,7 +326,7 @@ exports.getCustom = (req, res, next) => {
     if (req.get("CS-API-Arg")) {
         args = JSON.parse(req.get("CS-API-Arg"));
     }
-    let result = server.executeCustom(args); 
+    let result = modelManager.executeCustom(args); 
     res.sendStatus(200);   
 };
 
