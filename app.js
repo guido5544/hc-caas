@@ -204,9 +204,6 @@ if (require.main === module) {
   this.start();
 } 
 
-
-
-
 function handleInitialConfiguration() {
   let configs = {
       "mongodbURI": "mongodb://127.0.0.1:27017/conversions",
@@ -241,7 +238,8 @@ function handleInitialConfiguration() {
         "renderType": "client",
         "maxStreamingSessions": 10,
         "useSymLink": false,
-        "publicIP": "",
+        "publicURL": "",
+        "publicPort": "",
         "startPort": 3006,
         "listenPort": 3200,
         "name" : "",

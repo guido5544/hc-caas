@@ -183,12 +183,22 @@ exports.startStreamingServer = async (args) => {
     streamingserver.freeStreamingSlots = maxStreamingSessions - simStreamingSessions;
     await streamingserver.save();
 
-    let port = config.get('hc-caas.streamingServer.listenPort');
+    let port;
+
+    if (config.get('hc-caas.streamingServer.publicPort') != "") {
+        port = config.get('hc-caas.streamingServer.publicPort');
+    }
+    else {    
+        port = config.get('hc-caas.streamingServer.listenPort');
+    }
     let address;
 
-    if (config.has('hc-caas.streamingServer.streamingIP') && config.get('hc-caas.streamingServer.streamingIP') != "") {
-        port = config.get('hc-caas.streamingServer.streamingIP').split(":")[2];
-        address = config.get('hc-caas.streamingServer.streamingIP').replace(/(wss?:\/\/)/gi, '').split(":")[0];
+    if (config.get('hc-caas.streamingServer.publicURL') != "") {
+        let split = config.get('hc-caas.streamingServer.publicURL').split(":");
+        if (split.length == 3) {       
+            port = config.get('hc-caas.streamingServer.publicURL').split(":")[2];
+        }
+        address = config.get('hc-caas.streamingServer.publicURL').replace(/(wss?:\/\/)/gi, '').split(":")[0];
     }
     else {   
         address = global.caas_publicip.replace(/(https?:\/\/)/gi, '').split(":")[0];

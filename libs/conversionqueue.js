@@ -519,7 +519,7 @@ async function sendToWebHook(item, files) {
         body: JSON.stringify({ id: item.storageID, conversionState: item.conversionState, files: files })
       });
     } catch (e) {
-      console.log("Error: Webhook failed");
+      console.log("Error: Webhook failed:" + item.webhook);
     }
   }
 }
