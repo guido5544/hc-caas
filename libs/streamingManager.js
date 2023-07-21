@@ -117,6 +117,9 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
     else {
       res = await fetch("http://" + ip + '/caas_api/startStreamingServer', { method: 'PUT', signal: controller.signal,headers: { 'CS-API-Arg': JSON.stringify(args) } });
     }
+    if (res.status == 404) {
+      throw 'Streaming Server not found';
+    }
   }
   catch(e) {
     clearTimeout(to);

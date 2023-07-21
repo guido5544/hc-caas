@@ -1,7 +1,7 @@
 const config = require('config');
 const Conversionitem = require('../models/conversionitem');
 const fs = require('fs');
-const conversionQueue = require('./conversionqueue');
+const conversionQueue = require('./conversionServer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 
@@ -575,7 +575,7 @@ async function sendConversionRequest() {
   
 
   queueservers.sort(function (a, b) {
-    return  b.priority - a.priority || b.freeConversionSlots - a.freeConversionSlots;
+    return  a.pingFailed - b.pingFailed || b.priority - a.priority || b.freeConversionSlots - a.freeConversionSlots;
 
   });
 
@@ -586,8 +586,11 @@ async function sendConversionRequest() {
       
       if (queueservers[i].freeConversionSlots > 0) {
         try {
-          await fetch("http://" + queueservers[i].address + '/caas_api/startConversion', { method: 'PUT',signal: controller.signal,
+          let res = await fetch("http://" + queueservers[i].address + '/caas_api/startConversion', { method: 'PUT',signal: controller.signal,
           headers: { 'CS-API-Arg': JSON.stringify({accessPassword:config.get('hc-caas.accessPassword') }) } });
+          if (res.status == 404) {
+            throw 'Conversion Server not found';
+          }
         }
         catch (e) {
           console.log("Error sending conversion request to " + queueservers[0].address + ": " + e);

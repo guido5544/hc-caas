@@ -1,4 +1,4 @@
-const conversionQueue = require('../libs/conversionqueue');
+const conversionServer = require('../libs/conversionServer');
 const modelManager = require('../libs/modelManager');
 const streamingManager = require('../libs/streamingManager');
 const streamingServer = require('../libs/streamingServer');
@@ -219,8 +219,13 @@ exports.putDelete = (req, res, next) => {
 
 exports.startConversion = (req, res, next) => {
 
-    conversionQueue.startConversion();
-    res.sendStatus(200);
+    let result = conversionServer.startConversion();
+    if (!result.ERROR) {
+        res.sendStatus(200);
+    }
+    else {
+        res.sendStatus(404);
+    }
 
 };
 
@@ -241,10 +246,13 @@ exports.getStreamingSession = async (req, res, next) => {
 };
 
 exports.startStreamingServer = async (req, res, next) => {
-
-    let result = await streamingServer.startStreamingServer(setupAPIArgs(req));
-    res.json(result);
-
+    if (!config.get('hc-caas.runStreamingServer')) {
+        res.sendStatus(404);
+    }
+    else {
+        let result = await streamingServer.startStreamingServer(setupAPIArgs(req));
+        res.json(result);
+    }
 };
 
 

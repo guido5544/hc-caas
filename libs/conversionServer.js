@@ -113,7 +113,13 @@ exports.getQueue = () => {
 };
 
 exports.startConversion = () => {
-  getConversionJobFromQueue();
+  if (config.get('hc-caas.runConversionServer') == false) {
+    return {ERROR:"Conversion Server not running"};
+  }
+  else {
+    getConversionJobFromQueue();
+    return {OK:"Conversion Server started"};
+  }
 };
 
 async function cleanupDir(dir, item) {

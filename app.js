@@ -90,7 +90,7 @@ exports.start = async function (mongoose_in, customCallback) {
 
   try {
     if (config.get('hc-caas.runConversionServer')) {
-      conversionQueue = require('./libs/conversionqueue');
+      conversionQueue = require('./libs/conversionServer');
       conversionQueue.start();
     }
 
