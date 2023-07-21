@@ -428,14 +428,20 @@ function setupCommandLine(inputPath, dir, item) {
   }
   let commandLine;
 
+  if (config.get('hc-caas.licenseFile') != "") {
+    commandLine = ['--license_file', config.get('hc-caas.licenseFile')];
+  }
+  else {
+    commandLine = ['--license', config.get('hc-caas.license')];
+  }
+
   if (!path.isAbsolute(inputPath)) {
     inputPath = path.join(process.cwd(), inputPath);
     dir = path.join(process.cwd(), dir);
   }
 
-  if (!item.conversionCommandLine) {
-    commandLine = ['--license', config.get('hc-caas.license'),
-      '--input', inputPath,
+  if (!item.conversionCommandLine) {      
+      commandLine += '--input', inputPath,
       '--output_scs', dir + item.storageID + "/output/" + item.name + ".scs",
       '--output_sc', dir + item.storageID + "/output/" + item.name + "_",
       '--output_png', dir + item.storageID + "/output/" + item.name + ".png",
@@ -445,12 +451,11 @@ function setupCommandLine(inputPath, dir, item) {
       '--import_hidden_objects', hidden,
       '--png_transparent_background', '1',
       '--sc_create_scz', 'true',
-      '--sc_compress_scz', '1'];
+      '--sc_compress_scz', '1';
+    
   }
   else {  
     
-    commandLine = ['--license', config.get('hc-caas.license')];
-
     let hasInput = false;
     for (let i = 0; i < item.conversionCommandLine.length; i += 2) {
       

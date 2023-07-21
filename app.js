@@ -215,6 +215,7 @@ function handleInitialConfiguration() {
       "runConversionServer": true,
       "runStreamingServer": true,
       "license": "",
+      "licenseFile": "",
       "fullErrorReporting": false,
       "region": "",
       "conversionServer": {

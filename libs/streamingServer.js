@@ -369,21 +369,29 @@ function setupCommandLine(port,sessionid, streamingLocation, renderType) {
     let dirs = tempFileDir + "/" + sessionid;
 
     if (!path.isAbsolute(dirs)) {
-        dirs = path.join(process.cwd(), dirs);    
+        dirs = path.join(process.cwd(), dirs);
     }
-   
+
     if (streamingLocation) {
         dirs += ";" + streamingLocation;
     }
 
-    commandLine = ['--license', config.get('hc-caas.license'),
-        '--id', "test123",
-        '--sc-port', port.toString(),       
-        '--model-search-directories',dirs];
+    if (config.get('hc-caas.licenseFile') != "") {
+        commandLine = ['--license-file', config.get('hc-caas.licenseFile')];
+    }
+    else {
+        commandLine = ['--license', config.get('hc-caas.license')];
+    }
 
-        if (renderType == "server") { 
-            commandLine.push('--ssr', "1");
-        }
+
+    commandLine +=
+        '--id', "test123",
+        '--sc-port', port.toString(),
+        '--model-search-directories', dirs;
+
+    if (renderType == "server") {
+        commandLine.push('--ssr', "1");
+    }
 
     return commandLine;
 }
