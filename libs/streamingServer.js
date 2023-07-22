@@ -362,10 +362,11 @@ async function runStreamingServer(slot,sessionid, streamingLocation, renderType)
     await someTimeout(500);    
   }
 
-function setupCommandLine(port,sessionid, streamingLocation, renderType) {
+  
+  function setupCommandLine(port, sessionid, streamingLocation, renderType) {
 
     let commandLine;
-    
+
     let dirs = tempFileDir + "/" + sessionid;
 
     if (!path.isAbsolute(dirs)) {
@@ -384,10 +385,11 @@ function setupCommandLine(port,sessionid, streamingLocation, renderType) {
     }
 
 
-    commandLine +=
+    commandLine.push(
         '--id', "test123",
         '--sc-port', port.toString(),
-        '--model-search-directories', dirs;
+        '--model-search-directories', dirs
+    );
 
     if (renderType == "server") {
         commandLine.push('--ssr', "1");

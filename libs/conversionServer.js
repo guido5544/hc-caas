@@ -441,7 +441,7 @@ function setupCommandLine(inputPath, dir, item) {
   }
 
   if (!item.conversionCommandLine) {      
-      commandLine += '--input', inputPath,
+      commandLine.push('--input', inputPath,
       '--output_scs', dir + item.storageID + "/output/" + item.name + ".scs",
       '--output_sc', dir + item.storageID + "/output/" + item.name + "_",
       '--output_png', dir + item.storageID + "/output/" + item.name + ".png",
@@ -451,7 +451,7 @@ function setupCommandLine(inputPath, dir, item) {
       '--import_hidden_objects', hidden,
       '--png_transparent_background', '1',
       '--sc_create_scz', 'true',
-      '--sc_compress_scz', '1';
+      '--sc_compress_scz', '1');
     
   }
   else {  
