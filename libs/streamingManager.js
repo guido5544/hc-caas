@@ -21,7 +21,13 @@ async function queryStreamingServers() {
     let to = setTimeout(() => controller.abort(), 2000);
     
     try {   
-      ip = streamingservers[i].address;
+      let ip = streamingservers[i].address;
+    
+      if (ip.indexOf(global.caas_publicip) != -1) {
+        ip = "localhost" + ":" + config.get('hc-caas.port');
+      }
+
+
       let res = await fetch("http://" + ip + '/caas_api/pingStreamingServer', { signal: controller.signal,
       headers: { 'CS-API-Arg': JSON.stringify({accessPassword:config.get('hc-caas.accessPassword') }) }});
       if (res.status == 404) {
@@ -104,6 +110,10 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
 
   let ip;
   ip = bestFitServer.address
+
+  if (ip.indexOf(global.caas_publicip) != -1) {
+    ip = "localhost" + ":" + config.get('hc-caas.port');
+  }
 
   let res;
   console.log("Best Fit Server:" +  bestFitServer.address);

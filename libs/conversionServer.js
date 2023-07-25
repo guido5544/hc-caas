@@ -521,8 +521,15 @@ async function runZip(item) {
 async function sendToWebHook(item, files) {
   if (item.webhook) {
     try {
+      
+      let webhookip = item.webhook;
+      if (webhookip.indexOf(global.caas_publicip) != -1) {
+        let s = item.webhook.split(":");
+        webhookip = "http://localhost" + ":" + s[2];
+      }
 
-      await fetch(item.webhook, {
+
+      await fetch(webhookip, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
