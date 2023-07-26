@@ -200,7 +200,7 @@ exports.startStreamingServer = async (args) => {
         }
         address = config.get('hc-caas.streamingServer.publicURL').replace(/(wss?:\/\/)/gi, '').split(":")[0];
     }
-    else {   
+    else {           
         address = global.caas_publicip.replace(/(https?:\/\/)/gi, '').split(":")[0];
     }
     return {serverurl:address, sessionid:item.id, port:port};

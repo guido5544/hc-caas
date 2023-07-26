@@ -165,6 +165,9 @@ exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) =
 
   if (item) {
     ip = item.serveraddress;
+    if (ip.indexOf(global.caas_publicip) != -1) {
+      ip = "localhost" + ":" + config.get('hc-caas.port');
+    }
 
     try {
       if (args) {
