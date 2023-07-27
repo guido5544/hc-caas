@@ -237,6 +237,7 @@ function handleInitialConfiguration() {
         "streamingRegion": "",
         "scserverpath": "",
         "renderType": "client",
+        "useEGL": false,
         "maxStreamingSessions": 10,
         "useSymLink": false,
         "publicURL": "",

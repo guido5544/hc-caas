@@ -393,7 +393,9 @@ async function runStreamingServer(slot,sessionid, streamingLocation, renderType)
 
     if (renderType == "server") {
         commandLine.push('--ssr', "1");
-        commandLine.push('--ssr-egl', "1");
+        if (config.get('hc-caas.streamingServer.useEGL')) {
+            commandLine.push('--ssr-egl', "1");
+        }
     }
 
     return commandLine;
