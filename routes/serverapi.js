@@ -4,7 +4,7 @@ const apiController = require('../controllers/api');
 const router = express.Router();
 
 
-
+router.get('/info', apiController.getInfo);
 router.post('/upload', apiController.postFileUpload);
 router.post('/uploadArray', apiController.postFileUploadArray);
 router.get('/data/:itemid', apiController.getData);
@@ -20,6 +20,8 @@ router.get('/items', apiController.getItems);
 router.get('/updated', apiController.getUpdated);
 
 router.get('/custom', apiController.getCustom);
+
+
 
 
 router.get('/uploadToken/:name', apiController.getUploadToken);

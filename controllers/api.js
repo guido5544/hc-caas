@@ -230,6 +230,13 @@ exports.startConversion = (req, res, next) => {
 };
 
 
+
+exports.getInfo = async (req, res, next) => {
+    res.json({version: process.env.caas_version});
+};
+
+
+
 exports.getItems = async (req, res, next) => {
     let result = await modelManager.getItems();
     res.json(result);
