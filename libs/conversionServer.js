@@ -534,7 +534,7 @@ async function sendToWebHook(item, files) {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ id: item.storageID, conversionState: item.conversionState, files: files })
+        body: JSON.stringify({ id: item.storageID, name: item.name, conversionState: item.conversionState, files: files })
       });
     } catch (e) {
       console.log("Error: Webhook failed:" + item.webhook);
