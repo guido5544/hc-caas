@@ -100,22 +100,40 @@ exports.start = async (callback) => {
 };
 
 
-exports.getData = async (itemid) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
-  if (item)
-  {
-    let returnItem = JSON.parse(JSON.stringify(item));
-    returnItem.__v = undefined;
-    returnItem._id = undefined;
-    returnItem.storageID = undefined;
-    return (returnItem);
+exports.getData = async (itemid, args) => {
+  let itemids;
+  if (args && args.itemids) {
+    itemids = args.itemids;
   }
-  else
-  {
-    return {ERROR: "Item not found"};
+  else {
+    itemids = [itemid];
+  }
+
+  if (itemids.length == 1) {
+    let item = await Conversionitem.findOne({ storageID: itemids[0] });
+    if (item) {
+      let returnItem = JSON.parse(JSON.stringify(item));
+      returnItem.__v = undefined;
+      returnItem._id = undefined;
+      return returnItem;
+    } else {
+      return { ERROR: "Item not found" };
+    }
+  } else {
+    let items = await Conversionitem.find({ storageID: { $in: itemids } });
+    if (items.length > 0) {
+      let returnItems = items.map((item) => {
+        let returnItem = JSON.parse(JSON.stringify(item));
+        returnItem.__v = undefined;
+        returnItem._id = undefined;
+        return returnItem;
+      });
+      return returnItems;
+    } else {
+      return { ERROR: "Items not found" };
+    }
   }
 };
-
 
 exports.requestDownloadToken = async (itemid,type) => {
   if (!storage.requestDownloadToken)

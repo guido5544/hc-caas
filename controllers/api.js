@@ -100,7 +100,7 @@ exports.getDownloadToken = async (req, res, next) => {
 
 exports.getData = async (req, res, next) => {
 
-    let data = await modelManager.getData(req.params.itemid);   
+    let data = await modelManager.getData(req.params.itemid,setupAPIArgs(req));   
     res.json(data);
 };
 
