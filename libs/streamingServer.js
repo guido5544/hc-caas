@@ -10,7 +10,7 @@ const path = require('path');
 
 const localCache = require('./localCache');
 
-const common = require('./common');
+const authorization = require('./authorization');
 
 
 const execFile = require('child_process').execFile;
@@ -38,7 +38,6 @@ var startport = 4000;
 
 var slots = [];
 
-var httpTrafficTarget = null;
 
 function findFreeSlot()
 {
@@ -167,7 +166,7 @@ exports.startStreamingServer = async (args) => {
 
     let streamingLocation;
     if (args && args.startItem) {
-        let citem = await common.getConversionItem(args.startItem, args);
+        let citem = await authorization.getConversionItem(args.startItem, args);
         if (citem && citem.streamingLocation) {
             item.streamingLocation = args.streamingLocation;
             streamingLocation = args.streamingLocation;
@@ -268,10 +267,10 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
         let items;
 
         if (!hasNames) {
-            items = await common.getConversionItem(itemids, args);
+            items = await authorization.getConversionItem(itemids, args);
         }
         else {
-            items = await common.getConversionItem(itemids, args, true);
+            items = await authorization.getConversionItem(itemids, args, true);
 
         }
 

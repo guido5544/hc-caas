@@ -10,7 +10,7 @@ const fetch = require('node-fetch');
 
 const localCache = require('./localCache');
 
-const common = require('./common');
+const authorization = require('./authorization');
 
 
 var storage;
@@ -128,7 +128,7 @@ exports.getData = async (itemid, args) => {
   }
 
   if (itemids.length == 1) {
-    let item = await common.getConversionItem(itemids[0], args);
+    let item = await authorization.getConversionItem(itemids[0], args);
 
     if (item) {
       let returnItem = JSON.parse(JSON.stringify(item));
@@ -142,7 +142,7 @@ exports.getData = async (itemid, args) => {
       return { ERROR: "Item not found" };
     }
   } else {
-    let items = await common.getConversionItem(itemids, args);
+    let items = await authorization.getConversionItem(itemids, args);
     if (items.length > 0) {
       let returnItems = items.map((item) => {
         let returnItem = JSON.parse(JSON.stringify(item));
@@ -165,7 +165,7 @@ exports.requestDownloadToken = async (itemid,type,args) => {
   {
     return {ERROR: "Not available for this storage type"};
   }
-  let item = await common.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args);
 
   if (item) {
     let token = await storage.requestDownloadToken("conversiondata/" + item.storageID + "/" + item.name + "." + type, item);
@@ -196,7 +196,7 @@ async function readFileWithCache(itemid, name, item) {
 }
 
 exports.get = async (itemid,type,args) => {
-  let item = await common.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     let blob;
 
@@ -221,7 +221,7 @@ exports.get = async (itemid,type,args) => {
 
 
 exports.getByName = async (itemid,name,args) => {
-  let item = await common.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + name);
     return ({data:blob});
@@ -233,7 +233,7 @@ exports.getByName = async (itemid,name,args) => {
 };
 
 exports.getShattered = async (itemid, name,args) => {
-  let item = await common.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/scs/" + name);
     return ({ data: blob });
@@ -244,7 +244,7 @@ exports.getShattered = async (itemid, name,args) => {
 };
 
 exports.getShatteredXML = async (itemid,args) => {
-  let item = await common.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/shattered.xml");
     return ({ data: blob });
@@ -256,7 +256,7 @@ exports.getShatteredXML = async (itemid,args) => {
 
 
 exports.getOriginal = async (itemid, args) => {
-  let item = await common.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + item.name);
     return ({ data: blob });
@@ -291,7 +291,7 @@ exports.appendFromBuffer = async (buffer, itemname, itemid) => {
 };
 
 exports.append = async (directory, itemname, itemid, args) => {
-  let item = await common.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     if (directory) {
       await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
@@ -326,7 +326,7 @@ exports.append = async (directory, itemname, itemid, args) => {
 
 exports.requestUploadToken = async (itemname, args) => {
 
-  let user = await common.getUser(args);
+  let user = await authorization.getUser(args);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -410,7 +410,7 @@ exports.createDatabaseEntry = async (itemname, args) => {
 
   let itemid = uuidv4();
   let startState = "PENDING";
-  let user = await common.getUser(args);
+  let user = await authorization.getUser(args);
 
   if (user == -1) {
     return null;
@@ -502,7 +502,7 @@ exports.create = async (item, directory, itemname, args) => {
 
 
 exports.createEmpty = async (args) => {
-  let user = await common.getUser(args);
+  let user = await authorization.getUser(args);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -542,7 +542,7 @@ exports.generateCustomImage = async (itemid, args) => {
   {
     return {ERROR: "Itemid not specified"};
   }
-  let item = await common.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args);
 
   if (item) {
     item.conversionState = "PENDING";
@@ -569,7 +569,7 @@ exports.reconvert = async (itemid, args) => {
   {
     return {ERROR: "Itemid not specified"};
   }
-  let item = await common.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args);
 
   if (item) {
     item.conversionState = "PENDING";
@@ -631,7 +631,7 @@ function waitUntilConversionDone(itemid) {
 
 exports.deleteConversionitem = async (itemid, args) => {
 
-  let item = await common.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     console.log("Deleting item: " + itemid + " " + item.name);
     storage.delete("conversiondata/" + item.storageID, item);
@@ -689,7 +689,7 @@ async function sendConversionRequest() {
 
 exports.getItems = async (args) => {
 
-  let user = await common.getUser(args);
+  let user = await authorization.getUser(args);
 
   if (user == -1) {
     return { ERROR: "Not authorized" };

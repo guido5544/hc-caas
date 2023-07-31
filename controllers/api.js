@@ -6,6 +6,8 @@ const streamingServer = require('../libs/streamingServer');
 const config = require('config');
 const status = require('../libs/status');
 
+const authorization = require('../libs/authorization');
+
 
 function setupAPIArgs(req) {
 
@@ -322,4 +324,17 @@ exports.getCustom = (req, res, next) => {
 
 exports.getVersion = (req, res, next) => {
     res.send(process.env.caas_version);
+};
+
+
+exports.addUser = (req, res, next) => {
+    let response = authorization.addUser(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+
+exports.generateAPIKey = (req, res, next) => {
+    let response = authorization.generateAPIKey(req,setupAPIArgs(req));
+    res.json(response);
 };

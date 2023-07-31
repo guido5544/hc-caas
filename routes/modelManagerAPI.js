@@ -33,4 +33,9 @@ router.get('/version', apiController.getVersion);
 
 router.get('/status/:json?', apiController.getStatus);
 
+
+router.post('/addUser', apiController.addUser);
+router.get('/generateAPIKey/:email/:password', apiController.generateAPIKey);
+
+
 module.exports = router;
