@@ -148,16 +148,16 @@ exports.start = async function (mongoose_in, customCallback) {
         app.post('/caas_api/upload',upload.single('file'));
         app.post('/caas_api/uploadArray',upload.array('files'));
 
-        serverapiRoutes = require('./routes/serverapi');
+        serverapiRoutes = require('./routes/modelManagerAPI');
         app.use("/caas_api", serverapiRoutes);
       }
       if (config.get('hc-caas.runConversionServer')) {
-        queueapiRoutes = require('./routes/queueapi');
+        queueapiRoutes = require('./routes/conversionServerAPI');
         app.use("/caas_api", queueapiRoutes);
       }
 
       if (config.get('hc-caas.runStreamingServer')) {
-        streamingserverapiRoutes = require('./routes/streamingserverapi');
+        streamingserverapiRoutes = require('./routes/streamingServerAPI');
         app.use("/caas_api", streamingserverapiRoutes);
       }
       
@@ -218,6 +218,7 @@ function handleInitialConfiguration() {
       "licenseFile": "",
       "fullErrorReporting": false,
       "region": "",
+      "requireAccessKey": false,
       "conversionServer": {
         "name" : "",
         "converterpath": "",

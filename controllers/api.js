@@ -45,11 +45,15 @@ exports.postFileUpload = async (req, res, next) => {
     let args = setupAPIArgs(req);
 
     if (args.itemid != undefined) {
-        let data = await modelManager.append(req.file.destination, req.file.originalname, args.itemid);     
+        let data = await modelManager.append(req.file.destination, req.file.originalname, args.itemid,setupAPIArgs(req));     
         res.json(data);
     }
     else {
         let item = await modelManager.createDatabaseEntry(req.file.originalname, args);
+        if (!item) {
+            res.json({ERROR:"Can't Upload"});
+            return;
+        }
         if (args.waitUntilConversionDone) {
             await modelManager.create(item, req.file.destination, req.file.originalname, args);
         }
@@ -94,7 +98,7 @@ exports.getUploadToken = async (req, res, next) => {
 exports.getDownloadToken = async (req, res, next) => {
 
     console.log("download token send");
-    let result = await modelManager.requestDownloadToken(req.params.itemid,req.params.type);
+    let result = await modelManager.requestDownloadToken(req.params.itemid,req.params.type,setupAPIArgs(req));
     res.json(result);
 };
 
@@ -151,7 +155,7 @@ exports.putReconvert = async (req, res, next) => {
 };
 
 exports.getFileByType = async (req, res, next) => {
-    let result = await modelManager.get(req.params.itemid, req.params.type);
+    let result = await modelManager.get(req.params.itemid, req.params.type,setupAPIArgs(req));
 
     if (result.data) {    
         return res.send(Buffer.from(result.data));
@@ -163,7 +167,7 @@ exports.getFileByType = async (req, res, next) => {
 };
 
 exports.getFileByName = async (req, res, next) => {
-    let result = await modelManager.getByName(req.params.itemid, req.params.name);
+    let result = await modelManager.getByName(req.params.itemid, req.params.name,setupAPIArgs(req));
 
     if (result.data) {    
         return res.send(Buffer.from(result.data));
@@ -176,7 +180,7 @@ exports.getFileByName = async (req, res, next) => {
 
 exports.getOriginal = async (req, res, next) => {
 
-    let result = await modelManager.getOriginal(req.params.itemid);
+    let result = await modelManager.getOriginal(req.params.itemid,setupAPIArgs(req));
     if (result.data) {
         res.send(Buffer.from(result.data));
     }
@@ -187,7 +191,7 @@ exports.getOriginal = async (req, res, next) => {
 
 exports.getShattered = async (req, res, next) => {
 
-    let result = await modelManager.getShattered(req.params.itemid, req.params.name);
+    let result = await modelManager.getShattered(req.params.itemid, req.params.name,setupAPIArgs(req));
     if (result.data) {
         res.send(Buffer.from(result.data));
     }
@@ -198,7 +202,7 @@ exports.getShattered = async (req, res, next) => {
 
 exports.getShatteredXML = async (req, res, next) => {
 
-    let result = await modelManager.getShatteredXML(req.params.itemid);
+    let result = await modelManager.getShatteredXML(req.params.itemid,setupAPIArgs(req));
     if (result.data) {
         res.send(result.data.toString('ascii'));
     }
@@ -208,7 +212,7 @@ exports.getShatteredXML = async (req, res, next) => {
 };
 
 exports.putDelete = (req, res, next) => {
-    let result = modelManager.deleteConversionitem(req.params.itemid); 
+    let result = modelManager.deleteConversionitem(req.params.itemid,setupAPIArgs(req)); 
     if (result) {
         res.json(result);
     }
@@ -238,7 +242,7 @@ exports.getInfo = async (req, res, next) => {
 
 
 exports.getItems = async (req, res, next) => {
-    let result = await modelManager.getItems();
+    let result = await modelManager.getItems(setupAPIArgs(req));
     res.json(result);
 };
 

@@ -10,6 +10,7 @@ const path = require('path');
 
 const localCache = require('./localCache');
 
+const common = require('./common');
 
 
 const execFile = require('child_process').execFile;
@@ -166,7 +167,7 @@ exports.startStreamingServer = async (args) => {
 
     let streamingLocation;
     if (args && args.startItem) {
-        let citem = await Conversionitem.findOne({ 'storageID': args.startItem });
+        let citem = await common.getConversionItem(args.startItem, args);
         if (citem && citem.streamingLocation) {
             item.streamingLocation = args.streamingLocation;
             streamingLocation = args.streamingLocation;
@@ -267,10 +268,10 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
         let items;
 
         if (!hasNames) {
-            items = await Conversionitem.find({ 'storageID': { $in: itemids } });
+            items = await common.getConversionItem(itemids, args);
         }
         else {
-            items = await Conversionitem.find({ 'name': { $in: itemids } });
+            items = await common.getConversionItem(itemids, args, true);
 
         }
 

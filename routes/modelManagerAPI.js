@@ -20,10 +20,6 @@ router.get('/items', apiController.getItems);
 router.get('/updated', apiController.getUpdated);
 
 router.get('/custom', apiController.getCustom);
-
-
-
-
 router.get('/uploadToken/:name', apiController.getUploadToken);
 router.get('/downloadToken/:itemid/:type', apiController.getDownloadToken);
 

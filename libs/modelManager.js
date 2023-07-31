@@ -10,6 +10,9 @@ const fetch = require('node-fetch');
 
 const localCache = require('./localCache');
 
+const common = require('./common');
+
+
 var storage;
 
 let lastUpdated  = new Date();
@@ -95,12 +98,27 @@ exports.start = async (callback) => {
       await purgeFiles();
     }, 1000 * 60 * 60 * 24);
   }
-    
+
+  // let password = await bcrypt.hash("password",10);
+  // const item = new User({
+  //   email: "test@techsoft3d.com",
+  //   password: password
+  // });
+  // await item.save();
+
+
+  //   const item = new APIKey({
+  //   user: "64c7bde9183d10d4f2586641"
+  //  });
+  //  await item.save();
+
+
   console.log('Model Manager started');
 };
 
-
 exports.getData = async (itemid, args) => {
+
+
   let itemids;
   if (args && args.itemids) {
     itemids = args.itemids;
@@ -110,22 +128,29 @@ exports.getData = async (itemid, args) => {
   }
 
   if (itemids.length == 1) {
-    let item = await Conversionitem.findOne({ storageID: itemids[0] });
+    let item = await common.getConversionItem(itemids[0], args);
+
     if (item) {
       let returnItem = JSON.parse(JSON.stringify(item));
       returnItem.__v = undefined;
       returnItem._id = undefined;
+      returnItem.user = undefined;
+      returnItem.storageAvailability = undefined;
+      returnItem.webhook = undefined;
       return returnItem;
     } else {
       return { ERROR: "Item not found" };
     }
   } else {
-    let items = await Conversionitem.find({ storageID: { $in: itemids } });
+    let items = await common.getConversionItem(itemids, args);
     if (items.length > 0) {
       let returnItems = items.map((item) => {
         let returnItem = JSON.parse(JSON.stringify(item));
         returnItem.__v = undefined;
         returnItem._id = undefined;
+        returnItem.user = undefined;
+        returnItem.storageAvailability = undefined;
+        returnItem.webhook = undefined;
         return returnItem;
       });
       return returnItems;
@@ -135,12 +160,13 @@ exports.getData = async (itemid, args) => {
   }
 };
 
-exports.requestDownloadToken = async (itemid,type) => {
+exports.requestDownloadToken = async (itemid,type,args) => {
   if (!storage.requestDownloadToken)
   {
     return {ERROR: "Not available for this storage type"};
   }
-  let item = await Conversionitem.findOne({ storageID: itemid });
+  let item = await common.getConversionItem(itemid, args);
+
   if (item) {
     let token = await storage.requestDownloadToken("conversiondata/" + item.storageID + "/" + item.name + "." + type, item);
     return { token: token, itemid: itemid };
@@ -169,8 +195,8 @@ async function readFileWithCache(itemid, name, item) {
   }
 }
 
-exports.get = async (itemid,type) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.get = async (itemid,type,args) => {
+  let item = await common.getConversionItem(itemid, args);
   if (item) {
     let blob;
 
@@ -194,8 +220,8 @@ exports.get = async (itemid,type) => {
 };
 
 
-exports.getByName = async (itemid,name) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.getByName = async (itemid,name,args) => {
+  let item = await common.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + name);
     return ({data:blob});
@@ -206,8 +232,8 @@ exports.getByName = async (itemid,name) => {
   }
 };
 
-exports.getShattered = async (itemid, name) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.getShattered = async (itemid, name,args) => {
+  let item = await common.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/scs/" + name);
     return ({ data: blob });
@@ -217,8 +243,8 @@ exports.getShattered = async (itemid, name) => {
   }
 };
 
-exports.getShatteredXML = async (itemid) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.getShatteredXML = async (itemid,args) => {
+  let item = await common.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/shattered.xml");
     return ({ data: blob });
@@ -229,8 +255,8 @@ exports.getShatteredXML = async (itemid) => {
 };
 
 
-exports.getOriginal = async (itemid) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.getOriginal = async (itemid, args) => {
+  let item = await common.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + item.name);
     return ({ data: blob });
@@ -264,8 +290,8 @@ exports.appendFromBuffer = async (buffer, itemname, itemid) => {
   }
 };
 
-exports.append = async (directory, itemname, itemid) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.append = async (directory, itemname, itemid, args) => {
+  let item = await common.getConversionItem(itemid, args);
   if (item) {
     if (directory) {
       await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
@@ -299,7 +325,14 @@ exports.append = async (directory, itemname, itemid) => {
 };
 
 exports.requestUploadToken = async (itemname, args) => {
-  var itemid;
+
+  let user = await common.getUser(args);
+
+  if (user == -1) {
+    return { ERROR: "Not authorized to upload" };
+  }
+
+  let itemid;
   if (!storage.requestUploadToken) {
     return { ERROR: "Not available for this storage type" };
   }
@@ -321,6 +354,7 @@ exports.requestUploadToken = async (itemname, args) => {
       created: new Date(),
       webhook: args.webhook,
       storageAvailability: storage.resolveInitialAvailability(),
+      user: user
     });
     item.save();
   }
@@ -350,6 +384,9 @@ exports.createMultiple = async (files, args) => {
   }
 
   let item = await this.createDatabaseEntry(files[rootFileIndex].originalname, args);
+  if (!item) {
+    return { ERROR: "Can't Upload. Not authorized" };
+  }
   await this.create(item, files[rootFileIndex].destination, files[rootFileIndex].originalname, args);
   let itemid = item.storageID;
   let proms= [];
@@ -373,6 +410,12 @@ exports.createDatabaseEntry = async (itemname, args) => {
 
   let itemid = uuidv4();
   let startState = "PENDING";
+  let user = await common.getUser(args);
+
+  if (user == -1) {
+    return null;
+  }
+
 
   if (args.skipConversion)
     startState = "SUCCESS";
@@ -386,7 +429,8 @@ exports.createDatabaseEntry = async (itemname, args) => {
     created: new Date(),
     webhook: args.webhook,
     conversionCommandLine: args.conversionCommandLine,
-    storageAvailability: storage.resolveInitialAvailability()
+    storageAvailability: storage.resolveInitialAvailability(),
+    user: user
   });
   await item.save();
   return item;
@@ -458,7 +502,12 @@ exports.create = async (item, directory, itemname, args) => {
 
 
 exports.createEmpty = async (args) => {
-  
+  let user = await common.getUser(args);
+
+  if (user == -1) {
+    return { ERROR: "Not authorized to upload" };
+  }
+
   var itemid = uuidv4();
 
   let startState = "PENDING";
@@ -476,7 +525,8 @@ exports.createEmpty = async (args) => {
     webhook: args.webhook,
     streamLocation:"",
     conversionCommandLine: args.conversionCommandLine,
-    storageAvailability: storage.resolveInitialAvailability()
+    storageAvailability: storage.resolveInitialAvailability(),
+    user: user
   });
   
   await item.save();
@@ -492,7 +542,7 @@ exports.generateCustomImage = async (itemid, args) => {
   {
     return {ERROR: "Itemid not specified"};
   }
-  let item = await Conversionitem.findOne({ storageID: itemid });
+  let item = await common.getConversionItem(itemid, args);
 
   if (item) {
     item.conversionState = "PENDING";
@@ -519,7 +569,7 @@ exports.reconvert = async (itemid, args) => {
   {
     return {ERROR: "Itemid not specified"};
   }
-  let item = await Conversionitem.findOne({ storageID: itemid });
+  let item = await common.getConversionItem(itemid, args);
 
   if (item) {
     item.conversionState = "PENDING";
@@ -579,9 +629,9 @@ function waitUntilConversionDone(itemid) {
 
 
 
-exports.deleteConversionitem = async (itemid) => {
+exports.deleteConversionitem = async (itemid, args) => {
 
-  let item = await Conversionitem.findOne({ storageID: itemid });
+  let item = await common.getConversionItem(itemid, args);
   if (item) {
     console.log("Deleting item: " + itemid + " " + item.name);
     storage.delete("conversiondata/" + item.storageID, item);
@@ -637,8 +687,21 @@ async function sendConversionRequest() {
 }
 
 
-exports.getItems = async () => {
-  let models = await Conversionitem.find();
+exports.getItems = async (args) => {
+
+  let user = await common.getUser(args);
+
+  if (user == -1) {
+    return { ERROR: "Not authorized" };
+  }
+
+  let models;
+  if (user) {
+    models = await Conversionitem.find({ user: user });
+  }
+  else {
+    models = await Conversionitem.find();
+  }
 
   let cleanedModels = [];
 
