@@ -21,28 +21,28 @@ exports.getUser = async (args) => {
 }
 
 exports.getConversionItem = async (itemid, args, useNames = false) => {
-    if (!config.get('hc-caas.requireAccessKey')) {
-        return await Conversionitem.findOne({ storageID: itemid });
-    }
+    let user = undefined;
+    if (config.get('hc-caas.requireAccessKey')) {
+        if (!args || !args.accessKey) {
+            return null;
+        }
 
-    if (!args || !args.accessKey) {
-        return null;
-    }
-
-    let key = await APIKey.findOne({ _id: args.accessKey });
-    if (!key) {
-        return null;
+        let key = await APIKey.findOne({ _id: args.accessKey });
+        if (!key) {
+            return null;
+        }
+        user = key.user;
     }
 
     if (!Array.isArray(itemid)) {
-        return await Conversionitem.findOne({ storageID: itemid, user: key.user });
+        return await Conversionitem.findOne({ storageID: itemid, user: user });
     }
     else {
         if (useNames) {
-            return await Conversionitem.find({ 'name': { $in: itemid }, user: key.user });
+            return await Conversionitem.find({ 'name': { $in: itemid }, user: user });
         }
         else {
-            return await Conversionitem.find({ storageID: { $in: itemid }, user: key.user });
+            return await Conversionitem.find({ storageID: { $in: itemid }, user: user });
         }
     }
 }
