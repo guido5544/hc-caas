@@ -132,7 +132,7 @@ exports.start = async function (mongoose_in, customCallback) {
             if (!fs.existsSync(config.get('hc-caas.workingDirectory') + "/uploads")) {
               fs.mkdirSync(config.get('hc-caas.workingDirectory') + "/uploads");
             }
-            var dir = config.get('hc-caas.workingDirectory') + "/uploads/" + uv4;
+            let dir = config.get('hc-caas.workingDirectory') + "/uploads/" + uv4;
             if (!fs.existsSync(dir)) {
               fs.mkdirSync(dir);
             }

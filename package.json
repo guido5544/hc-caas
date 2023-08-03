@@ -1,6 +1,6 @@
 {
   "name": "ts3d.hc.caas",
-  "version": "0.9.99",
+  "version": "0.10.0",
   "description": "",
   "main": "app.js",
   "bin": {
@@ -16,7 +16,7 @@
   "author": "Guido Hoffmann",
   "license": "MIT",
   "devDependencies": {
-    "nodemon": "^2.0.20"
+    "nodemon": "^3.0.1"
   },
   "dependencies": {
     "@azure/identity": "^3.2.4",
@@ -33,7 +33,7 @@
     "http-proxy": "^1.18.1",
     "mongodb": "^4.13.0",
     "mongoose": "^6.8.3",
-    "multer": "^1.4.2",
+    "multer": "^1.4.4",
     "node-fetch": "^2.6.1",
     "path": "^0.12.7",
     "public-ip": "^6.0.1",
