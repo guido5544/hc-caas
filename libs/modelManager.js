@@ -556,6 +556,7 @@ exports.generateCustomImage = async (itemid, args) => {
     await item.save();
     await conversionQueue.getQueue().add({ item: item, customImageCode: args.customImageCode });
     sendConversionRequest();
+    return {SUCCESS: true};
   }
   else {
     return {ERROR: "Item not found"};
@@ -594,7 +595,6 @@ exports.reconvert = async (itemid, args) => {
 
     item.updated = new Date();
     await item.save();
-
     
     if (args.overrideItem) {
       item.name = args.overrideItem;
@@ -609,6 +609,7 @@ exports.reconvert = async (itemid, args) => {
       console.log("File " + item.name + " with storageID " + itemid + " converted at " + new Date());   
       console.log("Total Conversions:" + totalConversions);
     }
+    return {SUCCESS: true};
   }
   else {
     return {ERROR: "Item not found"};

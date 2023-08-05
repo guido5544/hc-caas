@@ -8,7 +8,6 @@ const status = require('../libs/status');
 
 const authorization = require('../libs/authorization');
 
-
 function setupAPIArgs(req) {
 
     let args;
@@ -24,7 +23,6 @@ function setupAPIArgs(req) {
     }            
     return args;
 }
-
 
 exports.getStatus = async (req, res, next) => {
     if (req.params.json) {
@@ -68,8 +66,6 @@ exports.postFileUpload = async (req, res, next) => {
 
 };
 
-
-
 exports.postFileUploadArray = async (req, res, next) => {
 
     let data = await modelManager.createMultiple(req.files, setupAPIArgs(req));
@@ -95,8 +91,6 @@ exports.getUploadToken = async (req, res, next) => {
     res.json(result);
 };
 
-
-
 exports.getDownloadToken = async (req, res, next) => {
 
     console.log("download token send");
@@ -119,7 +113,6 @@ exports.pingQueue = (req, res, next) => {
     }
 };
 
-
 exports.pingStreamingServer = (req, res, next) => {    
     if (config.get('hc-caas.runStreamingServer')) {
         res.sendStatus(200);
@@ -129,30 +122,17 @@ exports.pingStreamingServer = (req, res, next) => {
     }
 };
 
-
-
 exports.putCustomImage = async (req, res, next) => {
 
     let result = await modelManager.generateCustomImage(req.params.itemid, setupAPIArgs(req));  
-    if (result) {        
-        res.json(result);       
-    }
-    else {
-        res.sendStatus(200);
-    }
-  
+    res.json(result);  
 };
 
 
 exports.putReconvert = async (req, res, next) => {
 
     let result = await modelManager.reconvert(req.params.itemid, setupAPIArgs(req));  
-    if (result) {        
-        res.json(result);       
-    }
-    else {
-        res.sendStatus(200);
-    }
+    res.json(result);  
   
 };
 
@@ -235,13 +215,9 @@ exports.startConversion = (req, res, next) => {
 
 };
 
-
-
 exports.getInfo = async (req, res, next) => {
     res.json({version: process.env.caas_version});
 };
-
-
 
 exports.getItems = async (req, res, next) => {
     let result = await modelManager.getItems(setupAPIArgs(req));
@@ -268,7 +244,6 @@ exports.startStreamingServer = async (req, res, next) => {
     }
 };
 
-
 exports.enableStreamAccess = async (req, res, next) => {
 
     let items;
@@ -288,15 +263,13 @@ exports.enableStreamAccess = async (req, res, next) => {
         }
     }
     catch (e) {
-        console.log('Error: Invalid JSON');
-        res.sendStatus(200);
+        res.json({ERROR:"Invalid Stream Access Tokens"});
         return;
     }
     await streamingManager.enableStreamAccess(req.params.sessionid,items, setupAPIArgs(req), hasNames);  
-    res.sendStatus(200);
+    res.json({SUCCESS:true});
   
 };
-
 
 exports.serverEnableStreamAccess = async (req, res, next) => {
     let args = setupAPIArgs(req);
@@ -313,8 +286,6 @@ exports.serverEnableStreamAccess = async (req, res, next) => {
   
 };
 
-
-
 exports.getCustom = (req, res, next) => {   
     let args = setupAPIArgs(req);
     modelManager.executeCustom(args); 
@@ -322,17 +293,10 @@ exports.getCustom = (req, res, next) => {
 };
 
 
-exports.getVersion = (req, res, next) => {
-    res.send(process.env.caas_version);
-};
-
-
 exports.addUser = (req, res, next) => {
     let response = authorization.addUser(req,setupAPIArgs(req));
     res.json(response);
 };
-
-
 
 exports.generateAPIKey = (req, res, next) => {
     let response = authorization.generateAPIKey(req,setupAPIArgs(req));
