@@ -10,11 +10,13 @@ const path = require('path');
 
 const localCache = require('./localCache');
 
+const authorization = require('./authorization');
 
 
 const execFile = require('child_process').execFile;
 
-const scserverexepath = './ts3d_sc_server';   
+var scserverexepath = "";   
+
 var scserverpath = '';
 
 let tempFileDir = "";
@@ -29,13 +31,13 @@ var maxStreamingSessionsSoFar = 0;
 var totalStreamingSessionsSoFar = 0;
 
 var storage;
+
 var serveraddress;
 
 var startport = 4000;
 
 var slots = [];
 
-var httpTrafficTarget = null;
 
 function findFreeSlot()
 {
@@ -49,7 +51,6 @@ function findFreeSlot()
 }
 
 exports.start = async () => {
-
     maxStreamingSessions = config.get('hc-caas.streamingServer.maxStreamingSessions');
     startport = config.get('hc-caas.streamingServer.startPort');
 
@@ -58,30 +59,46 @@ exports.start = async () => {
     }
   
     scserverpath = config.get('hc-caas.streamingServer.scserverpath');
+
+
+    if (process.platform == "win32") {
+        scserverexepath = './ts3d_sc_server';
+    }
+    else {
+        scserverexepath = scserverpath + '/ts3d_sc_server';
+    }
+
     tempFileDir = config.get('hc-caas.workingDirectory');
   
     storage = require('./permanentStorage').getStorage();
 
-    let ip = config.get('hc-caas.streamingServer.ip');
-    
-    serveraddress = ip + ":" + config.get('hc-caas.port');
+    serveraddress = global.caas_publicip + ":" + config.get('hc-caas.port');
 
     let streamingserver = await Streamingserveritem.findOne({ address: serveraddress });
     if (!streamingserver) {
         streamingserver = new Streamingserveritem({
+            name: config.get('hc-caas.streamingServer.name'),
             address: serveraddress,
             freeStreamingSlots: maxStreamingSessions,
             region: config.get('hc-caas.region'),
-            renderType: config.get('hc-caas.streamingServer.renderType')
+            streamingRegion: config.get('hc-caas.streamingServer.streamingRegion'),
+            renderType: config.get('hc-caas.streamingServer.renderType'),
+            lastPing: new Date(),
+            priority: config.get('hc-caas.streamingServer.priority'),
+            pingFailed: false
         });
         streamingserver.save();
     }
     else {
+        streamingserver.name = config.get('hc-caas.streamingServer.name');
         streamingserver.freeStreamingSlots = maxStreamingSessions;
         streamingserver.region = config.get('hc-caas.region');
+        streamingserver.priority =  config.get('hc-caas.streamingServer.priority');
+        streamingserver.streamingRegion =  config.get('hc-caas.streamingServer.streamingRegion');
+        streamingserver.pingFailed = false;
+        streamingserver.lastPing = new Date();
         streamingserver.save();
     }
-
 
 
     if (!fs.existsSync(tempFileDir)) {
@@ -110,17 +127,27 @@ exports.start = async () => {
     proxyServer.on('upgrade', async function (req, socket, head) {
         let s = req.url.split("=");
 
-        let item = await Streamingsessionitem.findOne({ _id: s[1] });
+        let item;
+        try {
+            item = await Streamingsessionitem.findOne({ _id: s[1] });
+        }
+        catch (e) {
+            console.log(e);
+            return;
+        }
         if (item && (item.slot != undefined)) {
             let port = item.slot + startport;
-            setTimeout(function () {
+            try {
                 proxy.ws(req, socket, head, { target: 'ws://127.0.0.1:' + port });
-            }, 200);
+            }
+            catch (e) {
+                console.log("proxy issue:" + e);
+            }
         }
     });
 
     proxyServer.listen(config.get('hc-caas.streamingServer.listenPort'));
-    console.log('streaming server started');
+    console.log('Streaming Server started');
 
 };
 
@@ -139,7 +166,7 @@ exports.startStreamingServer = async (args) => {
 
     let streamingLocation;
     if (args && args.startItem) {
-        let citem = await Conversionitem.findOne({ 'storageID': args.startItem });
+        let citem = await authorization.getConversionItem(args.startItem, args);
         if (citem && citem.streamingLocation) {
             item.streamingLocation = args.streamingLocation;
             streamingLocation = args.streamingLocation;
@@ -156,15 +183,26 @@ exports.startStreamingServer = async (args) => {
     streamingserver.freeStreamingSlots = maxStreamingSessions - simStreamingSessions;
     await streamingserver.save();
 
-    let port = config.get('hc-caas.streamingServer.listenPort');
-    let address = config.get('hc-caas.streamingServer.ip');
-    
-    if (config.has('hc-caas.streamingServer.publicPort') && config.get('hc-caas.streamingServer.publicPort') != "") {
+    let port;
+
+    if (config.get('hc-caas.streamingServer.publicPort') != "") {
         port = config.get('hc-caas.streamingServer.publicPort');
-      }
-      if (config.has('hc-caas.streamingServer.publicAddress') && config.get('hc-caas.streamingServer.publicAddress') != "") { 
-        address = config.get('hc-caas.streamingServer.publicAddress');
-      }
+    }
+    else {    
+        port = config.get('hc-caas.streamingServer.listenPort');
+    }
+    let address;
+
+    if (config.get('hc-caas.streamingServer.publicURL') != "") {
+        let split = config.get('hc-caas.streamingServer.publicURL').split(":");
+        if (split.length == 3) {       
+            port = config.get('hc-caas.streamingServer.publicURL').split(":")[2];
+        }
+        address = config.get('hc-caas.streamingServer.publicURL').replace(/(wss?:\/\/)/gi, '').split(":")[0];
+    }
+    else {           
+        address = global.caas_publicip.replace(/(https?:\/\/)/gi, '').split(":")[0];
+    }
     return {serverurl:address, sessionid:item.id, port:port};
 
 };
@@ -214,17 +252,25 @@ function someTimeout(to) {
 
 exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = false) => {
 
-    let session = await Streamingsessionitem.findOne({ _id: sessionid });
-    var starttime = new Date();
+    let session;
+
+    try {
+        session = await Streamingsessionitem.findOne({ _id: sessionid });
+    }
+    catch (e) {
+        console.log(e);
+        return;
+    }
+
     if (session && itemids) {
 
         let items;
 
         if (!hasNames) {
-            items = await Conversionitem.find({ 'storageID': { $in: itemids } });
+            items = await authorization.getConversionItem(itemids, args);
         }
         else {
-            items = await Conversionitem.find({ 'name': { $in: itemids } });
+            items = await authorization.getConversionItem(itemids, args, true);
 
         }
 
@@ -313,32 +359,44 @@ async function runStreamingServer(slot,sessionid, streamingLocation, renderType)
         console.error("ERROR: Could not start streaming server. Check license and scserverpath path in config. Are required redistributables installed?");
       }
     });
- //   await someTimeout(500);
-    
+    await someTimeout(500);    
   }
 
-function setupCommandLine(port,sessionid, streamingLocation, renderType) {
+  
+  function setupCommandLine(port, sessionid, streamingLocation, renderType) {
 
     let commandLine;
-    
+
     let dirs = tempFileDir + "/" + sessionid;
 
     if (!path.isAbsolute(dirs)) {
-        dirs = path.join(process.cwd(), dirs);    
+        dirs = path.join(process.cwd(), dirs);
     }
-   
+
     if (streamingLocation) {
         dirs += ";" + streamingLocation;
     }
 
-    commandLine = ['--license', config.get('hc-caas.license'),
-        '--id', "test123",
-        '--sc-port', port.toString(),       
-        '--model-search-directories',dirs];
+    if (config.get('hc-caas.licenseFile') != "") {
+        commandLine = ['--license-file', config.get('hc-caas.licenseFile')];
+    }
+    else {
+        commandLine = ['--license', config.get('hc-caas.license')];
+    }
 
-        if (renderType == "server") { 
-            commandLine.push('--ssr', "1");
+
+    commandLine.push(
+        '--id', "test123",
+        '--sc-port', port.toString(),
+        '--model-search-directories', dirs
+    );
+
+    if (renderType == "server") {
+        commandLine.push('--ssr', "1");
+        if (config.get('hc-caas.streamingServer.useEGL')) {
+            commandLine.push('--ssr-egl', "1");
         }
+    }
 
     return commandLine;
 }

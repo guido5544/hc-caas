@@ -18,7 +18,7 @@
 *  Azure Blob Storage Support (beta)
 
 ## Main Features
-* Conversion Queue for distributed CAD conversions.
+* Conversion Queue for distributed CAD Conversions.
 * SC Streaming or SCS Loading
 * S3/Azure ABS Storage option 
 * Direct S3 upload via signedURL
@@ -35,7 +35,7 @@
 ## Limitations
 * **This library is not an officially supported part of HOOPS Communicator and provided as-is.**
 * No account/user management or security. This is BY DESIGN. CaaS is meant to be accessed behind a firewall from the server-side business logic of your application. An optional seperate node module for user management is available as well. See [here](https://github.com/techsoft3d/hc-caas-usermanagement) for more information.
-* Only tested on windows
+* Only tested on Windows
 
 ## ToDo
 
@@ -108,20 +108,20 @@ Please see here for the User Management Module that includes a demo application:
   "hc-caas": {
     "mongodbURI": "mongodb://localhost:27017/conversions",
     "workingDirectory": "PATH_TO_WORKINGDIRECTORY",
+    "serviceIP": "localhost",
     "port": "3001",
-    "runQueue": true,
-    "runServer": true,
+    "runConversionServer": true,
+    "runModelManager": true,
     "runStreamingManager": true,
     "runStreamingServer": true,
     "license": "",
     "fullErrorReporting": false,
     "region": "",
-    "queue": {
+    "conversionServer": {
       "converterpath": "ABSOLUTE_PATH_TO_COMMUNICATOR/authoring/converter/bin/win64",
       "HEimportexportpath": "ABSOLUTE_PATH_TO_CAAS/HE/ImportExport/x64/Release",
       "HEInstallPath": "ABSOLUTE_PATH_TO_EXCHANGE/bin/win64_v140",
       "maxConversions": 4,
-      "ip": "localhost",
       "polling": false,
       "imageServicePort": "3002"
     },
@@ -132,11 +132,10 @@ Please see here for the User Management Module that includes a demo application:
       "scserverpath": "ABSOLUTE_PATH_TO_COMMUNICATOR/server/bin/win64",
       "maxStreamingSessions" : 10,
       "useSymLink": false,
-      "ip": "localhost",
+      "publicURL": "",
+      "publicPort": "",
       "startPort": 3006,
-      "listenPort":3200,
-      "publicAddress": "",
-      "publicPort": ""     
+      "listenPort":3200
     },      
     "storage": {      
       "type": "filesystem",
@@ -168,9 +167,9 @@ Please see here for the User Management Module that includes a demo application:
 
 4. Create a folder for temporary data and provide the path in the workingDirectory field.
 5. Specify desired port. In production, CaaS is meant to run **behind** a firewall and should not be accessible from the web directly but you need to still ensure that the port is accessible if CaaS runs on a different machine from the main application. 
-6. Set runQueue to true if you want to run the conversion queue on this machine. As long as the machines running the conversion queue are sharing the same database session, and storage you can run an unlimited number of instances in parallel.
-7. Set runServer to true if you want to run the CaaS Rest API frontend on this machine. The frontend provides the REST API endpoints for the conversion queue and streaming servers. It is possible to have multiple active frontends, all connected to the same storage and database. This could be a desirable configuration in a multi-region setup.  
-8. If you enabled the conversion queue (runQueue:true) you need to provide the path to the directory containing the converter executable of the HOOPS Communicator package/installation. You also need to provide a valid license for HOOPS Communicator.
+6. Set runConversionServer to true if you want to run the conversion queue on this machine. As long as the machines running the conversion queue are sharing the same database session, and storage you can run an unlimited number of instances in parallel.
+7. Set runModelManager to true if you want to run the CaaS Rest API frontend on this machine. The frontend provides the REST API endpoints for the conversion queue and streaming servers. It is possible to have multiple active frontends, all connected to the same storage and database. This could be a desirable configuration in a multi-region setup.  
+8. If you enabled the conversion queue (runConversionServer:true) you need to provide the path to the directory containing the converter executable of the HOOPS Communicator package/installation. You also need to provide a valid license for HOOPS Communicator.
 9. If the conversion queue is running on a different machine from the server you need to specify the ip address and port of the queue here that is accessible from the server.
 10. By default CaaS will assign conversion jobs to all registered conversion queue servers based on their available capacity. If polling is set to true the conversion queue will poll for a newly available job every few seconds. In this case a conversion queue server does not need to be registered with the main server.
 11. If you are uploading SCS or SCZ files, CAAS will use a separate module in order to generate PNG's for those file types. See [here](https://www.npmjs.com/package/ts3d-hc-imageservice) for more information. You can specify the port this module uses for its internal server here.
@@ -246,7 +245,7 @@ It might be desirable to run the streaming service via a proxy, so that all requ
 ## REST API Reference
 
 
-### **/api/upload**
+### **/caas_api/upload**
 
 #### **Description**
 Uploads a new CAD file and places it on the conversion queue.
@@ -255,7 +254,7 @@ Uploads a new CAD file and places it on the conversion queue.
 ```
 let form = new FormData();
 form.append('file', fs.createReadStream("myfile.stp"));
-let res = await fetch(caasURI + '/api/upload', { method: 'POST', body: form,headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/api/webhook"})}});
+let res = await fetch(caasURI + '/caas_api/upload', { method: 'POST', body: form,headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/caas_api/webhook"})}});
 let data = await res.json();
 ```
 
@@ -263,7 +262,7 @@ let data = await res.json();
 *CS-API-Arg:*
 ```
 {
-  webhook: "http://localhost:3000/api/webhook",
+  webhook: "http://localhost:3000/caas_api/webhook",
   startPath: "micro_engine/_micro engine.CATProduct",
   conversionCommandLine:["--output_scs","","--output_png","","background_color","0,0,0","--output_step",""],
   itemid: "c79dd99e-cbbd-4b6d-ba43-15986b1adc14",
@@ -285,14 +284,14 @@ ID of newly created item
 ```
 
 
-### **/api/data**
+### **/caas_api/data**
 
 #### **Description**
 Retrieves data about a conversion item.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/data/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
+let res = await fetch(caasURI + '/caas_api/data/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
 ```
 
 #### **Parameters**
@@ -309,7 +308,7 @@ Information about the requested item.
   conversionState: "SUCCESS",
   updated: "2022-05-29T12:52:02.787Z",
   created: "2022-05-29T12:51:55.697Z",
-  webhook: "http://localhost:3000/api/webhook",
+  webhook: "http://localhost:3000/caas_api/webhook",
   files: [
     "landinggearmainshaftwithpmi_fullpmi.catpart.png",
     "landinggearmainshaftwithpmi_fullpmi.catpart.scs",
@@ -318,14 +317,14 @@ Information about the requested item.
 ```
 
 
-### **/api/file**
+### **/caas_api/file**
 
 #### **Description**
 Retrieves a file from the conversion server.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/file/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/scs');
+let res = await fetch(caasURI + '/caas_api/file/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/scs');
 let buffer = await res.arrayBuffer();
 ...
 ```
@@ -340,14 +339,14 @@ let buffer = await res.arrayBuffer();
 Binary Data
 
   
-### **/api/original**
+### **/caas_api/original**
 
 #### **Description**
 Retrieves the file that was uploaded to the conversion server.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/original/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
+let res = await fetch(caasURI + '/caas_api/original/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
 let buffer = await res.arrayBuffer();
 ...
 ```
@@ -362,14 +361,14 @@ Binary Data
 
 
   
-### **/api/reconvert**
+### **/caas_api/reconvert**
 
 #### **Description**
 Reconverts an existing conversion item.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/reconvert/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put', headers: {'CS-API-Arg': JSON.stringify({conversionCommandLine:["--output_step",""] })}});
+let res = await fetch(caasURI + '/caas_api/reconvert/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put', headers: {'CS-API-Arg': JSON.stringify({conversionCommandLine:["--output_step",""] })}});
 
 ...
 ```
@@ -394,14 +393,14 @@ let res = await fetch(caasURI + '/api/reconvert/c79dd99e-cbbd-4b6d-ba43-15986b1a
 NONE
 
 
-### **/api/delete**
+### **/caas_api/delete**
 
 #### **Description**
 Deletes a conversion item including all converted data.
 
 #### **Example**
 ```
- let res = await fetch(caasURI + '/api/delete/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put'});
+ let res = await fetch(caasURI + '/caas_api/delete/c79dd99e-cbbd-4b6d-ba43-15986b1adc1', { method: 'put'});
 ...
 ```
 
@@ -412,14 +411,14 @@ Deletes a conversion item including all converted data.
 NONE
 
  
-### **/api/items**
+### **/caas_api/items**
 
 #### **Description**
 Retrieves a list of all conversion items available on the conversion server.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/items');
+let res = await fetch(caasURI + '/caas_api/items');
 ...
 ```
 
@@ -430,14 +429,14 @@ JSON Array of available conversion items and all their data.
 
 
 
-### **/api/updated**
+### **/caas_api/updated**
 
 #### **Description**
 Retrieves the time any of the items on the conversion server were last updated (or deleted).
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/items');
+let res = await fetch(caasURI + '/caas_api/items');
 ...
 ```
 
@@ -451,14 +450,14 @@ JSON containing last updated time
 
 
 
-### **/api/uploadToken**
+### **/caas_api/uploadToken**
 
 #### **Description**
 Retrieves an upload token for directly uploading a file to S3 storage. After receiving the token and uploading the file directly from the client, *api/reconvert* should be called to start the conversion process.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/uploadToken', {headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/api/webhook"})}});
+let res = await fetch(caasURI + '/caas_api/uploadToken', {headers: {'CS-API-Arg': JSON.stringify({webhook:"http://localhost:3000/caas_api/webhook"})}});
 
 ```
 
@@ -466,7 +465,7 @@ let res = await fetch(caasURI + '/api/uploadToken', {headers: {'CS-API-Arg': JSO
 *CS-API-Arg:*
 ```
 {
-  webhook: "http://localhost:3000/api/webhook" 
+  webhook: "http://localhost:3000/caas_api/webhook" 
 }
 ```
 *webhook* - The ip address to call when the conversion is complete. If not provided polling is required to check the conversion status.  
@@ -477,14 +476,14 @@ JSON containing signed request URL and itemid
 { token: signedRequestURLforS3, itemid: c79dd99e-cbbd-4b6d-ba43-15986b1adc14 };
 ```
 
-### **/api/downloadToken**
+### **/caas_api/downloadToken**
 
 #### **Description**
 Retrieves a download token for directly downloading a file from S3 storage. 
 
 #### **Example**
 ```
-  let res = await fetch(caasURI + '/api/downloadToken/c79dd99e-cbbd-4b6d-ba43-15986b1adc1/scs');     
+  let res = await fetch(caasURI + '/caas_api/downloadToken/c79dd99e-cbbd-4b6d-ba43-15986b1adc1/scs');     
 ```
 
 #### **Parameters**
@@ -502,14 +501,14 @@ JSON containing signed request URL
 
 
 
-### **/api/shattered**
+### **/caas_api/shattered**
 
 #### **Description**
 Retrieves a shattered part for a conversion item converted with the *processShattered* argument.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/shattered/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/part.scs');
+let res = await fetch(caasURI + '/caas_api/shattered/c79dd99e-cbbd-4b6d-ba43-15986b1adc14/part.scs');
 let buffer = await res.arrayBuffer();
 ...
 ```
@@ -525,14 +524,14 @@ Binary Data
 
 
 
-### **/api/shatteredXML**
+### **/caas_api/shatteredXML**
 
 #### **Description**
 Retrieves the shattered XML file for a conversion item converted with the *processShattered* argument.
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/shatteredXML/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
+let res = await fetch(caasURI + '/caas_api/shatteredXML/c79dd99e-cbbd-4b6d-ba43-15986b1adc14');
 let shatteredData = await res.text();
 ...
 ```
@@ -547,14 +546,14 @@ let shatteredData = await res.text();
 XML data
 
 
-### **/api/streamingSession**
+### **/caas_api/streamingSession**
 
 #### **Description**
 Request a new streaming session
 
 #### **Example**
 ```
-let res = await fetch(caasURI + '/api/streamingSession');
+let res = await fetch(caasURI + '/caas_api/streamingSession');
 let data = await res.json();
 viewer = new Communicator.WebViewer({
       containerId: "viewerContainer",
@@ -579,14 +578,14 @@ JSON Object
 ```
 
 
-### **/api/enableStreamAccess**
+### **/caas_api/enableStreamAccess**
 
 #### **Description**
 Makes an scz file available for streaming
 
 #### **Example**
 ```
-await fetch(caasURI + '/api/enableStreamAccess/' + sessionid, { method: 'put', headers: { 'items': JSON.stringify([modelid]) } });
+await fetch(caasURI + '/caas_api/enableStreamAccess/' + sessionid, { method: 'put', headers: { 'items': JSON.stringify([modelid]) } });
 ...
 ```
 
@@ -604,7 +603,7 @@ await fetch(caasURI + '/api/enableStreamAccess/' + sessionid, { method: 'put', h
 None
 
 
-### **/api/version**
+### **/caas_api/version**
 
 #### **Description**
 Retrieves CaaS Version String 

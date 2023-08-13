@@ -20,11 +20,7 @@ app.use(express.urlencoded({ limit: "25mb", extended: false }));
 
 
 const conversionservice = require('./app');
-
-
 var server;
-
-
 
 var util = require('util');
 var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'a'});
@@ -35,15 +31,14 @@ console.log = function(d) { //
   log_stdout.write(util.format(d) + '\n');
 };
 
-
 var httpProxy = require('http-proxy');
 
 var proxy = httpProxy.createProxyServer({});
 
-if (config.has("hc-caas.proxy.keyPath") && config.get("hc-caas.proxy.keyPath") != "") {
+if (config.has("proxy.keyPath") && config.get("proxy.keyPath") != "") {
     const options = {
-        key: fs.readFileSync(config.get("hc-caas.proxy.keyPath")),
-        cert: fs.readFileSync(config.get("hc-caas.proxy.certPath"))
+        key: fs.readFileSync(config.get("proxy.keyPath")),
+        cert: fs.readFileSync(config.get("proxy.certPath"))
       };
 
     var server = https.createServer(options, function (req, res) {
@@ -74,4 +69,4 @@ function callback(args) {
     console.log(args);
 }
 
-conversionservice.start(undefined, callback);
+conversionservice.start(null, callback);

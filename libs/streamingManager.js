@@ -11,54 +11,79 @@ let storage;
 let started = false;
 
 
+
+
+async function queryStreamingServers() {
+  let streamingservers = await Streamingserveritem.find();
+
+  for (let i = 0; i < streamingservers.length; i++) {
+    const controller = new AbortController();
+    let to = setTimeout(() => controller.abort(), 2000);
+    
+    try {   
+      let ip = streamingservers[i].address;
+    
+      if (ip.indexOf(global.caas_publicip) != -1) {
+        ip = "localhost" + ":" + config.get('hc-caas.port');
+      }
+
+
+      let res = await fetch("http://" + ip + '/caas_api/pingStreamingServer', { signal: controller.signal,
+      headers: { 'CS-API-Arg': JSON.stringify({accessPassword:config.get('hc-caas.accessPassword') }) }});
+      if (res.status == 404) {
+        throw 'Streaming Server not found';
+      }
+      else {
+        streamingservers[i].lastPing = new Date();
+        streamingservers[i].pingFailed = false;
+        streamingservers[i].save();
+        console.log("Streaming Server found:" + streamingservers[i].address);
+      }
+    }
+    catch (e) {
+      
+      let timeDiff = Math.abs(new Date() - streamingservers[i].lastPing);
+      let diffHours = Math.ceil(timeDiff / (1000 * 60 * 60));
+      if (diffHours > 24) {
+        await Streamingserveritem.deleteOne({ "address": streamingservers[i].address });
+        console.log("Streaming Server " + streamingservers[i].address + " not reachable for more than 24 hours. Removed from database");
+      }
+      else {
+        streamingservers[i].pingFailed = true;
+        streamingservers[i].save();
+        console.log("Could not ping streaming server at " + streamingservers[i].address + ": " + e);
+      }
+    }
+    clearTimeout(to);
+  }
+}
+
 exports.start = async () => {
 
   storage = require('./permanentStorage').getStorage();
 
   setTimeout(async function () {
-
-    
-    let streamingservers = await Streamingserveritem.find();
-
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 2000);
-    let localip = await getIP();
-
-    for (let i = 0; i < streamingservers.length; i++) {
-      try {
-     
-        let ip;
-        if (localip == streamingservers[i].address.split(':')[0]) {
-          ip = "localhost" + ":" + streamingservers[i].address.split(':')[1];
-        }
-        else {
-          ip = streamingservers[i].address;
-        }
-
-        let res = await fetch("http://" + ip + '/api/pingStreamingServer', { signal: controller.signal });
-        if (res.status == 404) {
-          throw 'Streaming Server not found';
-        }
-        else {
-          console.log("Streaming Server found:" + streamingservers[i].address);
-        }
-      }
-      catch (e) {
-        await Streamingserveritem.deleteOne({ "address": streamingservers[i].address });
-        console.log("Could not ping streaming server at " + streamingservers[i].address + ": " + e);
-      }
-    }
+    await queryStreamingServers();  
   }, 1000);
+
+  setInterval(async function () {
+    await queryStreamingServers();
+  }, 1000 * 60 * 60);
+
+  
   console.log('streaming manager started');
   started = true;
 };
 
 
 
-exports.getStreamingSession = async (args) => {
+exports.getStreamingSession = async (args, extraCheck = true) => {
+  
   if (!started) {
     return { ERROR: "Streaming Manager not started" };
   }
+
+  console.log("geo:" + (args.geo ? args.geo : ""));
 
   let renderType = "client";
   if (args && args.renderType) {
@@ -66,74 +91,95 @@ exports.getStreamingSession = async (args) => {
   }
   let streamingservers = await Streamingserveritem.find({renderType: { $in: ['mixed', renderType] },region: config.get('hc-caas.region')});
 
+  if (streamingservers.length == 0) {
+    return { ERROR: "No Streaming Server Available" };;
+  }
   streamingservers.sort(function (a, b) {
-    if (a.freeStreamingSlots > b.freeStreamingSlots) {
-      return -1;
-    }
-    else if (a.freeStreamingSlots < b.freeStreamingSlots) {
-      return 1;
-    }
-    return 0;
+    return a.pingFailed - b.pingFailed || b.priority - a.priority || b.freeStreamingSlots - a.freeStreamingSlots;
   });
 
-  if (streamingservers && streamingservers.length > 0) {
-    let localip = await getIP();
-    let ip;
-    if (localip == streamingservers[0].address.split(':')[0]) {
-      ip = "localhost" + ":" + streamingservers[0].address.split(':')[1];
+  let bestFitServer = streamingservers[0];
+  if (args && args.geo) {
+    for (let i = 0; i < streamingservers.length; i++) {
+      if (args.geo.indexOf(streamingservers[i].streamingRegion) != -1 && !streamingservers[i].pingFailed) {
+        bestFitServer = streamingservers[i];
+        break;
+      }
     }
-    else {
-      ip = streamingservers[0].address;
-    }
-    let res;
-    if (!args) {
-       res = await fetch("http://" + ip + '/api/startStreamingServer', { method: 'PUT' });
-    }
-    else {
-      res = await fetch("http://" + ip + '/api/startStreamingServer', { method: 'PUT', headers:{'CS-API-Arg': JSON.stringify(args)}});
-    }
-    let jres = await res.json();
-  
-    return jres;
   }
+
+  let ip;
+  ip = bestFitServer.address
+
+  if (ip.indexOf(global.caas_publicip) != -1) {
+    ip = "localhost" + ":" + config.get('hc-caas.port');
+  }
+
+  let res;
+  console.log("Best Fit Server:" +  bestFitServer.address);
+  const controller = new AbortController();
+  let to = setTimeout(() => controller.abort(), 2000);
+
+  try {
+    if (!args) {
+      res = await fetch("http://" + ip + '/caas_api/startStreamingServer', { method: 'PUT',signal: controller.signal });
+    }
+    else {
+      res = await fetch("http://" + ip + '/caas_api/startStreamingServer', { method: 'PUT', signal: controller.signal,headers: { 'CS-API-Arg': JSON.stringify(args) } });
+    }
+    if (res.status == 404) {
+      throw 'Streaming Server not found';
+    }
+  }
+  catch(e) {
+    clearTimeout(to);
+    console.log("Error requesting streaming session from " + ip + ": " + e);
+    bestFitServer.pingFailed = true;
+    await bestFitServer.save();
+    if (extraCheck) {
+      return await this.getStreamingSession(args,false);
+    }
+    return { ERROR: "NO Streaming Server Available" };
+  }
+  clearTimeout(to);
+  bestFitServer.pingFailed = false;
+  bestFitServer.lastPing = new Date();
+  await bestFitServer.save();
+
+  let jres = await res.json();
+  res.renderType = bestFitServer.renderType;
+  return jres;
 };
 
 
 exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) => {
 
-  let item = await Streamingsessionitem.findOne({ _id:sessionid });
+  let item;
+  try {
+    item = await Streamingsessionitem.findOne({ _id:sessionid });
+  }
+  catch (e) {
+    console.log(e);
+    return;
+  }
+
   if (item) {
-    let localip = await getIP();
-    let ip;
-    if (localip == item.serveraddress.split(':')[0]) {
-      ip = "localhost" + ":" + item.serveraddress.split(':')[1];
-    }
-    else {
-      ip = item.serveraddress;
+    ip = item.serveraddress;
+    if (ip.indexOf(global.caas_publicip) != -1) {
+      ip = "localhost" + ":" + config.get('hc-caas.port');
     }
 
-    if (args) {
-      await fetch("http://" + ip + '/api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'CS-API-Arg': JSON.stringify(args),'items':JSON.stringify(itemids), hasNames:hasNames} });
+    try {
+      if (args) {
+        await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'CS-API-Arg': JSON.stringify(args), 'items': JSON.stringify(itemids), hasNames: hasNames } });
+      }
+      else {
+        await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'items': JSON.stringify(itemids), hasNames: hasNames } });
+      }
     }
-    else {
-      await fetch("http://" + ip + '/api/serverEnableStreamAccess/' + sessionid, { method: 'PUT',headers:{'items':JSON.stringify(itemids), hasNames:hasNames} });
+    catch (e) {
+      console.log("Error enabling stream access on " + ip + ": " + e);
     }
   }
 
 };
-
-
-
-async function getIP() {
-  return null;
-  // return new Promise((resolve, reject) => {
-
-  //   var http = require('http');
-
-  //   http.get({ 'host': 'api.ipify.org', 'port': 80, 'path': '/' }, function (resp) {
-  //     resp.on('data', function (ip) {     
-  //       resolve(new TextDecoder().decode(ip));
-  //     });
-  //   });
-  // });
-}

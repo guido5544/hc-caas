@@ -1,9 +1,37 @@
-const conversionQueue = require('../libs/conversionqueue');
-const server = require('../libs/server');
+const conversionServer = require('../libs/conversionServer');
+const modelManager = require('../libs/modelManager');
 const streamingManager = require('../libs/streamingManager');
 const streamingServer = require('../libs/streamingServer');
 
 const config = require('config');
+const status = require('../libs/status');
+
+const authorization = require('../libs/authorization');
+
+function setupAPIArgs(req) {
+
+    let args;
+    if (req.get("CS-API-Arg")) {
+        args = JSON.parse(req.get("CS-API-Arg"));
+    }
+    else {
+        args = {};
+    }
+    
+    if (config.get('hc-caas.accessPassword') != "") {
+        args.accessPassword = config.get('hc-caas.accessPassword');
+    }            
+    return args;
+}
+
+exports.getStatus = async (req, res, next) => {
+    if (req.params.json) {
+        res.json(await status.generateJSON());
+    }
+    else {
+        res.send(await status.generateHTML());
+    }
+};
 
 exports.postFileUpload = async (req, res, next) => {
 
@@ -14,23 +42,23 @@ exports.postFileUpload = async (req, res, next) => {
         return;
     }
     
-    let args;
-    if (req.get("CS-API-Arg"))
-        args = JSON.parse(req.get("CS-API-Arg"));
-    else
-        args = {};
+    let args = setupAPIArgs(req);
 
     if (args.itemid != undefined) {
-        let data = await server.append(req.file.destination, req.file.originalname, args.itemid);     
+        let data = await modelManager.append(req.file.destination, req.file.originalname, args.itemid,setupAPIArgs(req));     
         res.json(data);
     }
     else {
-        let item = await server.createDatabaseEntry(req.file.originalname, args);
+        let item = await modelManager.createDatabaseEntry(req.file.originalname, args);
+        if (!item) {
+            res.json({ERROR:"Can't Upload"});
+            return;
+        }
         if (args.waitUntilConversionDone) {
-            await server.create(item, req.file.destination, req.file.originalname, args);
+            await modelManager.create(item, req.file.destination, req.file.originalname, args);
         }
         else {
-             server.create(item, req.file.destination, req.file.originalname, args);
+             modelManager.create(item, req.file.destination, req.file.originalname, args);
         }
 
         res.json({itemid:item.storageID});
@@ -38,25 +66,15 @@ exports.postFileUpload = async (req, res, next) => {
 
 };
 
-
-
 exports.postFileUploadArray = async (req, res, next) => {
-  
-    let args;
-    if (req.get("CS-API-Arg"))
-        args = JSON.parse(req.get("CS-API-Arg"));
-    else
-        args = {};
-    
-     let data = await server.createMultiple(req.files, args);
-     res.json(data);
+
+    let data = await modelManager.createMultiple(req.files, setupAPIArgs(req));
+    res.json(data);
 };
 
 exports.putCreate = async (req, res, next) => {
-    let args;
     if (req.get("CS-API-Arg")) {
-        args = JSON.parse(req.get("CS-API-Arg"));
-        let data = await server.createEmpty(args);
+        let data = await modelManager.createEmpty(setupAPIArgs(req));
         res.json(data);
     }
     else {
@@ -68,36 +86,32 @@ exports.putCreate = async (req, res, next) => {
 exports.getUploadToken = async (req, res, next) => {
 
     console.log("upload token send");
-    let args = JSON.parse(req.get("CS-API-Arg"));
 
-    let result = await server.requestUploadToken(req.params.name, args);
+    let result = await modelManager.requestUploadToken(req.params.name, setupAPIArgs(req));
     res.json(result);
 };
-
-
 
 exports.getDownloadToken = async (req, res, next) => {
 
     console.log("download token send");
-    let result = await server.requestDownloadToken(req.params.itemid,req.params.type);
+    let result = await modelManager.requestDownloadToken(req.params.itemid,req.params.type,setupAPIArgs(req));
     res.json(result);
 };
 
 exports.getData = async (req, res, next) => {
 
-    let data = await server.getData(req.params.itemid);   
+    let data = await modelManager.getData(req.params.itemid,setupAPIArgs(req));   
     res.json(data);
 };
 
 exports.pingQueue = (req, res, next) => {    
-    if (config.get('hc-caas.runQueue')) {
+    if (config.get('hc-caas.runConversionServer')) {
         res.sendStatus(200);
     }
     else {
         res.sendStatus(404);
     }
 };
-
 
 exports.pingStreamingServer = (req, res, next) => {    
     if (config.get('hc-caas.runStreamingServer')) {
@@ -108,47 +122,22 @@ exports.pingStreamingServer = (req, res, next) => {
     }
 };
 
-
-
 exports.putCustomImage = async (req, res, next) => {
 
-    let args;
-    if (req.get("CS-API-Arg"))
-        args = JSON.parse(req.get("CS-API-Arg"));
-    else
-        args = {};
-
-    let result = await server.generateCustomImage(req.params.itemid, args);  
-    if (result) {        
-        res.json(result);       
-    }
-    else {
-        res.sendStatus(200);
-    }
-  
+    let result = await modelManager.generateCustomImage(req.params.itemid, setupAPIArgs(req));  
+    res.json(result);  
 };
 
 
 exports.putReconvert = async (req, res, next) => {
 
-    let args;
-    if (req.get("CS-API-Arg"))
-        args = JSON.parse(req.get("CS-API-Arg"));
-    else
-        args = {};
-
-    let result = await server.reconvert(req.params.itemid, args);  
-    if (result) {        
-        res.json(result);       
-    }
-    else {
-        res.sendStatus(200);
-    }
+    let result = await modelManager.reconvert(req.params.itemid, setupAPIArgs(req));  
+    res.json(result);  
   
 };
 
 exports.getFileByType = async (req, res, next) => {
-    let result = await server.get(req.params.itemid, req.params.type);
+    let result = await modelManager.get(req.params.itemid, req.params.type,setupAPIArgs(req));
 
     if (result.data) {    
         return res.send(Buffer.from(result.data));
@@ -160,7 +149,7 @@ exports.getFileByType = async (req, res, next) => {
 };
 
 exports.getFileByName = async (req, res, next) => {
-    let result = await server.getByName(req.params.itemid, req.params.name);
+    let result = await modelManager.getByName(req.params.itemid, req.params.name,setupAPIArgs(req));
 
     if (result.data) {    
         return res.send(Buffer.from(result.data));
@@ -173,7 +162,7 @@ exports.getFileByName = async (req, res, next) => {
 
 exports.getOriginal = async (req, res, next) => {
 
-    let result = await server.getOriginal(req.params.itemid);
+    let result = await modelManager.getOriginal(req.params.itemid,setupAPIArgs(req));
     if (result.data) {
         res.send(Buffer.from(result.data));
     }
@@ -184,7 +173,7 @@ exports.getOriginal = async (req, res, next) => {
 
 exports.getShattered = async (req, res, next) => {
 
-    let result = await server.getShattered(req.params.itemid, req.params.name);
+    let result = await modelManager.getShattered(req.params.itemid, req.params.name,setupAPIArgs(req));
     if (result.data) {
         res.send(Buffer.from(result.data));
     }
@@ -195,7 +184,7 @@ exports.getShattered = async (req, res, next) => {
 
 exports.getShatteredXML = async (req, res, next) => {
 
-    let result = await server.getShatteredXML(req.params.itemid);
+    let result = await modelManager.getShatteredXML(req.params.itemid,setupAPIArgs(req));
     if (result.data) {
         res.send(result.data.toString('ascii'));
     }
@@ -205,7 +194,7 @@ exports.getShatteredXML = async (req, res, next) => {
 };
 
 exports.putDelete = (req, res, next) => {
-    let result = server.delete(req.params.itemid); 
+    let result = modelManager.deleteConversionitem(req.params.itemid,setupAPIArgs(req)); 
     if (result) {
         res.json(result);
     }
@@ -216,44 +205,44 @@ exports.putDelete = (req, res, next) => {
 
 exports.startConversion = (req, res, next) => {
 
-    conversionQueue.startConversion();
-    res.sendStatus(200);
-    
+    let result = conversionServer.startConversion();
+    if (!result.ERROR) {
+        res.sendStatus(200);
+    }
+    else {
+        res.sendStatus(404);
+    }
+
 };
 
+exports.getInfo = async (req, res, next) => {
+    res.json({version: process.env.caas_version});
+};
 
 exports.getItems = async (req, res, next) => {
-    let result = await server.getItems();
-    res.json(result);    
+    let result = await modelManager.getItems(setupAPIArgs(req));
+    res.json(result);
 };
 
 exports.getUpdated = async (req, res, next) => {
-    let result = await server.getLastUpdated();
-    res.json(result);    
+    let result = await modelManager.getLastUpdated();
+    res.json(result);
 };
 
 exports.getStreamingSession = async (req, res, next) => {
-
-    let args;
-    if (req.get("CS-API-Arg")) {
-        args = JSON.parse(req.get("CS-API-Arg"));
-    }
-
-    let result = await streamingManager.getStreamingSession(args);
-    res.json(result);    
+    let result = await streamingManager.getStreamingSession(setupAPIArgs(req));
+    res.json(result);
 };
 
 exports.startStreamingServer = async (req, res, next) => {
-
-    let args;
-    if (req.get("CS-API-Arg")) {
-        args = JSON.parse(req.get("CS-API-Arg"));
+    if (!config.get('hc-caas.runStreamingServer')) {
+        res.sendStatus(404);
     }
-    let result = await streamingServer.startStreamingServer(args);
-    res.json(result); 
-    
+    else {
+        let result = await streamingServer.startStreamingServer(setupAPIArgs(req));
+        res.json(result);
+    }
 };
-
 
 exports.enableStreamAccess = async (req, res, next) => {
 
@@ -272,30 +261,19 @@ exports.enableStreamAccess = async (req, res, next) => {
                 hasNames = true;
             }        
         }
-
-
-        if (req.get("CS-API-Arg"))
-            args = JSON.parse(req.get("CS-API-Arg"));
-
     }
     catch (e) {
-        console.log('Error: Invalid JSON');
-        res.sendStatus(200);
+        res.json({ERROR:"Invalid Stream Access Tokens"});
         return;
     }
-    await streamingManager.enableStreamAccess(req.params.sessionid,items, args, hasNames);  
-    res.sendStatus(200);
+    await streamingManager.enableStreamAccess(req.params.sessionid,items, setupAPIArgs(req), hasNames);  
+    res.json({SUCCESS:true});
   
 };
 
-
-
-
 exports.serverEnableStreamAccess = async (req, res, next) => {
-    let args;
-    if (req.get("CS-API-Arg")) {
-        args = JSON.parse(req.get("CS-API-Arg"));
-    }
+    let args = setupAPIArgs(req);
+
     let items  = JSON.parse(req.get("items"));
 
     let hasNames = false;
@@ -308,18 +286,19 @@ exports.serverEnableStreamAccess = async (req, res, next) => {
   
 };
 
-
-
 exports.getCustom = (req, res, next) => {   
-    let args;
-    if (req.get("CS-API-Arg")) {
-        args = JSON.parse(req.get("CS-API-Arg"));
-    }
-    let result = server.executeCustom(args); 
+    let args = setupAPIArgs(req);
+    modelManager.executeCustom(args); 
     res.sendStatus(200);   
 };
 
 
-exports.getVersion = (req, res, next) => {
-    res.send(process.env.caas_version);
+exports.addUser = (req, res, next) => {
+    let response = authorization.addUser(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.generateAPIKey = (req, res, next) => {
+    let response = authorization.generateAPIKey(req,setupAPIArgs(req));
+    res.json(response);
 };

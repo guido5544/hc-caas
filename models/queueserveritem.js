@@ -14,6 +14,22 @@ const queueserveritemSchema = new Schema({
   region: {
     type: String,
     required: false
+  },
+  name: {
+    type: String,
+    required: false
+  },
+  lastPing: {
+    type: Date,
+    required: false
+  },
+  pingFailed: {
+    type: Boolean,
+    required: false
+  },
+  priority: {
+    type: Number,
+    required: false
   }
   
 });

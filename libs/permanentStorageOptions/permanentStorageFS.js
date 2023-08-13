@@ -109,18 +109,7 @@ exports.store = (inputfile, s3target) => {
 
 
 _makeAllDirectories = (dirs) => {
-
-    var d= dirs.split("/");
-    var di = "";
-    for (var i=0;i<d.length;i++)
-    {
-        if (i>0)
-            di+=("/" + d[i]);
-        else 
-            di+=d[i];
-        if (!fs.existsSync(di))
-            fs.mkdirSync(di);
-    }
+    fs.mkdirSync(dirs,{ recursive: true });
 };
 
 _storeInFS = (storagepath, data) => {

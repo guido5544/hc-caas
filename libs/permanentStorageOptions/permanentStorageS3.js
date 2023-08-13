@@ -210,18 +210,46 @@ _storeInS3 = (filename, data, item) => {
 
 };
 
+
+function deleteAll(bucket,name) {
+    s3.listObjectsV2({
+        Bucket: bucket,
+        Prefix: name
+    }, function(err, data) {
+        if (err) {
+            console.log(err, err.stack); // an error occurred
+        } else {
+            var deleteParams = {Bucket: bucket, Delete: {Objects: []}};
+    
+            // Add objects to delete to the array
+            data.Contents.forEach(function(content) {
+                deleteParams.Delete.Objects.push({Key: content.Key});
+            });
+    
+            // Now, delete the objects
+            s3.deleteObjects(deleteParams, function(err, data) {
+                if (err) {
+                    console.log(err, err.stack); // an error occurred
+                } else {
+                    console.log('deleted'); // successful response
+                }
+            });
+        }
+    });
+}
+
 exports.delete = (name, item) => {
     if (item && item.storageAvailability) {
         for (let i = 0; i < item.storageAvailability.length; i++) {
-            let s3Params = { Bucket: item.storageAvailability[i].bucket, Key: '', Body: '' };
+            let s3Params = { Bucket: item.storageAvailability[i].bucket, Key: ''};
             s3Params.Key = name;
-            s3.deleteObject(s3Params);
+            deleteAll(item.storageAvailability[i].bucket,name);          
         }
     }
     else {
-        let s3Params = { Bucket: bucket, Key: '', Body: '' };
+        let s3Params = { Bucket: bucket, Key: ''};
         s3Params.Key = name;
-        s3.deleteObject(s3Params);
+        deleteAll(bucket,name);       
     }
 };
 

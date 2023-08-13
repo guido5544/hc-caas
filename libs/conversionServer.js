@@ -2,13 +2,12 @@ const fs = require('fs');
 const config = require('config');
 const path = require('path');
 const mongooseJobQueue = require('fast-mongoose-job-queue');
-const unzipper = require('unzipper');
 const del = require('del');
 const fetch = require('node-fetch');
 
 const Conversionitem = require('../models/conversionitem');
 const Queueserveritem = require('../models/queueserveritem');
-
+const decompress = require('decompress');
 
 var storage;
 
@@ -16,16 +15,19 @@ const e = require('express');
 
 const execFile = require('child_process').execFile;
 
-const converterexepath = './converter';   
+let  converterexepath = '';
+
+
 const HEimportexportexepath = './ImportExport';   
 
-var converterpath = 'hc-caas/converter';
+var converterpath = '';
+
 var HEimportexportpath = '';
 
 let tempFileDir = "E:/GitHub/conversionservice/hc-caas/tempfiles";
 
 let simConversions = 0;
-const maxConversions = config.get('hc-caas.queue.maxConversions');
+const maxConversions = config.get('hc-caas.conversionServer.maxConversions');
 
 var queue
 if (config.get('hc-caas.region') == "") {
@@ -49,30 +51,43 @@ exports.start = async () => {
 
   queue.cleanup();
   
-  let ip = config.get('hc-caas.queue.ip');
+  let ip = global.caas_publicip;
 
-  converterpath = config.get('hc-caas.queue.converterpath');
-  HEimportexportpath = config.get('hc-caas.queue.HEimportexportpath');
-  tempFileDir = config.get('hc-caas.workingDirectory');
-  if (ip == "") {
-    ip = await getIP();
+  converterpath = config.get('hc-caas.conversionServer.converterpath');
+
+  if (process.platform == "win32") {
+    converterexepath = './converter';
+  }
+  else {
+    converterexepath = converterpath + '/converter';
   }
 
+  HEimportexportpath = config.get('hc-caas.conversionServer.HEimportexportpath');
+  tempFileDir = config.get('hc-caas.workingDirectory');
+  
   queueaddress = ip + ":" + config.get('hc-caas.port');
 
   let queueserver = await Queueserveritem.findOne({ address: queueaddress });
   if (!queueserver) {
       queueserver = new Queueserveritem({
+        name: config.get('hc-caas.conversionServer.name'),
         address: queueaddress,
         freeConversionSlots:maxConversions,
-        region: config.get('hc-caas.region')
+        region: config.get('hc-caas.region'),
+        lastPing: new Date(),
+        pingFailed: false,
+        priority: config.get('hc-caas.conversionServer.priority')
     });
     queueserver.save();
   }
   else
   {
+    queueserver.name = config.get('hc-caas.conversionServer.name'),
     queueserver.freeConversionSlots = maxConversions;
     queueserver.region = config.get('hc-caas.region');
+    queueserver.priority =  config.get('hc-caas.conversionServer.priority')    
+    queueserver.lastPing = new Date();
+    queueserver.pingFailed = false;
     queueserver.save();
   }
 
@@ -80,7 +95,7 @@ exports.start = async () => {
     fs.mkdirSync(tempFileDir);
   }
 
-  if (config.get('hc-caas.queue.polling')) {
+  if (config.get('hc-caas.conversionServer.polling')) {
     setInterval(async function () {
       await getConversionJobFromQueue();
     }, 1000);
@@ -88,7 +103,7 @@ exports.start = async () => {
   else
      getConversionJobFromQueue();
     
-  console.log('Conversion queue running');
+  console.log('Conversion Server started');
 
 
 };
@@ -98,7 +113,13 @@ exports.getQueue = () => {
 };
 
 exports.startConversion = () => {
-  getConversionJobFromQueue();
+  if (config.get('hc-caas.runConversionServer') == false) {
+    return {ERROR:"Conversion Server not running"};
+  }
+  else {
+    getConversionJobFromQueue();
+    return {OK:"Conversion Server started"};
+  }
 };
 
 async function cleanupDir(dir, item) {
@@ -142,20 +163,24 @@ async function getFileFromStorage(payload) {
   else {
     data = await storage.readFile("conversiondata/" + item.storageID + "/" + item.name);
   }
-  if (!data)
+  if (!data) {
     return false;
+  }
+
   const dir = tempFileDir + "/" + item.storageID;
+  const outputdir = tempFileDir + "/" + item.storageID + "/output";
+
 
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
   }
 
-  if (path.extname(item.name) == ".zip") {
-    fs.writeFileSync(dir + "/" + item.name, data);
+  if (!fs.existsSync(outputdir)) {
+    fs.mkdirSync(outputdir);
   }
-  else {
-    fs.writeFileSync(dir + "/" + item.name, data);
-  }
+
+  fs.writeFileSync(dir + "/" + item.name, data);
+  
   console.log(item.name + " downloaded from storage");
   return true;
 }
@@ -171,11 +196,11 @@ async function conversionComplete(err, item) {
       await saveShatteredFilesInStorage(item);
     }
     else {
-      const files = await readDir(tempFileDir + "/" + item.storageID);
+      const files = await readDir(tempFileDir + "/" + item.storageID + "/output");
       for (var i = 0; i < files.length; i++) {
         if ((item.name) != files[i] && files[i] != "zip") {
           savedFiles.push(files[i]);          
-          await storage.store(tempFileDir + "/" + item.storageID + "/" + files[i], "conversiondata/" + item.storageID + "/" + files[i], item);
+          await storage.store(tempFileDir + "/" + item.storageID + "/output/" + files[i], "conversiondata/" + item.storageID + "/" + files[i], item);
         }
       }
     }
@@ -284,8 +309,8 @@ async function runConverter(item) {
           cwd: converterpath
         }, async function (err, data) {
           if (err == null) {
-            if (fs.existsSync(dir + item.storageID + "/" + item.name + "_.scz")) {
-              fs.renameSync( dir + item.storageID + "/" + item.name + "_.scz",dir + item.storageID + "/" + item.name + ".scz");
+            if (fs.existsSync(dir + item.storageID + "/output/" + item.name + "_.scz")) {
+              fs.renameSync( dir + item.storageID + "/output/" + item.name + "_.scz",dir + item.storageID + "/output/" + item.name + ".scz");
             }
             //      console.log(data);
             console.log(item.name + " converted successfully at " + new Date());
@@ -330,7 +355,7 @@ async function scSpecialHandling(inputPath, dir, item, customImageCode) {
     if (item.name.indexOf(".scz") == -1) {
       if (!imageservice) {
         imageservice = require('ts3d-hc-imageservice');
-        await imageservice.start({ viewerPort: config.get('hc-caas.queue.imageServicePort') });
+        await imageservice.start({ viewerPort: config.get('hc-caas.conversionServer.imageServicePort') });
       }
 
       let width = 640, height = 480;
@@ -357,13 +382,13 @@ function GLTFSpecialHandling(inputPath, dir, item) {
   let found = getCommandLineArgument('--output_glb', item.conversionCommandLine);
   if (found != -1) {
     commandLine = [inputPath, dir + item.storageID + "/" + item.name + "." + "glb","GLB",config.get('hc-caas.license'),
-      config.get('hc-caas.queue.HEInstallPath') ];
+      config.get('hc-caas.conversionServer.HEInstallPath') ];
   }
   else {
      found = getCommandLineArgument('--output_fbx', item.conversionCommandLine);  
      if (found != -1) {
       commandLine = [inputPath, dir + item.storageID + "/" + item.name + "." + "fbx","FBX",config.get('hc-caas.license'),
-      config.get('hc-caas.queue.HEInstallPath') ];
+      config.get('hc-caas.conversionServer.HEInstallPath') ];
      }
   }
 
@@ -403,29 +428,34 @@ function setupCommandLine(inputPath, dir, item) {
   }
   let commandLine;
 
+  if (config.get('hc-caas.licenseFile') != "") {
+    commandLine = ['--license_file', config.get('hc-caas.licenseFile')];
+  }
+  else {
+    commandLine = ['--license', config.get('hc-caas.license')];
+  }
+
   if (!path.isAbsolute(inputPath)) {
     inputPath = path.join(process.cwd(), inputPath);
     dir = path.join(process.cwd(), dir);
   }
 
-  if (!item.conversionCommandLine) {
-    commandLine = ['--license', config.get('hc-caas.license'),
-      '--input', inputPath,
-      '--output_scs', dir + item.storageID + "/" + item.name + ".scs",
-      '--output_sc', dir + item.storageID + "/" + item.name + "_",
-      '--output_png', dir + item.storageID + "/" + item.name + ".png",
+  if (!item.conversionCommandLine) {      
+      commandLine.push('--input', inputPath,
+      '--output_scs', dir + item.storageID + "/output/" + item.name + ".scs",
+      '--output_sc', dir + item.storageID + "/output/" + item.name + "_",
+      '--output_png', dir + item.storageID + "/output/" + item.name + ".png",
       '--background_color', "1,1,1",
       '--sc_export_attributes', 'true',
       '--ifc_import_openings', 'false',
       '--import_hidden_objects', hidden,
       '--png_transparent_background', '1',
       '--sc_create_scz', 'true',
-      '--sc_compress_scz', '1'];
+      '--sc_compress_scz', '1');
+    
   }
   else {  
     
-    commandLine = ['--license', config.get('hc-caas.license')];
-
     let hasInput = false;
     for (let i = 0; i < item.conversionCommandLine.length; i += 2) {
       
@@ -441,13 +471,13 @@ function setupCommandLine(inputPath, dir, item) {
       if (item.conversionCommandLine[i].indexOf("--output_") != -1) {
         let type = item.conversionCommandLine[i].split("_")[1];
         if (item.conversionCommandLine[i+1] != null && item.conversionCommandLine[i+1] != "") {
-          commandLine.push(dir + item.storageID + "/" + item.conversionCommandLine[i+1]);
+          commandLine.push(dir + item.storageID + "/output/" + item.conversionCommandLine[i+1]);
         }
         else {
           if (type == "sc") {
-            commandLine.push(dir + item.storageID + "/" + item.name);
+            commandLine.push(dir + item.storageID + "/output/" + item.name);
           } else {
-            commandLine.push(dir + item.storageID + "/" + item.name + "." + type);
+            commandLine.push(dir + item.storageID + "/output/" + item.name + "." + type);
           }
         }
       }
@@ -468,12 +498,15 @@ function setupCommandLine(inputPath, dir, item) {
 async function runZip(item) {
 
   const dir = tempFileDir + "/";
-  fs.createReadStream(dir + item.storageID + "/" + item.name)
-    .pipe(unzipper.Extract({ path: dir + item.storageID + "/" + "zip" })).on('finish', () => {
-      console.log(item.name + " unzipped");
-      runConverter(item);
-    }
-    ).on('error', async (err) => {
+
+  try {
+    await decompress(dir + item.storageID + "/" + item.name, dir + item.storageID + "/" + "zip");
+    console.log(item.name + " unzipped");
+    runConverter(item);
+    return;
+  }
+  catch (err) {
+
       console.log(err);
       cleanupDir(item);
       let founditem = await Conversionitem.findOne({ storageID: item.storageID });
@@ -482,22 +515,29 @@ async function runZip(item) {
       await founditem.save();
       updateConversionStatus(founditem);
 
-    });
+  };
 }
 
 async function sendToWebHook(item, files) {
   if (item.webhook) {
     try {
+      
+      let webhookip = item.webhook;
+      if (webhookip.indexOf(global.caas_publicip) != -1) {
+        let s = item.webhook.split(":");
+        webhookip = "http://localhost" + ":" + s[2];
+      }
 
-      await fetch(item.webhook, {
+
+      await fetch(webhookip, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ id: item.storageID, conversionState: item.conversionState, files: files })
+        body: JSON.stringify({ id: item.storageID, name: item.name, conversionState: item.conversionState, files: files })
       });
     } catch (e) {
-      console.log("Error: Webhook failed");
+      console.log("Error: Webhook failed:" + item.webhook);
     }
   }
 }
@@ -540,7 +580,7 @@ async function getConversionJobFromQueue() {
     }
   }
   else {
-    if (!config.get('hc-caas.queue.polling')) {
+    if (!config.get('hc-caas.conversionServer.polling')) {
       setTimeout(async function () {
         await getConversionJobFromQueue();
       }, 1000);

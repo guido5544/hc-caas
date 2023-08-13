@@ -15,8 +15,28 @@ const streamingserveritemSchema = new Schema({
     type: String,
     required: false
   },
+  streamingRegion: {
+    type: String,
+    required: false
+  },
   renderType: {
     type: String,
+    required: false
+  },
+  name: {
+    type: String,
+    required: false
+  },
+  lastPing: {
+    type: Date,
+    required: false
+  },
+  pingFailed: {
+    type: Boolean,
+    required: false
+  },
+  priority: {
+    type: Number,
     required: false
   }
 });

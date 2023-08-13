@@ -21,11 +21,35 @@ var streamingManager;
 
 process.env.ALLOW_CONFIG_MUTATIONS = "true";
 process.env.SUPPRESS_NO_CONFIG_WARNING = 'y';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+
 const config = require('config');
 
 
+
+function getPublicIP() {
+  return new Promise((resolve, reject) => {
+    var http = require('http');
+
+    http.get({ 'host': 'api.ipify.org', 'port': 80, 'path': '/' }, function (resp) {
+      resp.on('data', function (ip) {
+        resolve(ip);
+      });
+    });
+  });
+}
+
 exports.start = async function (mongoose_in, customCallback) {
   handleInitialConfiguration();
+
+
+  if (!config.has('hc-caas.serviceIP') || config.get('hc-caas.serviceIP') == "") {
+    global.caas_publicip = (await getPublicIP()).toString();
+  }
+  else {
+    global.caas_publicip = config.get('hc-caas.serviceIP');
+  }
+
   try {
     config.get('hc-caas');
   } catch (e) {
@@ -37,12 +61,11 @@ exports.start = async function (mongoose_in, customCallback) {
     fs.mkdirSync(config.get('hc-caas.workingDirectory'));
   }
 
-  var versioninfo = require('./package.json');
+  let versioninfo = require('./package.json');
   process.env.caas_version = versioninfo.version;
   console.log("Initializing CaaS. Version: " + process.env.caas_version);
-
-
-  if (mongoose_in == undefined || !mongoose_in) {
+  console.log("CaaS Service IP: " + global.caas_publicip);
+  if (!mongoose_in) {
     mongoose = require('mongoose');
     let mongouri = config.get('hc-caas.mongodbURI');
     let connectionstring;
@@ -55,24 +78,25 @@ exports.start = async function (mongoose_in, customCallback) {
       connectionstring = mongouri;
     global.con = mongoose.createConnection(connectionstring);
   }
-  else
+  else {
     global.con = mongoose_in;
+  }
 
  
   streamingManager = require('./libs/streamingManager');
   exports.streamingManager = streamingManager;
 
-  exports.server = require('./libs/server');
+  exports.modelManager = require('./libs/modelManager');
 
   try {
-    if (config.get('hc-caas.runQueue')) {
-      conversionQueue = require('./libs/conversionqueue');
+    if (config.get('hc-caas.runConversionServer')) {
+      conversionQueue = require('./libs/conversionServer');
       conversionQueue.start();
     }
 
-    if (config.get('hc-caas.runServer')) {
-      exports.server.start(customCallback);
-       if (config.get('hc-caas.runStreamingManager')) {
+    if (config.get('hc-caas.runModelManager')) {
+      exports.modelManager.start(customCallback);
+       if (config.get('hc-caas.modelManager.runStreamingManager')) {
           streamingManager.start();
        }
     }
@@ -83,20 +107,32 @@ exports.start = async function (mongoose_in, customCallback) {
       streamingServer.start();
     }    
 
-    if ((config.get('hc-caas.runServer') && config.get('hc-caas.server.listen')) || config.get('hc-caas.runQueue') ||  config.get('hc-caas.runStreamingServer')) {
+    if ((config.get('hc-caas.runModelManager') && config.get('hc-caas.modelManager.listen')) || config.get('hc-caas.runConversionServer') ||  config.get('hc-caas.runStreamingServer')) {
       app.use(cors());
       app.use(express.json({ limit: '25mb' }));
       app.use(express.urlencoded({ limit: '25mb', extended: false }));
 
-     
-      if (config.get('hc-caas.runServer') && config.get('hc-caas.server.listen')) {
+
+      if (config.get('hc-caas.accessPassword') != "") {
+        app.use(function (req, res, next) {
+          if (req.get("CS-API-Arg")) {
+            let args = JSON.parse(req.get("CS-API-Arg"));
+            if (args.accessPassword == config.get('hc-caas.accessPassword')) {
+              return next();
+            }
+          }
+        });
+      }
+
+
+      if (config.get('hc-caas.runModelManager') && config.get('hc-caas.modelManager.listen')) {
         const fileStorage = multer.diskStorage({
           destination: (req, file, cb) => {
             var uv4 = uuidv4();
             if (!fs.existsSync(config.get('hc-caas.workingDirectory') + "/uploads")) {
               fs.mkdirSync(config.get('hc-caas.workingDirectory') + "/uploads");
             }
-            var dir = config.get('hc-caas.workingDirectory') + "/uploads/" + uv4;
+            let dir = config.get('hc-caas.workingDirectory') + "/uploads/" + uv4;
             if (!fs.existsSync(dir)) {
               fs.mkdirSync(dir);
             }
@@ -109,24 +145,24 @@ exports.start = async function (mongoose_in, customCallback) {
 
         var upload = multer({ storage: fileStorage });
 
-        app.post('/api/upload',upload.single('file'));
-        app.post('/api/uploadArray',upload.array('files'));
+        app.post('/caas_api/upload',upload.single('file'));
+        app.post('/caas_api/uploadArray',upload.array('files'));
 
-        serverapiRoutes = require('./routes/serverapi');
-        app.use("/api", serverapiRoutes);
+        serverapiRoutes = require('./routes/modelManagerAPI');
+        app.use("/caas_api", serverapiRoutes);
       }
-      if (config.get('hc-caas.runQueue')) {
-        queueapiRoutes = require('./routes/queueapi');
-        app.use("/api", queueapiRoutes);
+      if (config.get('hc-caas.runConversionServer')) {
+        queueapiRoutes = require('./routes/conversionServerAPI');
+        app.use("/caas_api", queueapiRoutes);
       }
 
       if (config.get('hc-caas.runStreamingServer')) {
-        streamingserverapiRoutes = require('./routes/streamingserverapi');
-        app.use("/api", streamingserverapiRoutes);
+        streamingserverapiRoutes = require('./routes/streamingServerAPI');
+        app.use("/caas_api", streamingserverapiRoutes);
       }
-
+      
       app.listen(config.get('hc-caas.port'));
-      console.log("listening on port " + config.get('hc-caas.port'));
+      console.log("caas listening on port " + config.get('hc-caas.port'));
     }
 
     process.on('uncaughtException', (error, origin) => {
@@ -168,43 +204,49 @@ if (require.main === module) {
   this.start();
 } 
 
-
-
-
 function handleInitialConfiguration() {
   let configs = {
       "mongodbURI": "mongodb://127.0.0.1:27017/conversions",
+      "accessPassword": "",
       "workingDirectory": "caasTemp",
+      "serviceIP": "localhost",
       "port": "3001",
-      "runQueue": true,
-      "runServer": true,
-      "runStreamingManager": true,
+      "runModelManager": true,
+      "runConversionServer": true,
       "runStreamingServer": true,
       "license": "",
+      "licenseFile": "",
       "fullErrorReporting": false,
       "region": "",
-      "queue": {
+      "requireAccessKey": false,
+      "conversionServer": {
+        "name" : "",
         "converterpath": "",
         "HEimportexportpath": "",
         "HEInstallPath": "",
         "maxConversions": 4,
-        "ip": "localhost",
         "polling": false,
-        "imageServicePort": "3002"
+        "imageServicePort": "3002",
+        "priority": 0,
       },
-      "server": {
-        "listen": true
+      "modelManager": {
+        "listen": true,
+        "purgeFiles": false,
+        "runStreamingManager": true,
       },
       "streamingServer": {
+        "streamingRegion": "",
         "scserverpath": "",
         "renderType": "client",
+        "useEGL": false,
         "maxStreamingSessions": 10,
         "useSymLink": false,
-        "ip": "localhost",
+        "publicURL": "",
+        "publicPort": "",
         "startPort": 3006,
         "listenPort": 3200,
-        "publicAddress": "",
-        "publicPort": ""
+        "name" : "",
+        "priority": 0,
       },
       "storage": {
         "type": "filesystem",
@@ -220,10 +262,6 @@ function handleInitialConfiguration() {
       "localCache": {
         "directory": "",
         "maxSize": 0
-      },
-      "proxy": {
-        "keyPath": "",
-        "certPath": ""
       }
   };
 

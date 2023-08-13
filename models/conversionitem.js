@@ -60,8 +60,12 @@ const conversionitemSchema = new Schema({
   streamLocation: {
     type: String,
     required: false
+  },
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'Users',
+    required: false
   }
-  
 });
 
 module.exports = global.con.model('Conversionitem', conversionitemSchema);

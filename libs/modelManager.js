@@ -1,7 +1,7 @@
 const config = require('config');
 const Conversionitem = require('../models/conversionitem');
 const fs = require('fs');
-const conversionQueue = require('./conversionqueue');
+const conversionQueue = require('./conversionServer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 
@@ -9,6 +9,9 @@ const Queueserveritem = require('../models/queueserveritem');
 const fetch = require('node-fetch');
 
 const localCache = require('./localCache');
+
+const authorization = require('./authorization');
+
 
 var storage;
 
@@ -18,6 +21,62 @@ var totalConversions = 0;
 
 var customCallback;
 
+async function purgeFiles() {
+  let files = await Conversionitem.find();
+
+  for (let i = 0; i < files.length; i++) {
+    if (files[i].conversionState != "SUCCESS") {
+      let timeDiff = Math.abs(new Date() - files[i].updated);
+      let diffHours = Math.ceil(timeDiff / (1000 * 60 * 60));
+      if (diffHours > 24) {
+          exports.deleteConversionitem(files[i].storageID);
+      }
+    }
+  }
+}
+
+async function refreshServerAvailability() {
+  var queueservers = await Queueserveritem.find();
+
+  for (let i = 0; i < queueservers.length; i++) {
+    const controller = new AbortController();
+    let to = setTimeout(() => controller.abort(), 2000);
+
+    try {
+      let queserverip = queueservers[i].address;
+      if (queserverip.indexOf(global.caas_publicip) != -1) {
+        queserverip = "localhost" + ":" + config.get('hc-caas.port');
+      }
+
+      let res = await fetch("http://" + queserverip + '/caas_api/pingQueue', { signal: controller.signal, 
+        headers: { 'CS-API-Arg': JSON.stringify({accessPassword:config.get('hc-caas.accessPassword') }) } });
+      if (res.status == 404) {
+        throw "Could not ping Conversion Server " + queueservers[i].address;
+      }
+      else {
+        console.log("Conversion Server found:" + queueservers[i].address);
+        queueservers[i].lastPing = new Date();
+        queueservers[i].pingFailed = false;
+        queueservers[i].save();
+      }
+    }
+    catch (e) {
+      let timeDiff = Math.abs(new Date() - queueservers[i].lastPing);
+      queueservers[i].pingFailed = true;
+      queueservers[i].save();
+      let diffHours = Math.ceil(timeDiff / (1000 * 60 * 60));
+      if (diffHours > 24) {
+        await Queueserveritem.deleteOne({ "address": queueservers[i].address });
+        console.log("Conversion Server " + queueservers[i].address + " not reachable for more than 24 hours. Removed from database");
+      }
+      else {
+        console.log("Could not ping Conversion Server " + queueservers[i].address + ": " + e);
+      }
+    }
+    clearTimeout(to);
+  }
+}
+
 exports.start = async (callback) => {
 
   customCallback = callback;
@@ -25,54 +84,89 @@ exports.start = async (callback) => {
   storage = require('./permanentStorage').getStorage();
 
   setTimeout(async function () {
-    var queueservers = await Queueserveritem.find();
-
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 2000);
-
-    for (let i = 0; i < queueservers.length; i++) {
-      try {
-        let res = await fetch("http://" + queueservers[i].address + '/api/pingQueue', { signal: controller.signal });
-        if (res.status == 404) {
-          throw 'Server not found';
-        }
-        else {
-          console.log("Conversion Queue found:" + queueservers[i].address);
-        }
-      }
-      catch (e) {
-        await Queueserveritem.deleteOne({ "address": queueservers[i].address });
-        console.log("Could not ping " + queueservers[i].address + ": " + e);
-      }
-    }
+    await refreshServerAvailability();
   }, 1000);
-  console.log('Server started on ' + new Date());
+
+  setInterval(async function () {
+    await refreshServerAvailability();
+  }, 1000 * 60 * 60);
+
+
+  if (config.get('hc-caas.modelManager.purgeFiles')) {
+    await purgeFiles();
+    setInterval(async function () {
+      await purgeFiles();
+    }, 1000 * 60 * 60 * 24);
+  }
+
+  // let password = await bcrypt.hash("password",10);
+  // const item = new User({
+  //   email: "test@techsoft3d.com",
+  //   password: password
+  // });
+  // await item.save();
+
+
+  //   const item = new APIKey({
+  //   user: "64c7bde9183d10d4f2586641"
+  //  });
+  //  await item.save();
+
+
+  console.log('Model Manager started');
 };
 
+exports.getData = async (itemid, args) => {
 
-exports.getData = async (itemid) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
-  if (item)
-  {
-    let returnItem = JSON.parse(JSON.stringify(item));
-    returnItem.__v = undefined;
-    returnItem._id = undefined;
-    returnItem.storageID = undefined;
-    return (returnItem);
+
+  let itemids;
+  if (args && args.itemids) {
+    itemids = args.itemids;
   }
-  else
-  {
-    return {ERROR: "Item not found"};
+  else {
+    itemids = [itemid];
+  }
+
+  if (itemids.length == 1) {
+    let item = await authorization.getConversionItem(itemids[0], args);
+
+    if (item) {
+      let returnItem = JSON.parse(JSON.stringify(item));
+      returnItem.__v = undefined;
+      returnItem._id = undefined;
+      returnItem.user = undefined;
+      returnItem.storageAvailability = undefined;
+      returnItem.webhook = undefined;
+      return returnItem;
+    } else {
+      return { ERROR: "Item not found" };
+    }
+  } else {
+    let items = await authorization.getConversionItem(itemids, args);
+    if (items.length > 0) {
+      let returnItems = items.map((item) => {
+        let returnItem = JSON.parse(JSON.stringify(item));
+        returnItem.__v = undefined;
+        returnItem._id = undefined;
+        returnItem.user = undefined;
+        returnItem.storageAvailability = undefined;
+        returnItem.webhook = undefined;
+        return returnItem;
+      });
+      return returnItems;
+    } else {
+      return { ERROR: "Items not found" };
+    }
   }
 };
 
-
-exports.requestDownloadToken = async (itemid,type) => {
+exports.requestDownloadToken = async (itemid,type,args) => {
   if (!storage.requestDownloadToken)
   {
     return {ERROR: "Not available for this storage type"};
   }
-  let item = await Conversionitem.findOne({ storageID: itemid });
+  let item = await authorization.getConversionItem(itemid, args);
+
   if (item) {
     let token = await storage.requestDownloadToken("conversiondata/" + item.storageID + "/" + item.name + "." + type, item);
     return { token: token, itemid: itemid };
@@ -101,8 +195,8 @@ async function readFileWithCache(itemid, name, item) {
   }
 }
 
-exports.get = async (itemid,type) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.get = async (itemid,type,args) => {
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     let blob;
 
@@ -126,8 +220,8 @@ exports.get = async (itemid,type) => {
 };
 
 
-exports.getByName = async (itemid,name) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.getByName = async (itemid,name,args) => {
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + name);
     return ({data:blob});
@@ -138,8 +232,8 @@ exports.getByName = async (itemid,name) => {
   }
 };
 
-exports.getShattered = async (itemid, name) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.getShattered = async (itemid, name,args) => {
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/scs/" + name);
     return ({ data: blob });
@@ -149,8 +243,8 @@ exports.getShattered = async (itemid, name) => {
   }
 };
 
-exports.getShatteredXML = async (itemid) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.getShatteredXML = async (itemid,args) => {
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/shattered.xml");
     return ({ data: blob });
@@ -161,8 +255,8 @@ exports.getShatteredXML = async (itemid) => {
 };
 
 
-exports.getOriginal = async (itemid) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.getOriginal = async (itemid, args) => {
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + item.name);
     return ({ data: blob });
@@ -196,10 +290,12 @@ exports.appendFromBuffer = async (buffer, itemname, itemid) => {
   }
 };
 
-exports.append = async (directory, itemname, itemid) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.append = async (directory, itemname, itemid, args) => {
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
-    await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname,item);
+    if (directory) {
+      await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
+    }
     let newfile = true;
     for (let i = 0; i < item.files.length; i++) {
       if (item.files[i] == itemname) {
@@ -213,11 +309,13 @@ exports.append = async (directory, itemname, itemid) => {
     item.updated = new Date();
     await item.save();
 
-    fs.rm(directory, { recursive: true }, (err) => {
-      if (err) {
-        throw err;
-      }
-    });
+    if (directory) {
+      fs.rm(directory, { recursive: true }, (err) => {
+        if (err) {
+          throw err;
+        }
+      });
+    }
 
     return { itemid: itemid };
   }
@@ -227,29 +325,42 @@ exports.append = async (directory, itemname, itemid) => {
 };
 
 exports.requestUploadToken = async (itemname, args) => {
-  if (!storage.requestUploadToken)
-  {
-    return {ERROR: "Not available for this storage type"};
+
+  let user = await authorization.getUser(args);
+
+  if (user == -1) {
+    return { ERROR: "Not authorized to upload" };
   }
 
-  var itemid = uuidv4();
+  let itemid;
+  if (!storage.requestUploadToken) {
+    return { ERROR: "Not available for this storage type" };
+  }
 
-  let startState = "UPLOADING";
-  const item = new Conversionitem({
-    name: itemname,
-    storageID: itemid,
-    conversionState: startState,
-    updated: new Date(),
-    created: new Date(),
-    webhook: args.webhook,  
-    storageAvailability: storage.resolveInitialAvailability(),
-  });
-  item.save();
+  if (args && args.itemid != undefined) {
+    let data = await this.append(null, itemname, args.itemid);
+    itemid = args.itemid;
+  }
+  else {
+
+    itemid = uuidv4();
+
+    let startState = "UPLOADING";
+    const item = new Conversionitem({
+      name: itemname,
+      storageID: itemid,
+      conversionState: startState,
+      updated: new Date(),
+      created: new Date(),
+      webhook: args.webhook,
+      storageAvailability: storage.resolveInitialAvailability(),
+      user: user
+    });
+    item.save();
+  }
 
   let token = await storage.requestUploadToken("conversiondata/" + itemid + "/" + itemname);
-
   return { token: token, itemid: itemid };
-
 };
 
 
@@ -273,6 +384,9 @@ exports.createMultiple = async (files, args) => {
   }
 
   let item = await this.createDatabaseEntry(files[rootFileIndex].originalname, args);
+  if (!item) {
+    return { ERROR: "Can't Upload. Not authorized" };
+  }
   await this.create(item, files[rootFileIndex].destination, files[rootFileIndex].originalname, args);
   let itemid = item.storageID;
   let proms= [];
@@ -296,6 +410,12 @@ exports.createDatabaseEntry = async (itemname, args) => {
 
   let itemid = uuidv4();
   let startState = "PENDING";
+  let user = await authorization.getUser(args);
+
+  if (user == -1) {
+    return null;
+  }
+
 
   if (args.skipConversion)
     startState = "SUCCESS";
@@ -309,7 +429,8 @@ exports.createDatabaseEntry = async (itemname, args) => {
     created: new Date(),
     webhook: args.webhook,
     conversionCommandLine: args.conversionCommandLine,
-    storageAvailability: storage.resolveInitialAvailability()
+    storageAvailability: storage.resolveInitialAvailability(),
+    user: user
   });
   await item.save();
   return item;
@@ -331,7 +452,7 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
     await storage.store(inpath, "conversiondata/" + item.storageID + "/" + filename);
   }
   catch (err) {
-    this.delete(item.storageID);
+    this.deleteConversionitem(item.storageID);
     return err;
   }
   await conversionQueue.getQueue().add({ item: item });
@@ -341,7 +462,7 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
   
   let res = await this.get(item.storageID,type);
   
-  this.delete(item.storageID);
+  this.deleteConversionitem(item.storageID);
   
   if (res.ERROR) {
     return res;
@@ -381,6 +502,12 @@ exports.create = async (item, directory, itemname, args) => {
 
 
 exports.createEmpty = async (args) => {
+  let user = await authorization.getUser(args);
+
+  if (user == -1) {
+    return { ERROR: "Not authorized to upload" };
+  }
+
   var itemid = uuidv4();
 
   let startState = "PENDING";
@@ -398,7 +525,8 @@ exports.createEmpty = async (args) => {
     webhook: args.webhook,
     streamLocation:"",
     conversionCommandLine: args.conversionCommandLine,
-    storageAvailability: storage.resolveInitialAvailability()
+    storageAvailability: storage.resolveInitialAvailability(),
+    user: user
   });
   
   await item.save();
@@ -414,7 +542,7 @@ exports.generateCustomImage = async (itemid, args) => {
   {
     return {ERROR: "Itemid not specified"};
   }
-  let item = await Conversionitem.findOne({ storageID: itemid });
+  let item = await authorization.getConversionItem(itemid, args);
 
   if (item) {
     item.conversionState = "PENDING";
@@ -428,6 +556,7 @@ exports.generateCustomImage = async (itemid, args) => {
     await item.save();
     await conversionQueue.getQueue().add({ item: item, customImageCode: args.customImageCode });
     sendConversionRequest();
+    return {SUCCESS: true};
   }
   else {
     return {ERROR: "Item not found"};
@@ -441,7 +570,7 @@ exports.reconvert = async (itemid, args) => {
   {
     return {ERROR: "Itemid not specified"};
   }
-  let item = await Conversionitem.findOne({ storageID: itemid });
+  let item = await authorization.getConversionItem(itemid, args);
 
   if (item) {
     item.conversionState = "PENDING";
@@ -466,7 +595,6 @@ exports.reconvert = async (itemid, args) => {
 
     item.updated = new Date();
     await item.save();
-
     
     if (args.overrideItem) {
       item.name = args.overrideItem;
@@ -481,6 +609,7 @@ exports.reconvert = async (itemid, args) => {
       console.log("File " + item.name + " with storageID " + itemid + " converted at " + new Date());   
       console.log("Total Conversions:" + totalConversions);
     }
+    return {SUCCESS: true};
   }
   else {
     return {ERROR: "Item not found"};
@@ -501,10 +630,11 @@ function waitUntilConversionDone(itemid) {
 
 
 
-exports.delete = async (itemid) => {
+exports.deleteConversionitem = async (itemid, args) => {
 
-  let item = await Conversionitem.findOne({ storageID: itemid });
+  let item = await authorization.getConversionItem(itemid, args);
   if (item) {
+    console.log("Deleting item: " + itemid + " " + item.name);
     storage.delete("conversiondata/" + item.storageID, item);
     lastUpdated = new Date();
     await Conversionitem.deleteOne({ storageID: itemid });
@@ -515,26 +645,64 @@ exports.delete = async (itemid) => {
 };
 
 async function sendConversionRequest() {
-  let queueservers = await Queueserveritem.find({region: config.get('hc-caas.region')});
+  let queueservers = await Queueserveritem.find({ region: config.get('hc-caas.region') });
+  
 
   queueservers.sort(function (a, b) {
-    if (a.freeConversionSlots > b.freeConversionSlots) {
-      return -1;
-    }
-    else if (a.freeConversionSlots < b.freeConversionSlots) {
-      return 1;
-    }
-    return 0;
+    return  a.pingFailed - b.pingFailed || b.priority - a.priority || b.freeConversionSlots - a.freeConversionSlots;
+
   });
 
   if (queueservers && queueservers.length > 0) {
-    await fetch("http://" + queueservers[0].address + '/api/startConversion', { method: 'PUT' });
+    for (let i = 0; i < queueservers.length; i++) {
+      const controller = new AbortController();
+      let to = setTimeout(() => controller.abort(), 2000);
+      
+      if (queueservers[i].freeConversionSlots > 0) {
+        try {
+          let queserverip = queueservers[i].address;
+          if (queserverip.indexOf(global.caas_publicip) != -1) {
+            queserverip = "localhost" + ":" + config.get('hc-caas.port');
+          }
+
+          let res = await fetch("http://" + queserverip + '/caas_api/startConversion', { method: 'PUT',signal: controller.signal,
+          headers: { 'CS-API-Arg': JSON.stringify({accessPassword:config.get('hc-caas.accessPassword') }) } });
+          if (res.status == 404) {
+            throw 'Conversion Server not found';
+          }
+        }
+        catch (e) {
+          console.log("Error sending conversion request to " + queueservers[0].address + ": " + e);
+          queueservers[i].pingFailed = true;
+          queueservers[i].save();
+          continue;
+        }
+        queueservers[i].lastPing = new Date();
+        queueservers[i].pingFailed = false;
+        queueservers[i].save();
+        break;
+      }
+      clearTimeout(to);
+    }
   }
 }
 
 
-exports.getItems = async () => {
-  let models = await Conversionitem.find();
+exports.getItems = async (args) => {
+
+  let user = await authorization.getUser(args);
+
+  if (user == -1) {
+    return { ERROR: "Not authorized" };
+  }
+
+  let models;
+  if (user) {
+    models = await Conversionitem.find({ user: user });
+  }
+  else {
+    models = await Conversionitem.find();
+  }
 
   let cleanedModels = [];
 
