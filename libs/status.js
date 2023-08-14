@@ -66,8 +66,8 @@ exports.generateJSON = async () => {
   for (let i = 0; i < streamingservers.length; i++) {
     servers.push({
       servername: streamingservers[i].name ? streamingservers[i].name : "", serveraddress: streamingservers[i].address,
-      type: 'Streaming Server', status: (streamingservers[i].pingFailed ? 'Offline' : 'Online'), lastAccess: formatDate(streamingservers[i].lastPing)
-    });
+      type: 'Streaming Server', status: (streamingservers[i].pingFailed ? 'Offline' : 'Online'), lastAccess: formatDate(streamingservers[i].lastPing),
+      freeSlots: streamingservers[i].freeStreamingSlots});
   }
 
   let queueservers = await Queueserveritem.find();
@@ -85,11 +85,9 @@ exports.generateJSON = async () => {
   });
 
   for (let i = 0; i < queueservers.length; i++) {
-
     servers.push({
       servername: queueservers[i].name ? queueservers[i].name : "", serveraddress: queueservers[i].address, type: 'Conversion Server', status: (queueservers[i].pingFailed ? 'Offline' : 'Online'),
-      lastAccess: formatDate(queueservers[i].lastPing)
-    });
+      lastAccess: formatDate(queueservers[i].lastPing),freeSlots: queueservers[i].freeConversionSlots});
   }
   return servers;
 };

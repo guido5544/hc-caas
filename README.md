@@ -1,5 +1,10 @@
 # CaaS (Communicator as a Service): Conversion and Streaming Server Backend for HOOPS Communicator
 
+## Version Update (0.10.5) 
+* Version update for CaaS Server Depolyment Release
+* Access Control Support
+* Various improvements and bugfixes
+
 ## Version Update (0.9.18) 
 * SSR support
 
