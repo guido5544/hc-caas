@@ -5,7 +5,7 @@ const config = require('config');
 const bcrypt = require('bcrypt');
 
 
-exports.getUser = async (args) => {
+exports.getUserID = async (args) => {
     if (!config.get('hc-caas.requireAccessKey')) {
         return undefined;
     }
@@ -22,16 +22,20 @@ exports.getUser = async (args) => {
 
 exports.getConversionItem = async (itemid, args, useNames = false) => {
     let user = undefined;
-    if (config.get('hc-caas.requireAccessKey')) {
-        if (!args || !args.accessKey) {
-            return null;
-        }
 
-        let key = await APIKey.findOne({ _id: args.accessKey });
-        if (!key) {
-            return null;
+    if (config.get('hc-caas.accessPassword') == "" || config.get('hc-caas.accesPassword') != args.accessPassword) {
+
+        if (config.get('hc-caas.requireAccessKey')) {
+            if (!args || !args.accessKey) {
+                return null;
+            }
+
+            let key = await APIKey.findOne({ _id: args.accessKey });
+            if (!key) {
+                return null;
+            }
+            user = key.user;
         }
-        user = key.user;
     }
 
     if (!Array.isArray(itemid)) {
@@ -49,9 +53,9 @@ exports.getConversionItem = async (itemid, args, useNames = false) => {
 
 
 
-exports.addUser = async (req,args) => {
+exports.addUser = async (req, args) => {
 
-    let userid = await this.getUser(args);
+    let userid = await this.getUserID(args);
     if (userid == -1) {
         return { ERROR: "Not authorized" };
     }

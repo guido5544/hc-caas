@@ -326,7 +326,7 @@ exports.append = async (directory, itemname, itemid, args) => {
 
 exports.requestUploadToken = async (itemname, args) => {
 
-  let user = await authorization.getUser(args);
+  let user = await authorization.getUserID(args);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -410,7 +410,7 @@ exports.createDatabaseEntry = async (itemname, args) => {
 
   let itemid = uuidv4();
   let startState = "PENDING";
-  let user = await authorization.getUser(args);
+  let user = await authorization.getUserID(args);
 
   if (user == -1) {
     return null;
@@ -502,7 +502,7 @@ exports.create = async (item, directory, itemname, args) => {
 
 
 exports.createEmpty = async (args) => {
-  let user = await authorization.getUser(args);
+  let user = await authorization.getUserID(args);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -690,7 +690,7 @@ async function sendConversionRequest() {
 
 exports.getItems = async (args) => {
 
-  let user = await authorization.getUser(args);
+  let user = await authorization.getUserID(args);
 
   if (user == -1) {
     return { ERROR: "Not authorized" };

@@ -117,7 +117,7 @@ exports.start = async function (mongoose_in, customCallback) {
         app.use(function (req, res, next) {
           if (req.get("CS-API-Arg")) {
             let args = JSON.parse(req.get("CS-API-Arg"));
-            if (args.accessPassword == config.get('hc-caas.accessPassword')) {
+            if (args.accessPassword == config.get('hc-caas.accessPassword') || (args.accessKey && config.get('hc-caas.requireAccessKey'))) {
               return next();
             }
           }
