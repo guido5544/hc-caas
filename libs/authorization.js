@@ -115,5 +115,5 @@ exports.checkPassword = async (req) => {
         return { ERROR: "wrong password" };        
     }
 
-    return {SUCCESS: true};
+    return {success: true};
 };
