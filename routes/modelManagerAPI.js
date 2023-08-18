@@ -31,6 +31,8 @@ router.put('/enableStreamAccess/:sessionid', apiController.enableStreamAccess);
 
 router.post('/addUser', apiController.addUser);
 router.get('/generateAPIKey/:email/:password', apiController.generateAPIKey);
+router.get('/checkPassword/:email/:password', apiController.checkPassword);
+
 
 
 module.exports = router;

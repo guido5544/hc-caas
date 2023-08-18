@@ -101,3 +101,19 @@ exports.generateAPIKey = async (req) => {
 
    return {key:item.id};    
 };
+
+
+exports.checkPassword = async (req) => {
+
+    let user = await User.findOne({email:req.params.email});
+    if (!user) {
+        return { ERROR: "User not found" };        
+    }
+
+    let result = await bcrypt.compare(req.params.password, user.password);
+    if (!result) {
+        return { ERROR: "wrong password" };        
+    }
+
+    return {SUCCESS: true};
+};

@@ -302,3 +302,8 @@ exports.generateAPIKey = (req, res, next) => {
     let response = authorization.generateAPIKey(req,setupAPIArgs(req));
     res.json(response);
 };
+
+exports.checkPassword = (req, res, next) => {
+    let response = authorization.checkPassword(req,setupAPIArgs(req));
+    res.json(response);
+};
