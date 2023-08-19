@@ -9,11 +9,8 @@ const UserSchema = new Schema({
   password: { type: String, required: true},
   role: { type: Number, required: true, default:1},
   status: { type: String, required: false, default:"active"},
-  organization: {
-    type: Schema.Types.ObjectId,
-    ref: 'Organizations',
-    required: false
-  }
+  organizations: [{id:String, role: Number,accepted:Boolean}],
+  inviteCode: { type: String, required: false}
 }, {timestamps:true});
 
 module.exports = global.con.model('Users', UserSchema);
