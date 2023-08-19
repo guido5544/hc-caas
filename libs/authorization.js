@@ -22,23 +22,41 @@ exports.getUserID = async (args) => {
     return key.user;
 }
 
+
+exports.getUserAdmin = async (args) => {
+    if (config.get('hc-caas.accessPassword') == "" || config.get('hc-caas.accessPassword') != args.accessPassword) {
+        return -1;
+    }
+
+    if (!args.email) {
+        return null;
+    }
+
+    let user = await User.findOne({ id: args.email});
+    let result = await bcrypt.compare(args.password, user.password);
+    if (!result) {
+        return -1;
+    }
+
+    return user;
+}
+
 exports.getConversionItem = async (itemid, args, useNames = false) => {
     let user = undefined;
 
-    if (config.get('hc-caas.accessPassword') == "" || config.get('hc-caas.accesPassword') != args.accessPassword) {
 
-        if (config.get('hc-caas.requireAccessKey')) {
-            if (!args || !args.accessKey) {
-                return null;
-            }
-
-            let key = await APIKey.findOne({ _id: args.accessKey });
-            if (!key) {
-                return null;
-            }
-            user = key.user;
+    if (config.get('hc-caas.requireAccessKey')) {
+        if (!args || !args.accessKey) {
+            return null;
         }
+
+        let key = await APIKey.findOne({ _id: args.accessKey });
+        if (!key) {
+            return null;
+        }
+        user = key.user;
     }
+    
 
     if (!Array.isArray(itemid)) {
         return await Conversionitem.findOne({ storageID: itemid, user: user });
@@ -66,21 +84,13 @@ function findOrgRole(orgid,user) {
 
 
 exports.addUser = async (req, args) => {
-
-    let userid = await this.getUserID(args);
-    if (userid == -1) {
+    
+    let user = await this.getUserAdmin(args);
+    if (user == -1) {
         return { ERROR: "Not authorized" };
     }
 
-    let user;
     let org;
-
-    if (userid) {
-        user = await User.findOne({ id: userid });
-        if (!user) {
-            return { ERROR: "User not found" };
-        }
-    }
 
     if (req.body.organizationID && (!user || user.role == 0)) {
         org = await Organization.findOne({ id: req.body.organizationID });
