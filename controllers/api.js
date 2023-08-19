@@ -307,3 +307,8 @@ exports.checkPassword = async (req, res, next) => {
     let response = await authorization.checkPassword(req,setupAPIArgs(req));
     res.json(response);
 };
+
+exports.getUserInfo = async (req, res, next) => {
+    let response = await authorization.getUserInfo(req,setupAPIArgs(req));
+    res.json(response);
+};
