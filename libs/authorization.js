@@ -1,4 +1,5 @@
 const User = require('../models/UserManagement/User');
+const Organization = require('../models/UserManagement/Organization');
 const APIKey = require('../models/UserManagement/ApiKey');
 const Conversionitem = require('../models/conversionitem');
 const config = require('config');
@@ -60,22 +61,43 @@ exports.addUser = async (req, args) => {
         return { ERROR: "Not authorized" };
     }
 
+    let user;
     if (userid) {
-        let user = await User.findOne({id:userid});
-        if (user.role > 0) {
+        user = await User.findOne({ id: userid });
+        if (!user || user.role > 1) {
             return { ERROR: "Not authorized" };
         }
     }
-    let password = await bcrypt.hash(req.body.password,10);
+    let password = await bcrypt.hash(req.body.password, 10);
+
+    let org;
+
+    if (req.body.organizationID && (!user || user.role == 0)) {
+        org = await Organization.findOne({ id: req.body.organizationID });
+    }
+    else if (user && user.defaultOrganization) {
+        org = await Organization.findOne({ id: user.defaultOrganization });
+    }
+
+    if (!org) {
+        org = new Organization({
+            name: "Temp"
+        });
+        await org.save();
+    }
 
     const item = new User({
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         email: req.body.email,
         password: password,
-      });
+        organizations: [{ id: org.id, role: 1, accepted: false }],
+        defaultOrganization: org.id
+    });
+
+
     await item.save();
-    return {};
+    return { organizationID: org.id };
 };
 
 

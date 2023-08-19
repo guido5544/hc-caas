@@ -293,17 +293,17 @@ exports.getCustom = (req, res, next) => {
 };
 
 
-exports.addUser = (req, res, next) => {
-    let response = authorization.addUser(req,setupAPIArgs(req));
+exports.addUser = async (req, res, next) => {
+    let response = await authorization.addUser(req,setupAPIArgs(req));
     res.json(response);
 };
 
-exports.generateAPIKey = (req, res, next) => {
-    let response = authorization.generateAPIKey(req,setupAPIArgs(req));
+exports.generateAPIKey = async (req, res, next) => {
+    let response = await authorization.generateAPIKey(req,setupAPIArgs(req));
     res.json(response);
 };
 
-exports.checkPassword = (req, res, next) => {
-    let response = authorization.checkPassword(req,setupAPIArgs(req));
+exports.checkPassword = async (req, res, next) => {
+    let response = await authorization.checkPassword(req,setupAPIArgs(req));
     res.json(response);
 };

@@ -10,6 +10,7 @@ const UserSchema = new Schema({
   role: { type: Number, required: true, default:1},
   status: { type: String, required: false, default:"active"},
   organizations: [{id:String, role: Number,accepted:Boolean}],
+  defaultOrganization: { type: String, required: false},
   inviteCode: { type: String, required: false}
 }, {timestamps:true});
 
