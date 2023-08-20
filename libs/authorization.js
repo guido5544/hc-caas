@@ -237,6 +237,9 @@ exports.retrieveInvite = async (req,args) => {
 
 
     let invite = await Invite.findOne({ id: req.params.inviteid });
+    if (!invite) {
+        return { ERROR: "Invite not found" };
+    }
 
     let user = await User.findOne(invite.user);
     let organization = await Organization.findOne(invite.organization);
