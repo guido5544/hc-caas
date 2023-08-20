@@ -33,6 +33,9 @@ router.post('/addUser', apiController.addUser);
 router.get('/generateAPIKey/:email/:password', apiController.generateAPIKey);
 router.get('/checkPassword/:email/:password', apiController.checkPassword);
 router.get('/userInfo/:email/:password', apiController.getUserInfo);
+router.put('/changeOrgName/:email/:password/:orgid/:orgname', apiController.changeOrgName);
+router.get('/retrieveInvite/:inviteid', apiController.retrieveInvite);
+router.put('/acceptInvite/:inviteid/:password?', apiController.acceptInvite);
 
 
 

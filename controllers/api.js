@@ -312,3 +312,19 @@ exports.getUserInfo = async (req, res, next) => {
     let response = await authorization.getUserInfo(req,setupAPIArgs(req));
     res.json(response);
 };
+
+exports.changeOrgName = async (req, res, next) => {
+    let response = await authorization.changeOrgName(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.retrieveInvite = async (req, res, next) => {
+    let response = await authorization.retrieveInvite(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.acceptInvite = async (req, res, next) => {
+    let response = await authorization.acceptInvite(req,setupAPIArgs(req));
+    res.json(response);
+};

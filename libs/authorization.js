@@ -23,17 +23,17 @@ exports.getUserID = async (args) => {
 }
 
 
-exports.getUserAdmin = async (args) => {
+exports.getUserAdmin = async (args, email,password) => {
     if (config.get('hc-caas.accessPassword') == "" || config.get('hc-caas.accessPassword') != args.accessPassword) {
         return -1;
     }
 
-    if (!args.email) {
+    if (!email) {
         return null;
     }
 
-    let user = await User.findOne({ id: args.email});
-    let result = await bcrypt.compare(args.password, user.password);
+    let user = await User.findOne({ id: email});
+    let result = await bcrypt.compare(password, user.password);
     if (!result) {
         return -1;
     }
@@ -85,7 +85,7 @@ function findOrgRole(orgid,user) {
 
 exports.addUser = async (req, args) => {
     
-    let user = await this.getUserAdmin(args);
+    let user = await this.getUserAdmin(args,args.email,args.password);
     if (user == -1) {
         return { ERROR: "Not authorized" };
     }
@@ -196,7 +196,7 @@ exports.checkPassword = async (req) => {
 
 
 
-exports.getUserInfo = async (req) => {
+exports.getUserInfo = async (req,args) => {
 
     let user = await User.findOne({email:req.params.email});
     if (!user) {
@@ -215,19 +215,71 @@ exports.getUserInfo = async (req) => {
 
 
 
-exports.changeOrgName = async (req) => {
+exports.changeOrgName = async (req,args) => {
 
-    let user = await User.findOne({email:req.params.email});
-    if (!user) {
-        return { ERROR: "User not found" };        
+    let user = await this.getUserAdmin(args, req.params.email, req.params.password);
+    if (user == -1 || !user || findOrgRole(req.params.orgid,user) > 1) {
+        return { ERROR: "Not authorized" };
     }
 
-    let result = await bcrypt.compare(req.params.password, user.password);
-    if (!result) {
-        return { ERROR: "wrong password" };        
+    let org = await Organization.findOne({ id: req.params.orgid });
+    if (!org) {
+        return { ERROR: "Organization not found" };
     }
+    org.name = req.params.orgname;
+    await org.save();
 
-    let org = await Organization.findOne({ id: user.defaultOrganization });
-
-    return {firstName:user.firstName, lastName:user.lastName, organization:org.name,organizationID:org.id};
+    return {orgName: org.name};
 };
+
+
+exports.retrieveInvite = async (req,args) => {
+
+
+    let invite = await Invite.findOne({ id: req.params.inviteid });
+
+    let user = await User.findOne(invite.user);
+    let organization = await Organization.findOne(invite.organization);
+
+    return {email: user.email, hasPassword: user.password ? true : false,
+        organization: organization.name, organizationID: organization.id};
+};
+
+
+
+
+
+exports.acceptInvite = async (req,args) => {
+
+
+    let invite = await Invite.findOne({ id: req.params.inviteid });
+
+    let user = await User.findOne(invite.user);
+
+    if (!user.password) {
+        if (!req.params.password) {
+            return { ERROR: "Password required" };
+        }
+        user.password = await bcrypt.hash(req.params.password, 10);
+        await user.save();
+    }
+
+    let org = await Organization.findOne(invite.organization);
+
+    
+    let orgs = user.organizations;
+    for (let i = 0; i < orgs.length; i++) {
+        if (orgs[i].id == org.id) {
+            orgs[i].accepted = true;
+            await user.save();
+            break;
+        }
+    }
+
+    await Invite.deleteOne({ id: req.params.inviteid });
+
+    return {success:true};
+};
+
+
+
