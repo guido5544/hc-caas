@@ -94,6 +94,42 @@ function findOrg(orgid,user) {
 
 
 
+
+
+exports.updateUser = async (req, args) => {
+    let user = await this.getUserAdmin(args,args.email,args.password);
+    if (user == -1) {
+        return { ERROR: "Not authorized" };
+    }
+
+    if (user && findOrgRole(req.body.organizationID,user) > 1) {
+        return { ERROR: "Not authorized" };
+    }
+
+    let ruser = await User.findOne({ email: req.body.email });
+
+    if (req.body.firstName) {
+        ruser.firstName = req.body.firstName 
+    }
+  
+    if (req.body.lastName) {
+        ruser.lastName = req.body.lastName 
+    }
+
+    if (req.body.role && req.body.organizationID) {       
+        for (let i=0;i<ruser.organizations.length;i++) {
+            if (ruser.organizations[i].id == req.body.organizationID) {
+                ruser.organizations[i].role = req.body.role;
+                await ruser.save();
+                break;
+            }
+        }
+    }
+    return {success:true};
+}
+
+
+
 exports.removeUser = async (req, args) => {
     
     let user = await this.getUserAdmin(args,args.email,args.password);
@@ -125,7 +161,6 @@ exports.removeUser = async (req, args) => {
 }
 
     
-
 
 
 exports.addUser = async (req, args) => {
@@ -231,6 +266,9 @@ exports.checkPassword = async (req) => {
     if (!user) {
         return { ERROR: "User not found" };        
     }
+    if (!user.password) {
+        return { ERROR: "No password set" };
+    }
 
     let result = await bcrypt.compare(req.params.password, user.password);
     if (!result) {
@@ -256,7 +294,7 @@ exports.getUserInfo = async (req,args) => {
 
     let org = await Organization.findOne({ id: user.defaultOrganization });
 
-    return {firstName:user.firstName, lastName:user.lastName, organization:org.name,organizationID:org.id, superuser: user.superuser};
+    return {firstName:user.firstName, lastName:user.lastName, organization:org.name,organizationID:org.id, superuser: user.superuser, role: findOrgRole(org.id,user)};
 };
 
 

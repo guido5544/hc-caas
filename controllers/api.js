@@ -335,6 +335,11 @@ exports.getUsers = async (req, res, next) => {
 };
 
 
+exports.updateUser = async (req, res, next) => {
+    let response = await authorization.updateUser(req,setupAPIArgs(req));
+    res.json(response);
+};
+
 
 exports.removeUser = async (req, res, next) => {
     let response = await authorization.removeUser(req,setupAPIArgs(req));
