@@ -137,7 +137,7 @@ exports.addUser = async (req, args) => {
 
     let org;
 
-    if (req.body.organizationID && (!user || user.role == 0)) {
+    if (req.body.organizationID && (!user || user.superuser == 0)) {
         org = await Organization.findOne({ id: req.body.organizationID });
         if (!org) {
             return { ERROR: "Organization not found" };
@@ -179,8 +179,9 @@ exports.addUser = async (req, args) => {
             firstName: req.body.firstName,
             lastName: req.body.lastName,
             email: req.body.email,
+            superuser: req.body.role == 0 ? true : false,
             password: password,
-            organizations: [{ id: org.id, role: req.body.role, accepted: accepted }],
+            organizations: [{ id: org.id, role: (req.body.role == 0 ? 1 :req.body.role), accepted: accepted }],
             defaultOrganization: org.id
         });
         await item.save();
@@ -255,7 +256,7 @@ exports.getUserInfo = async (req,args) => {
 
     let org = await Organization.findOne({ id: user.defaultOrganization });
 
-    return {firstName:user.firstName, lastName:user.lastName, organization:org.name,organizationID:org.id};
+    return {firstName:user.firstName, lastName:user.lastName, organization:org.name,organizationID:org.id, superuser: user.superuser};
 };
 
 
