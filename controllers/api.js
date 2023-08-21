@@ -333,3 +333,10 @@ exports.getUsers = async (req, res, next) => {
     let response = await authorization.getUsers(req,setupAPIArgs(req));
     res.json(response);
 };
+
+
+
+exports.removeUser = async (req, res, next) => {
+    let response = await authorization.removeUser(req,setupAPIArgs(req));
+    res.json(response);
+};

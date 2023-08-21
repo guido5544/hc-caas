@@ -37,6 +37,7 @@ router.put('/changeOrgName/:email/:password/:orgid/:orgname', apiController.chan
 router.get('/retrieveInvite/:inviteid', apiController.retrieveInvite);
 router.put('/acceptInvite/:inviteid/:password?', apiController.acceptInvite);
 router.get('/getUsers/:email/:password/:orgid', apiController.getUsers);
+router.put('/removeUser/:targetemail/:orgid', apiController.removeUser);
 
 
 

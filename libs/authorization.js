@@ -94,6 +94,39 @@ function findOrg(orgid,user) {
 
 
 
+exports.removeUser = async (req, args) => {
+    
+    let user = await this.getUserAdmin(args,args.email,args.password);
+    if (user == -1) {
+        return { ERROR: "Not authorized" };
+    }
+
+    if (user && findOrgRole(req.params.orgid,user) > 1) {
+        return { ERROR: "Not authorized" };
+    }
+
+
+    let ruser = await User.findOne({ email: req.params.targetemail });
+    if (!ruser) {
+        return { ERROR: "User not found" };
+    }
+
+    for (let i=0;i<ruser.organizations.length;i++) {
+        if (ruser.organizations[i].id == req.params.orgid) {
+            ruser.organizations.splice(i,1);
+            await ruser.save();
+            break;
+        }
+    }
+    if (ruser.organizations.length == 0) {
+        await User.deleteOne({ email: req.params.targetemail });
+    }
+    return {success:true};
+}
+
+    
+
+
 
 exports.addUser = async (req, args) => {
     
@@ -259,6 +292,8 @@ exports.retrieveInvite = async (req,args) => {
     return {email: user.email, hasPassword: user.password ? true : false,
         organization: organization.name, organizationID: organization.id};
 };
+
+
 
 
 
