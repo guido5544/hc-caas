@@ -248,7 +248,7 @@ exports.changeOrgName = async (req,args) => {
 exports.retrieveInvite = async (req,args) => {
 
 
-    let invite = await Invite.findOne({ id: req.params.inviteid });
+    let invite = await Invite.findOne({ _id: req.params.inviteid });
     if (!invite) {
         return { ERROR: "Invite not found" };
     }
@@ -267,7 +267,7 @@ exports.retrieveInvite = async (req,args) => {
 exports.acceptInvite = async (req,args) => {
 
 
-    let invite = await Invite.findOne({ id: req.params.inviteid });
+    let invite = await Invite.findOne({ _id: req.params.inviteid });
 
     let user = await User.findOne(invite.user);
 
@@ -291,7 +291,7 @@ exports.acceptInvite = async (req,args) => {
         }
     }
 
-    await Invite.deleteOne({ id: req.params.inviteid });
+    await Invite.deleteOne({ _id: req.params.inviteid });
 
     return {success:true};
 };
