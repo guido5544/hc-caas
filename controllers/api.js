@@ -328,3 +328,8 @@ exports.acceptInvite = async (req, res, next) => {
     let response = await authorization.acceptInvite(req,setupAPIArgs(req));
     res.json(response);
 };
+
+exports.getUsers = async (req, res, next) => {
+    let response = await authorization.getUsers(req,setupAPIArgs(req));
+    res.json(response);
+};

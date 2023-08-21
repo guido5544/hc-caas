@@ -79,8 +79,20 @@ function findOrgRole(orgid,user) {
             return orgs[i].role;
         }
     }
-    return -1;
+    return 99999;
 }
+
+
+function findOrg(orgid,user) {
+    let orgs = user.organizations;
+    for (let i = 0; i < orgs.length; i++) {
+        if (orgs[i].id == orgid) {
+            return orgs[i];
+        }
+    }
+}
+
+
 
 
 exports.addUser = async (req, args) => {
@@ -123,8 +135,8 @@ exports.addUser = async (req, args) => {
 
     let existingUser = await User.findOne({ email: req.body.email });
     if (existingUser) {
-        if (findOrgRole(org.id,existingUser) == -1) {
-            existingUser.organizations.push({ id: org.id, role: 1, accepted: accepted });
+        if (findOrgRole(org.id,existingUser) == 99999) {
+            existingUser.organizations.push({ id: org.id, role: req.body.role, accepted: accepted });
             await existingUser.save();
         }
         return { organizationID: org.id };
@@ -135,7 +147,7 @@ exports.addUser = async (req, args) => {
             lastName: req.body.lastName,
             email: req.body.email,
             password: password,
-            organizations: [{ id: org.id, role: 1, accepted: accepted }],
+            organizations: [{ id: org.id, role: req.body.role, accepted: accepted }],
             defaultOrganization: org.id
         });
         await item.save();
@@ -284,5 +296,27 @@ exports.acceptInvite = async (req,args) => {
     return {success:true};
 };
 
+exports.getUsers = async (req,args) => {
 
+    let user = await this.getUserAdmin(args, req.params.email, req.params.password);
+    if (user == -1 || !user || findOrgRole(req.params.orgid,user) > 2) {
+        return { ERROR: "Not authorized" };
+    }
+
+    let users = await User.find({'organization': req.params.orgid });
+
+    let result = [];
+    for (let i=0;i<users.length;i++) {
+        let accepted = findOrg(req.params.orgid,users[i]).accepted;
+        let inviteid;
+        if (!accepted) {
+            let invite = await Invite.findOne({ user: users[i].id });
+            if (invite) {
+                inviteid = invite.id;
+            }
+        }
+        result.push({firstName:users[i].firstName, lastName:users[i].lastName, email:users[i].email, role:findOrgRole(req.params.orgid,users[i]), accepted:accepted, inviteid:inviteid});
+    }
+    return {users:result};
+}
 
