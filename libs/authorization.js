@@ -294,7 +294,7 @@ exports.getUserInfo = async (req,args) => {
 
     let org = await Organization.findOne({ _id: user.defaultOrganization });
 
-    return {firstName:user.firstName, lastName:user.lastName, organization:org.name,organizationID:org.id, superuser: user.superuser, role: findOrgRole(org.id,user)};
+    return {email: user.email,firstName:user.firstName, lastName:user.lastName, organization:org.name,organizationID:org.id, superuser: user.superuser, role: findOrgRole(org.id,user)};
 };
 
 
