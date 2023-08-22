@@ -345,3 +345,24 @@ exports.removeUser = async (req, res, next) => {
     let response = await authorization.removeUser(req,setupAPIArgs(req));
     res.json(response);
 };
+
+exports.addOrganization = async (req, res, next) => {
+    let response = await authorization.addOrganization(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.getOrganizations = async (req, res, next) => {
+    let response = await authorization.getOrganizations(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.getOrganization = async (req, res, next) => {
+    let response = await authorization.getOrganization(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.switchOrganization = async (req, res, next) => {
+    let response = await authorization.switchOrganization(req,setupAPIArgs(req));
+    res.json(response);
+};

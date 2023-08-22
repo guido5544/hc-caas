@@ -32,7 +32,7 @@ exports.getUserAdmin = async (args, email,password) => {
         return null;
     }
 
-    let user = await User.findOne({ id: email});
+    let user = await User.findOne({ email: email});
     let result = await bcrypt.compare(password, user.password);
     if (!result) {
         return -1;
@@ -172,8 +172,8 @@ exports.addUser = async (req, args) => {
 
     let org;
 
-    if (req.body.organizationID && (!user || user.superuser == 0)) {
-        org = await Organization.findOne({ id: req.body.organizationID });
+    if (req.body.organizationID && (!user || user.superuser)) {
+        org = await Organization.findOne({ _id: req.body.organizationID });
         if (!org) {
             return { ERROR: "Organization not found" };
         }
@@ -182,7 +182,7 @@ exports.addUser = async (req, args) => {
         if (findOrgRole(user.defaultOrganization,user) > 1) {
             return { ERROR: "Not authorized" };
         }
-        org = await Organization.findOne({ id: user.defaultOrganization });
+        org = await Organization.findOne({ _id: user.defaultOrganization });
     }
     
     let accepted = false;
@@ -204,7 +204,7 @@ exports.addUser = async (req, args) => {
     let existingUser = await User.findOne({ email: req.body.email });
     if (existingUser) {
         if (findOrgRole(org.id,existingUser) == 99999) {
-            existingUser.organizations.push({ id: org.id, role: req.body.role, accepted: accepted });
+            existingUser.organizations.push({ id: org.id, role: req.body.role, accepted: true });
             await existingUser.save();
         }
         return { organizationID: org.id };
@@ -292,7 +292,7 @@ exports.getUserInfo = async (req,args) => {
         return { ERROR: "wrong password" };        
     }
 
-    let org = await Organization.findOne({ id: user.defaultOrganization });
+    let org = await Organization.findOne({ _id: user.defaultOrganization });
 
     return {firstName:user.firstName, lastName:user.lastName, organization:org.name,organizationID:org.id, superuser: user.superuser, role: findOrgRole(org.id,user)};
 };
@@ -317,6 +317,27 @@ exports.changeOrgName = async (req,args) => {
 };
 
 
+
+
+
+exports.addOrganization = async (req,args) => {
+
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (!user.superuser) {
+        return { ERROR: "Not authorized" };
+
+    }
+
+    let org = new Organization({
+        name: req.params.orgname
+    });
+    await org.save();
+   
+    return { organizationID: org.id};
+};
+
+
+
 exports.retrieveInvite = async (req,args) => {
 
 
@@ -331,11 +352,6 @@ exports.retrieveInvite = async (req,args) => {
     return {email: user.email, hasPassword: user.password ? true : false,
         organization: organization.name, organizationID: organization.id};
 };
-
-
-
-
-
 
 
 exports.acceptInvite = async (req,args) => {
@@ -373,11 +389,11 @@ exports.acceptInvite = async (req,args) => {
 exports.getUsers = async (req,args) => {
 
     let user = await this.getUserAdmin(args, req.params.email, req.params.password);
-    if (user == -1 || !user || findOrgRole(req.params.orgid,user) > 2) {
+    if (user == -1 || !user || (findOrgRole(req.params.orgid,user) > 2 && !user.superuser)) {
         return { ERROR: "Not authorized" };
     }
 
-    let users = await User.find({'organization': req.params.orgid });
+    let users = await User.find({'organizations.id': req.params.orgid });
 
     let result = [];
     for (let i=0;i<users.length;i++) {
@@ -392,5 +408,67 @@ exports.getUsers = async (req,args) => {
         result.push({firstName:users[i].firstName, lastName:users[i].lastName, email:users[i].email, role:findOrgRole(req.params.orgid,users[i]), accepted:accepted, inviteid:inviteid});
     }
     return {users:result};
+}
+
+
+
+exports.getOrganizations = async (req,args) => {
+
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user) {
+        return { ERROR: "Not authorized" };
+    }
+
+    if (user.superuser && req.params.getAll == 'true') {
+
+        let orgs = await Organization.find();
+        let result = [];
+        for (let i = 0; i < orgs.length; i++) {
+            result.push({ name: orgs[i].name, id: orgs[i].id });
+        }
+        return { organizations: result };
+    }
+
+    let result = [];
+    for (let i=0;i<user.organizations.length;i++) {
+        let org = await Organization.findOne({ _id: user.organizations[i].id });
+        result.push({name:org.name,id:org.id,role:user.organizations[i].role});
+    }
+
+    return {organizations:result};
+}
+
+
+
+exports.getOrganization = async (req,args) => {
+
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user) {
+        return { ERROR: "Not authorized" };
+    }
+   let org = await Organization.findOne({ _id: req.params.orgid });
+
+    return {orgname:org.name};
+}
+
+
+
+
+exports.switchOrganization = async (req,args) => {
+
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user) {
+        return { ERROR: "Not authorized" };
+    }
+
+    for (let i=0;i<user.organizations.length;i++) {
+        if (user.organizations[i].id == req.params.orgid) {
+            user.defaultOrganization = req.params.orgid;
+            await user.save();
+            return {success:true};
+        }
+    }
+
+    return { ERROR: "User is not part of this Organization" };
 }
 

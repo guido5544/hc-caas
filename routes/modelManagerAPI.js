@@ -38,8 +38,11 @@ router.get('/retrieveInvite/:inviteid', apiController.retrieveInvite);
 router.put('/acceptInvite/:inviteid/:password?', apiController.acceptInvite);
 router.get('/getUsers/:email/:password/:orgid', apiController.getUsers);
 router.put('/removeUser/:targetemail/:orgid', apiController.removeUser);
+router.put('/addOrganization/:orgname', apiController.addOrganization);
 router.post('/updateUser', apiController.updateUser);
-
+router.get('/getOrganizations/:getAll?', apiController.getOrganizations);
+router.get('/getOrganization/:orgid', apiController.getOrganization);
+router.put('/switchOrganization/:orgid', apiController.switchOrganization);
 
 
 module.exports = router;
