@@ -366,3 +366,9 @@ exports.switchOrganization = async (req, res, next) => {
     let response = await authorization.switchOrganization(req,setupAPIArgs(req));
     res.json(response);
 };
+
+
+exports.getAPIKeys = async (req, res, next) => {
+    let response = await authorization.getAPIKeys(req,setupAPIArgs(req));
+    res.json(response);
+};

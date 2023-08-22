@@ -248,9 +248,7 @@ exports.generateAPIKey = async (req) => {
         return { ERROR: "wrong password" };        
 
     }
-
-    await APIKey.deleteOne({ user: user.id });
-    
+   
     const item = new APIKey({
     user: user
    });
@@ -472,3 +470,21 @@ exports.switchOrganization = async (req,args) => {
     return { ERROR: "User is not part of this Organization" };
 }
 
+
+
+
+exports.getAPIKeys = async (req,args) => {
+
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user) {
+        return { ERROR: "Not authorized" };
+    }
+
+    let keys = await APIKey.find({ user: user.id });
+
+    let result = [];
+    for (let i = 0; i < keys.length; i++) {
+        result.push({ name: keys[i].name, created: keys[i].createdAt,usedAt: keys[i].usedAt,key: keys[i].id });
+    }
+    return { keys: result };
+}

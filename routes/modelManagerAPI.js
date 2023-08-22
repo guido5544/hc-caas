@@ -43,6 +43,6 @@ router.post('/updateUser', apiController.updateUser);
 router.get('/getOrganizations/:getAll?', apiController.getOrganizations);
 router.get('/getOrganization/:orgid', apiController.getOrganization);
 router.put('/switchOrganization/:orgid', apiController.switchOrganization);
-
+router.get('/getAPIKeys', apiController.getAPIKeys);
 
 module.exports = router;
