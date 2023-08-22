@@ -102,7 +102,7 @@ exports.updateUser = async (req, args) => {
         return { ERROR: "Not authorized" };
     }
 
-    if (user && findOrgRole(req.body.organizationID,user) > 1) {
+    if (user && (req.body.role && findOrgRole(req.body.organizationID,user) > 1)) {
         return { ERROR: "Not authorized" };
     }
 
@@ -119,12 +119,12 @@ exports.updateUser = async (req, args) => {
     if (req.body.role && req.body.organizationID) {       
         for (let i=0;i<ruser.organizations.length;i++) {
             if (ruser.organizations[i].id == req.body.organizationID) {
-                ruser.organizations[i].role = req.body.role;
-                await ruser.save();
+                ruser.organizations[i].role = req.body.role;               
                 break;
             }
         }
     }
+    await ruser.save();
     return {success:true};
 }
 
