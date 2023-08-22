@@ -44,5 +44,6 @@ router.get('/getOrganizations/:getAll?', apiController.getOrganizations);
 router.get('/getOrganization/:orgid', apiController.getOrganization);
 router.put('/switchOrganization/:orgid', apiController.switchOrganization);
 router.get('/getAPIKeys', apiController.getAPIKeys);
-
+router.put('/invalidateAPIKey/:key', apiController.invalidateAPIKey);
+router.put('/editAPIKey/:key', apiController.editAPIKey);
 module.exports = router;

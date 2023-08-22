@@ -372,3 +372,16 @@ exports.getAPIKeys = async (req, res, next) => {
     let response = await authorization.getAPIKeys(req,setupAPIArgs(req));
     res.json(response);
 };
+
+
+exports.invalidateAPIKey = async (req, res, next) => {
+    let response = await authorization.invalidateAPIKey(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+
+exports.editAPIKey = async (req, res, next) => {
+    let response = await authorization.editAPIKey(req,setupAPIArgs(req));
+    res.json(response);
+};

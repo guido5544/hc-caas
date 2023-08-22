@@ -488,3 +488,43 @@ exports.getAPIKeys = async (req,args) => {
     }
     return { keys: result };
 }
+
+
+exports.invalidateAPIKey = async (req,args) => {
+
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user) {
+        return { ERROR: "Not authorized" };
+    }
+
+    let keys = await APIKey.find({ user: user.id });
+    for (let i = 0; i < keys.length; i++) {
+        if (keys[i].id == req.params.key) {
+            keys[i].valid = false;
+            await keys[i].save();
+            return {success:true};
+        }
+    }
+
+    return { ERROR: "Key not found" };
+}
+
+
+exports.editAPIKey = async (req,args) => {
+
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user) {
+        return { ERROR: "Not authorized" };
+    }
+
+    let keys = await APIKey.find({ user: user.id });
+    for (let i = 0; i < keys.length; i++) {
+        if (keys[i].id == req.params.key) {
+            keys[i].name = args.name;
+            await keys[i].save();
+            return {success:true};
+        }
+    }
+
+    return { ERROR: "Key not found" };
+}
