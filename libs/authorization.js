@@ -236,25 +236,20 @@ exports.addUser = async (req, args) => {
 };
 
 
-exports.generateAPIKey = async (req) => {
+exports.generateAPIKey = async (req,args) => {
 
-    let user = await User.findOne({email:req.params.email});
-    if (!user) {
-        return { ERROR: "User not found" };        
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user) {
+        return { ERROR: "Not authorized" };
     }
 
-    let result = await bcrypt.compare(req.params.password, user.password);
-    if (!result) {
-        return { ERROR: "wrong password" };        
-
-    }
-   
     const item = new APIKey({
-    user: user
-   });
-   await item.save();
+        name: args.name,
+        user: user
+    });
+    await item.save();
 
-   return {key:item.id};    
+    return { key: item.id };
 };
 
 
@@ -484,7 +479,7 @@ exports.getAPIKeys = async (req,args) => {
 
     let result = [];
     for (let i = 0; i < keys.length; i++) {
-        result.push({ name: keys[i].name, created: keys[i].createdAt,usedAt: keys[i].usedAt,key: keys[i].id });
+        result.push({ name: keys[i].name, created: keys[i].createdAt,usedAt: keys[i].usedAt,key: keys[i].id, valid: keys[i].valid });
     }
     return { keys: result };
 }
