@@ -60,6 +60,8 @@ exports.getUserAdmin = async (args, email,password) => {
 
 
 
+
+
 exports.conversionAllowed = async (args) => {
     if (!config.get('hc-caas.requireAccessKey')) {
         return true;
@@ -99,9 +101,8 @@ exports.conversionAllowed = async (args) => {
 }
 
 exports.getConversionItem = async (itemid, args, action = this.actionType.dataAccess, useNames = false) => {
-    let user = undefined;
-
-
+    let user;
+    let org;
     if (config.get('hc-caas.requireAccessKey')) {
         if (!args || !args.accessKey) {
             return null;
@@ -124,7 +125,7 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
         user = await User.findOne({ _id: key.user });
 
         if (action != this.actionType.info && action != this.actionType.other) {
-            let org = await Organization.findOne({ _id: user.defaultOrganization });
+            org = await Organization.findOne({ _id: user.defaultOrganization });
 
             if (!org) {
                 return null;
@@ -133,6 +134,17 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
             if (org.tokens == 0) {
                 return null;
             }
+            if (Array.isArray(itemid)) {
+                if (itemid.length > org.tokens) {
+                    return null;
+                }
+                org.tokens -= itemid.length;
+            }
+            else {
+                org.tokens--;
+            }
+            await org.save();
+
         }
     }
 
