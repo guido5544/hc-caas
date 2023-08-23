@@ -7,6 +7,9 @@ const fetch = require('node-fetch');
 
 const Conversionitem = require('../models/conversionitem');
 const Queueserveritem = require('../models/queueserveritem');
+
+const authorization = require('./authorization');
+
 const decompress = require('decompress');
 
 var storage;
@@ -188,6 +191,8 @@ async function getFileFromStorage(payload) {
 
 async function conversionComplete(err, item) {
 
+
+
   let savedFiles = [];
   if (err != null)
     console.log(err);
@@ -206,6 +211,8 @@ async function conversionComplete(err, item) {
     }
 
     let founditem = await Conversionitem.findOne({ storageID: item.storageID });
+    authorization.conversionComplete(founditem);
+    
     founditem.conversionState = "SUCCESS";
     founditem.updated =  new Date();
     for (let i=0;i<savedFiles.length;i++)

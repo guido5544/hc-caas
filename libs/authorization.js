@@ -6,7 +6,6 @@ const Conversionitem = require('../models/conversionitem');
 const config = require('config');
 const bcrypt = require('bcrypt');
 
-
 exports.actionType = {
     dataAccess:0,    
     streamingAccess:1,    
@@ -97,9 +96,21 @@ exports.conversionAllowed = async (args) => {
         return false;
     }
 
-    return org.tokens > 0;
+    return org.tokens > 10;
 }
 
+
+exports.conversionComplete = async (item) => {
+    if (config.get('hc-caas.requireAccessKey')) {
+        if (item.organization) {
+            let org = await Organization.findOne({ _id: item.organization });
+            if (org) {
+                org.tokens-=10;
+                await org.save();
+            }
+        }
+    }
+}
 exports.getConversionItem = async (itemid, args, action = this.actionType.dataAccess, useNames = false) => {
     let user;
     let org;
