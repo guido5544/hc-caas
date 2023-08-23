@@ -274,6 +274,10 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
 
         }
 
+        if (!items) {
+            return;
+        }
+
         let subdirectory = "";
         if (args && args.subDirectory) {
             fs.mkdirSync(tempFileDir + "/" + sessionid + "/" + args.subDirectory);

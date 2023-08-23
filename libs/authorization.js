@@ -24,11 +24,16 @@ exports.getUserID = async (args) => {
         return -1;
     }
 
-    let key = await APIKey.findOne({ _id: args.accessKey });
-    if (!key) {
+    try {
+        let key = await APIKey.findOne({ _id: args.accessKey });
+        if (!key) {
+            return -1;
+        }
+        return key.user;
+    }
+    catch (err) {
         return -1;
     }
-    return key.user;
 }
 
 
@@ -52,7 +57,7 @@ exports.getUserAdmin = async (args, email,password) => {
 
 
 exports.conversionAllowed = async (args) => {
-    if (!config.get('hc-caas.requireAccessKey'))  {
+    if (!config.get('hc-caas.requireAccessKey')) {
         return true;
     }
 
@@ -60,8 +65,14 @@ exports.conversionAllowed = async (args) => {
         return false;
     }
 
-    let key = await APIKey.findOne({ _id: args.accessKey });
-    if (!key || !key.valid) {
+    let key;
+    try {
+        key = await APIKey.findOne({ _id: args.accessKey });
+        if (!key || !key.valid) {
+            return null;
+        }
+    }
+    catch (err) {
         return null;
     }
 
@@ -89,12 +100,18 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
             return null;
         }
 
-        let key = await APIKey.findOne({ _id: args.accessKey });
-        if (!key || !key.valid) {
+        let key;
+        try {
+            key = await APIKey.findOne({ _id: args.accessKey });
+            if (!key || !key.valid) {
+                return null;
+            }
+        }
+        catch (err) {
             return null;
         }
 
-        user = key.user;
+        user = await User.findOne({ _id: key.user });
 
         if (action != this.actionType.info && action != this.actionType.other) {
             let org = await Organization.findOne({ _id: user.defaultOrganization });
@@ -108,7 +125,7 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
             }
         }
     }
-    
+
 
     if (!Array.isArray(itemid)) {
         return await Conversionitem.findOne({ storageID: itemid, user: user });
