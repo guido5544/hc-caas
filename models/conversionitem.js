@@ -65,7 +65,13 @@ const conversionitemSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'Users',
     required: false
+  },
+  organization: {
+    type: Schema.Types.ObjectId,
+    ref: 'Organization',
+    required: false
   }
+
 });
 
 module.exports = global.con.model('Conversionitem', conversionitemSchema);

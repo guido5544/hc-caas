@@ -326,7 +326,7 @@ exports.append = async (directory, itemname, itemid, args) => {
 
 exports.requestUploadToken = async (itemname, args) => {
 
-  let user = await authorization.getUserID(args);
+  let user = await authorization.getUser(args);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -354,7 +354,9 @@ exports.requestUploadToken = async (itemname, args) => {
       created: new Date(),
       webhook: args.webhook,
       storageAvailability: storage.resolveInitialAvailability(),
-      user: user
+      user: user,
+      organization: user.defaultOrganization
+
     });
     item.save();
   }
@@ -410,7 +412,7 @@ exports.createDatabaseEntry = async (itemname, args) => {
 
   let itemid = uuidv4();
   let startState = "PENDING";
-  let user = await authorization.getUserID(args);
+  let user = await authorization.getUser(args);
 
   if (user == -1) {
     return null;
@@ -430,7 +432,9 @@ exports.createDatabaseEntry = async (itemname, args) => {
     webhook: args.webhook,
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
-    user: user
+    user: user,
+    organization: user.defaultOrganization
+
   });
   await item.save();
   return item;
@@ -505,7 +509,7 @@ exports.create = async (item, directory, itemname, args) => {
 
 
 exports.createEmpty = async (args) => {
-  let user = await authorization.getUserID(args);
+  let user = await authorization.getUser(args);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -529,7 +533,8 @@ exports.createEmpty = async (args) => {
     streamLocation:"",
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
-    user: user
+    user: user,
+    organization: user.defaultOrganization
   });
   
   await item.save();
@@ -697,7 +702,7 @@ async function sendConversionRequest() {
 
 exports.getItems = async (args) => {
 
-  let user = await authorization.getUserID(args);
+  let user = await authorization.getUser(args);
 
   if (user == -1) {
     return { ERROR: "Not authorized" };
