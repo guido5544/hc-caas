@@ -7,6 +7,15 @@ const config = require('config');
 const bcrypt = require('bcrypt');
 
 
+exports.actionType = {
+    dataAccess:0,    
+    streamingAccess:1,    
+    conversion: 2,    
+    info:3, 
+    other:4
+};
+
+
 exports.getUserID = async (args) => {
     if (!config.get('hc-caas.requireAccessKey')) {
         return undefined;
@@ -41,7 +50,37 @@ exports.getUserAdmin = async (args, email,password) => {
     return user;
 }
 
-exports.getConversionItem = async (itemid, args, useNames = false) => {
+
+exports.conversionAllowed = async (args) => {
+    if (!config.get('hc-caas.requireAccessKey'))  {
+        return true;
+    }
+
+    if (!args || !args.accessKey) {
+        return false;
+    }
+
+    let key = await APIKey.findOne({ _id: args.accessKey });
+    if (!key || !key.valid) {
+        return null;
+    }
+
+    let user = await User.findOne({ _id: key.user });
+
+    if (!user) {
+        return false;
+    }
+
+    let org = await Organization.findOne({ _id: user.defaultOrganization });
+
+    if (!org) {
+        return false;
+    }
+
+    return org.tokens > 0;
+}
+
+exports.getConversionItem = async (itemid, args, action = this.actionType.dataAccess, useNames = false) => {
     let user = undefined;
 
 
@@ -51,10 +90,23 @@ exports.getConversionItem = async (itemid, args, useNames = false) => {
         }
 
         let key = await APIKey.findOne({ _id: args.accessKey });
-        if (!key) {
+        if (!key || !key.valid) {
             return null;
         }
+
         user = key.user;
+
+        if (action != this.actionType.info && action != this.actionType.other) {
+            let org = await Organization.findOne({ _id: user.defaultOrganization });
+
+            if (!org) {
+                return null;
+            }
+
+            if (org.tokens == 0) {
+                return null;
+            }
+        }
     }
     
 
@@ -299,7 +351,7 @@ exports.changeOrgName = async (req,args) => {
         return { ERROR: "Not authorized" };
     }
 
-    let org = await Organization.findOne({ id: req.params.orgid });
+    let org = await Organization.findOne({ _id: req.params.orgid });
     if (!org) {
         return { ERROR: "Organization not found" };
     }

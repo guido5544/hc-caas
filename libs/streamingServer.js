@@ -166,7 +166,7 @@ exports.startStreamingServer = async (args) => {
 
     let streamingLocation;
     if (args && args.startItem) {
-        let citem = await authorization.getConversionItem(args.startItem, args);
+        let citem = await authorization.getConversionItem(args.startItem, args,authorization.actionType.streamingAccess);
         if (citem && citem.streamingLocation) {
             item.streamingLocation = args.streamingLocation;
             streamingLocation = args.streamingLocation;
@@ -267,10 +267,10 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
         let items;
 
         if (!hasNames) {
-            items = await authorization.getConversionItem(itemids, args);
+            items = await authorization.getConversionItem(itemids, args,authorization.actionType.streamingAccess);
         }
         else {
-            items = await authorization.getConversionItem(itemids, args, true);
+            items = await authorization.getConversionItem(itemids, args, authorization.actionType.streamingAccess,true);
 
         }
 

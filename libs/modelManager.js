@@ -128,7 +128,7 @@ exports.getData = async (itemid, args) => {
   }
 
   if (itemids.length == 1) {
-    let item = await authorization.getConversionItem(itemids[0], args);
+    let item = await authorization.getConversionItem(itemids[0], args,authorization.actionType.info);
 
     if (item) {
       let returnItem = JSON.parse(JSON.stringify(item));
@@ -142,7 +142,7 @@ exports.getData = async (itemid, args) => {
       return { ERROR: "Item not found" };
     }
   } else {
-    let items = await authorization.getConversionItem(itemids, args);
+    let items = await authorization.getConversionItem(itemids, args,args,authorization.actionType.info);
     if (items.length > 0) {
       let returnItems = items.map((item) => {
         let returnItem = JSON.parse(JSON.stringify(item));
@@ -291,7 +291,7 @@ exports.appendFromBuffer = async (buffer, itemname, itemid) => {
 };
 
 exports.append = async (directory, itemname, itemid, args) => {
-  let item = await authorization.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args,authorization.actionType.other);
   if (item) {
     if (directory) {
       await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
@@ -481,13 +481,16 @@ exports.create = async (item, directory, itemname, args) => {
  
 
   await storage.store(directory + "/" + itemname, "conversiondata/" + item.storageID + "/" + itemname);
- 
-  if (!args.skipConversion) {
-    await conversionQueue.getQueue().add({ item: item });
-    
-    sendConversionRequest();
-    if (args.waitUntilConversionDone) {
-      await waitUntilConversionDone(item.storageID);
+
+  if (await authorization.conversionAllowed(args)) {
+    if (!args.skipConversion) {
+      await conversionQueue.getQueue().add({ item: item });
+
+      sendConversionRequest();
+
+      if (args.waitUntilConversionDone) {
+        await waitUntilConversionDone(item.storageID);
+      }
     }
   }
 
@@ -542,7 +545,7 @@ exports.generateCustomImage = async (itemid, args) => {
   {
     return {ERROR: "Itemid not specified"};
   }
-  let item = await authorization.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args,authorization.actionType.other);
 
   if (item) {
     item.conversionState = "PENDING";
@@ -570,12 +573,16 @@ exports.reconvert = async (itemid, args) => {
   {
     return {ERROR: "Itemid not specified"};
   }
-  let item = await authorization.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args,authorization.actionType.other);
+
 
   if (item) {
     item.conversionState = "PENDING";
 
-    
+    if (!await authorization.conversionAllowed(args)) {
+      return { ERROR: "Not authorized" };
+    }
+
     if (args.multiConvert) {
       item.multiConvert = true;
     }
@@ -632,7 +639,7 @@ function waitUntilConversionDone(itemid) {
 
 exports.deleteConversionitem = async (itemid, args) => {
 
-  let item = await authorization.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args, authorization.actionType.other);
   if (item) {
     console.log("Deleting item: " + itemid + " " + item.name);
     storage.delete("conversiondata/" + item.storageID, item);
