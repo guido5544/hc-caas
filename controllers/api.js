@@ -385,3 +385,9 @@ exports.editAPIKey = async (req, res, next) => {
     let response = await authorization.editAPIKey(req,setupAPIArgs(req));
     res.json(response);
 };
+
+
+exports.updateOrgTokens = async (req, res, next) => {
+    let response = await authorization.updateOrgTokens(req,setupAPIArgs(req));
+    res.json(response);
+};

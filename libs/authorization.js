@@ -44,7 +44,7 @@ exports.getUserAdmin = async (args, email,password) => {
         return -1;
     }
 
-    if (!email) {
+    if (!email || !password) {
         return null;
     }
 
@@ -413,7 +413,21 @@ exports.changeOrgName = async (req,args) => {
 
 
 
+exports.updateOrgTokens = async (req,args) => {
 
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user || !user.superuser) {
+        return { ERROR: "Not authorized" };
+    }
+
+    let org = await Organization.findOne({ _id: req.params.orgid });
+    if (!org) {
+        return { ERROR: "Organization not found" };
+    }
+    org.tokens = req.params.tokens;
+    await org.save();
+    return {orgName: org.name};
+};
 
 exports.addOrganization = async (req,args) => {
 
@@ -543,7 +557,7 @@ exports.getOrganization = async (req,args) => {
     }
    let org = await Organization.findOne({ _id: req.params.orgid });
 
-    return {orgname:org.name};
+    return {orgname:org.name, tokens:org.tokens};
 }
 
 
