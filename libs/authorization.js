@@ -159,16 +159,15 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
         }
     }
 
-
     if (!Array.isArray(itemid)) {
-        return await Conversionitem.findOne({ storageID: itemid, user: user });
+        return await Conversionitem.findOne({ storageID: itemid, user: { $in: [user, null] } });
     }
     else {
         if (useNames) {
-            return await Conversionitem.find({ 'name': { $in: itemid }, user: user });
+            return await Conversionitem.find({ 'name': { $in: itemid }, user: { $in: [user, null] }  });
         }
         else {
-            return await Conversionitem.find({ storageID: { $in: itemid }, user: user });
+            return await Conversionitem.find({ storageID: { $in: itemid },  user: { $in: [user, null] } });
         }
     }
 }
@@ -324,7 +323,7 @@ exports.addUser = async (req, args) => {
         await item.save();
 
         let inviteid;
-        if (!password) {
+        if (!password && user) {
             let newinvite = new Invite({
                 user: item,
                 organization: org,

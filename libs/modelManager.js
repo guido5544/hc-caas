@@ -355,7 +355,7 @@ exports.requestUploadToken = async (itemname, args) => {
       webhook: args.webhook,
       storageAvailability: storage.resolveInitialAvailability(),
       user: user,
-      organization: user.defaultOrganization
+      organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
 
     });
     item.save();
@@ -433,7 +433,8 @@ exports.createDatabaseEntry = async (itemname, args) => {
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
     user: user,
-    organization: user.defaultOrganization
+    organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
+
 
   });
   await item.save();
@@ -534,7 +535,7 @@ exports.createEmpty = async (args) => {
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
     user: user,
-    organization: user.defaultOrganization
+    organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
   });
   
   await item.save();
