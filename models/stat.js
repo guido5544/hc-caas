@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const StatSchema = new Schema({ 
-  type: { type: String, required: true},
+  type: { type: Number, required: true},
   user: {
     type: Schema.Types.ObjectId,
     ref: 'Users',

@@ -3,6 +3,9 @@ const Invite = require('../models/UserManagement/Invites');
 const Organization = require('../models/UserManagement/Organization');
 const APIKey = require('../models/UserManagement/ApiKey');
 const Conversionitem = require('../models/conversionitem');
+
+const stats = require('./stats');
+
 const config = require('config');
 const bcrypt = require('bcrypt');
 
@@ -107,6 +110,7 @@ exports.conversionComplete = async (item) => {
             if (org) {
                 org.tokens-=10;
                 await org.save();
+                stats.add(stats.type.completedConversion, item.user, item.organization,item.name);
             }
         }
     }
@@ -135,7 +139,7 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
 
         user = await User.findOne({ _id: key.user });
 
-        if (action != this.actionType.info && action != this.actionType.other) {
+        if (action == this.actionType.streamingAccess) {
             org = await Organization.findOne({ _id: user.defaultOrganization });
 
             if (!org) {
@@ -150,10 +154,15 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
                     return null;
                 }
                 org.tokens -= itemid.length;
+                stats.add(stats.type.streamingAccess, user, org,itemid[0]);
             }
             else {
                 org.tokens--;
+                stats.add(stats.type.streamingAccess, user, org,itemid);
+ 
             }
+  
+
             await org.save();
 
         }
