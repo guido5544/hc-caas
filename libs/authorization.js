@@ -224,7 +224,7 @@ exports.updateUser = async (req, args) => {
         return { ERROR: "Not authorized" };
     }
 
-    if (user && (req.body.role && findOrgRole(req.body.organizationID,user) > 1)) {
+    if (user && (req.body.role && (findOrgRole(req.body.organizationID,user) > 1 && !user.superuser))) {
         return { ERROR: "Not authorized" };
     }
 
