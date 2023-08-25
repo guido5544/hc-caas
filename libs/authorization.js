@@ -259,7 +259,7 @@ exports.removeUser = async (req, args) => {
         return { ERROR: "Not authorized" };
     }
 
-    if (user && findOrgRole(req.params.orgid,user) > 1) {
+    if (user && (!user.superuser && findOrgRole(req.params.orgid,user) > 1)) {
         return { ERROR: "Not authorized" };
     }
 
