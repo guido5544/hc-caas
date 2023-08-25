@@ -51,7 +51,8 @@ exports.getStatsByMonth = async (req,args) => {
     let items = await Stat.find({createdAt: {
         $gte: firstDayOfMonth,
         $lt: firstDayOfNextMonth
-        }
+        }, 
+        organization: req.params.orgid
       });
 
 
