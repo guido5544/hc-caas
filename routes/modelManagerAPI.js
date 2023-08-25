@@ -48,4 +48,5 @@ router.get('/getAPIKeys', apiController.getAPIKeys);
 router.put('/invalidateAPIKey/:key', apiController.invalidateAPIKey);
 router.put('/editAPIKey/:key', apiController.editAPIKey);
 router.get('/getStatsByMonth/:orgid/:month/:year', apiController.getStatsByMonth);
+router.put('/injectStats/:orgid', apiController.injectStats);
 module.exports = router;

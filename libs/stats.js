@@ -65,3 +65,29 @@ exports.getStatsByMonth = async (req,args) => {
 
    return {stats:stats};
 }
+
+
+
+
+exports.injectStats = async (req,args) => {
+    let user = await authorization.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user || findOrgRole(req.params.orgid,user) > 2) {
+        return { ERROR: "Not authorized" };
+    }
+
+    let s =args.stats;    
+    for (let i=0;i<s.length;i++) {
+
+        let item = new Stat({
+            type: s[i].type,
+            user: user,
+            organization: req.params.orgid,
+            value: s[i].value,
+            createdAt: s[i].createdAt
+        });      
+        await item.save();  
+    }
+   return {success:true};
+}
+
+

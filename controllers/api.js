@@ -399,3 +399,10 @@ exports.getStatsByMonth = async (req, res, next) => {
     let response = await stats.getStatsByMonth(req,setupAPIArgs(req));
     res.json(response);
 };
+
+
+
+exports.injectStats = async (req, res, next) => {
+    let response = await stats.injectStats(req,setupAPIArgs(req));
+    res.json(response);
+};
