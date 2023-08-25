@@ -37,7 +37,7 @@ exports.add = async (type,user, organization, value) => {
 
 exports.getStatsByMonth = async (req,args) => {
     let user = await authorization.getUserAdmin(args, args.email, args.password);
-    if (user == -1 || !user || findOrgRole(req.params.orgid,user) > 2) {
+    if (user == -1 || !user || (findOrgRole(req.params.orgid,user) > 2 && !user.superuser)) {
         return { ERROR: "Not authorized" };
     }
 
