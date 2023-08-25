@@ -7,6 +7,7 @@ const config = require('config');
 const status = require('../libs/status');
 
 const authorization = require('../libs/authorization');
+const stats = require('../libs/stats');
 
 function setupAPIArgs(req) {
 
@@ -389,5 +390,12 @@ exports.editAPIKey = async (req, res, next) => {
 
 exports.updateOrgTokens = async (req, res, next) => {
     let response = await authorization.updateOrgTokens(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+
+exports.getStatsByMonth = async (req, res, next) => {
+    let response = await stats.getStatsByMonth(req,setupAPIArgs(req));
     res.json(response);
 };

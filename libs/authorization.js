@@ -118,6 +118,7 @@ exports.conversionComplete = async (item) => {
 exports.getConversionItem = async (itemid, args, action = this.actionType.dataAccess, useNames = false) => {
     let user;
     let org;
+    let recordStats = false;
     if (config.get('hc-caas.requireAccessKey')) {
         if (!args || !args.accessKey) {
             return null;
@@ -149,17 +150,17 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
             if (org.tokens == 0) {
                 return null;
             }
+            
             if (Array.isArray(itemid)) {
                 if (itemid.length > org.tokens) {
                     return null;
                 }
                 org.tokens -= itemid.length;
-                stats.add(stats.type.streamingAccess, user, org,itemid[0]);
+                recordStats = true;
             }
             else {
                 org.tokens--;
-                stats.add(stats.type.streamingAccess, user, org,itemid);
- 
+                recordStats = true; 
             }
   
 
@@ -169,15 +170,26 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
     }
 
     if (!Array.isArray(itemid)) {
-        return await Conversionitem.findOne({ storageID: itemid, user: { $in: [user, null] } });
+        let item =  await Conversionitem.findOne({ storageID: itemid, user: { $in: [user, null] } });
+        if (recordStats) {
+            stats.add(stats.type.streamingAccess, user, org,item.name);
+        }
+        return item;
     }
     else {
+        let items;
         if (useNames) {
-            return await Conversionitem.find({ 'name': { $in: itemid }, user: { $in: [user, null] }  });
+            items = await Conversionitem.find({ 'name': { $in: itemid }, user: { $in: [user, null] }  });
         }
         else {
-            return await Conversionitem.find({ storageID: { $in: itemid },  user: { $in: [user, null] } });
+            items = await Conversionitem.find({ storageID: { $in: itemid },  user: { $in: [user, null] } });
         }
+        if (recordStats) {
+            for (let i=0;i<items.length;i++) {
+                stats.add(stats.type.streamingAccess, user, org,items[i].name);
+            }
+        }
+        return items;
     }
 }
 

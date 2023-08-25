@@ -14,7 +14,7 @@ const StatSchema = new Schema({
     ref: 'Organization',
     required: false
   },
-  Value: { type: String, required: true},
+  value: { type: String, required: true},
 }, {timestamps:true});
 
 module.exports = global.con.model('Stat', StatSchema);
