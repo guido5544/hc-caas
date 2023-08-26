@@ -214,10 +214,6 @@ function findOrg(orgid,user) {
     }
 }
 
-
-
-
-
 exports.updateUser = async (req, args) => {
     let user = await this.getUserAdmin(args,args.email,args.password);
     if (user == -1) {
@@ -250,8 +246,6 @@ exports.updateUser = async (req, args) => {
     return {success:true};
 }
 
-
-
 exports.removeUser = async (req, args) => {
     
     let user = await this.getUserAdmin(args,args.email,args.password);
@@ -282,8 +276,6 @@ exports.removeUser = async (req, args) => {
     return {success:true};
 }
 
-    
-
 
 exports.addUser = async (req, args) => {
     
@@ -294,19 +286,16 @@ exports.addUser = async (req, args) => {
 
     let org;
 
-    if (req.body.organizationID && (!user || user.superuser)) {
+    if (req.body.organizationID) {
+        if (user && (findOrgRole(req.body.organizationID,user) > 1 && !user.superuser)) {
+            return { ERROR: "Not authorized" };
+        }
         org = await Organization.findOne({ _id: req.body.organizationID });
         if (!org) {
             return { ERROR: "Organization not found" };
         }
     }
-    else if (user && user.defaultOrganization) {
-        if (findOrgRole(user.defaultOrganization,user) > 1) {
-            return { ERROR: "Not authorized" };
-        }
-        org = await Organization.findOne({ _id: user.defaultOrganization });
-    }
-    
+      
     let accepted = false;
 
     if (!org) {
@@ -336,9 +325,9 @@ exports.addUser = async (req, args) => {
             firstName: req.body.firstName,
             lastName: req.body.lastName,
             email: req.body.email,
-            superuser: req.body.role == 0 ? true : false,
+            superuser: false,
             password: password,
-            organizations: [{ id: org.id, role: (req.body.role == 0 ? 1 :req.body.role), accepted: accepted }],
+            organizations: [{ id: org.id, role: req.body.role, accepted: accepted }],
             defaultOrganization: org.id
         });
         await item.save();
