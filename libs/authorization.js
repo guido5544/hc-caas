@@ -417,7 +417,7 @@ exports.getUserInfo = async (req,args) => {
 exports.changeOrgName = async (req,args) => {
 
     let user = await this.getUserAdmin(args, req.params.email, req.params.password);
-    if (user == -1 || !user || findOrgRole(req.params.orgid,user) > 1) {
+    if (user == -1 || !user || (findOrgRole(req.params.orgid,user) > 1 && !user.superuser)) {
         return { ERROR: "Not authorized" };
     }
 
