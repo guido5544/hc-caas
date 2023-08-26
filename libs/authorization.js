@@ -269,10 +269,16 @@ exports.removeUser = async (req, args) => {
             await ruser.save();
             break;
         }
-    }
+    }        
+
     if (ruser.organizations.length == 0) {
         await User.deleteOne({ email: req.params.targetemail });
     }
+    else if (req.params.orgid == ruser.defaultOrganization) {
+        ruser.defaultOrganization = ruser.organizations[0].id;
+        await ruser.save();
+    }
+
     return {success:true};
 }
 
@@ -397,7 +403,10 @@ exports.getUserInfo = async (req,args) => {
     }
 
     let org = await Organization.findOne({ _id: user.defaultOrganization });
-
+    if (!org) {
+        return { ERROR: "Organization not found" };
+    }
+        
     return {email: user.email,firstName:user.firstName, lastName:user.lastName, organization:org.name,organizationID:org.id, superuser: user.superuser, role: findOrgRole(org.id,user)};
 };
 
