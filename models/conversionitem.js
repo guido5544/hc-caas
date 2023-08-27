@@ -54,10 +54,14 @@ const conversionitemSchema = new Schema({
     required: true
   },
   storageAvailability: {
-    type: Array,
+    type: Array,Z
     required: false
   },
   streamLocation: {
+    type: String,
+    required: false
+  },
+  hcVersion: {
     type: String,
     required: false
   },
