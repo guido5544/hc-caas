@@ -267,8 +267,8 @@ exports.enableStreamAccess = async (req, res, next) => {
         res.json({ERROR:"Invalid Stream Access Tokens"});
         return;
     }
-    await streamingManager.enableStreamAccess(req.params.sessionid,items, setupAPIArgs(req), hasNames);  
-    res.json({SUCCESS:true});
+    let result = await streamingManager.enableStreamAccess(req.params.sessionid,items, setupAPIArgs(req), hasNames);  
+    res.json(result);
   
 };
 
@@ -282,9 +282,8 @@ exports.serverEnableStreamAccess = async (req, res, next) => {
         hasNames = JSON.parse(req.get("hasNames"));
     }
 
-    await streamingServer.serverEnableStreamAccess(req.params.sessionid, items, args, hasNames);  
-    res.sendStatus(200);
-  
+    let result = await streamingServer.serverEnableStreamAccess(req.params.sessionid, items, args, hasNames);  
+    res.json(result);
 };
 
 exports.getCustom = (req, res, next) => {   

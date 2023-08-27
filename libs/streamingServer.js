@@ -259,7 +259,7 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
     }
     catch (e) {
         console.log(e);
-        return;
+        return { ERROR: "No session found" };
     }
 
     if (session && itemids) {
@@ -275,7 +275,7 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
         }
 
         if (!items) {
-            return;
+            return { ERROR: "No items found" };
         }
 
         let subdirectory = "";
@@ -324,7 +324,12 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
         }
         var endtime = new Date();
 //        console.log("storage load time:" + (endtime - starttime));
+        return { success: true };
     }
+    else {    
+        return { ERROR: "No session found" };
+    }
+
 };
 
 

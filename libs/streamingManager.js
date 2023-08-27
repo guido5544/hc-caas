@@ -147,7 +147,7 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
   await bestFitServer.save();
 
   let jres = await res.json();
-  res.renderType = bestFitServer.renderType;
+  jres.renderType = bestFitServer.renderType;
   return jres;
 };
 
@@ -169,17 +169,20 @@ exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) =
       ip = "localhost" + ":" + config.get('hc-caas.port');
     }
 
+    let sares;
     try {
       if (args) {
-        await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'CS-API-Arg': JSON.stringify(args), 'items': JSON.stringify(itemids), hasNames: hasNames } });
+        sares = await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'CS-API-Arg': JSON.stringify(args), 'items': JSON.stringify(itemids), hasNames: hasNames } });
       }
       else {
-        await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'items': JSON.stringify(itemids), hasNames: hasNames } });
+        sares = await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'items': JSON.stringify(itemids), hasNames: hasNames } });
       }
     }
     catch (e) {
-      console.log("Error enabling stream access on " + ip + ": " + e);
+      return {ERROR: "Error enabling stream access"};
     }
+    return await sares.json();
   }
+  return {ERROR: "Error enabling stream access"};
 
 };
