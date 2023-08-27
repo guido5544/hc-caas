@@ -87,7 +87,7 @@ exports.getStreamingSession = async (args, req = null, extraCheck = true) => {
   }
 
   let geo = "";
-  if (args && args.geo) {
+  if (args && args.geo && args.geo != "") {
     geo = args.geo;
   }
   else if (req && config.get('hc-caas.determineGeoFromRequest')) {
