@@ -168,7 +168,7 @@ exports.getStreamingSession = async (args, req = null, extraCheck = true) => {
   await bestFitServer.save();
 
   let jres = await res.json();
-  jres.renderType = bestFitServer.renderType;
+  res.renderType = bestFitServer.renderType;
   return jres;
 };
 
