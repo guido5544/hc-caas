@@ -4,6 +4,9 @@ const { v4: uuidv4 } = require('uuid');
 const Streamingserveritem = require('../models/streamingserveritem');
 const Streamingsessionitem = require('../models/streamingsessionitem');
 
+const geoip = require('geoip-lite');
+
+
 const fetch = require('node-fetch');
 
 let storage;
@@ -77,13 +80,31 @@ exports.start = async () => {
 
 
 
-exports.getStreamingSession = async (args, extraCheck = true) => {
+exports.getStreamingSession = async (args, req = null, extraCheck = true) => {
   
   if (!started) {
     return { ERROR: "Streaming Manager not started" };
   }
 
-  console.log("geo:" + (args.geo ? args.geo : ""));
+  let geo = "";
+  if (args && args.geo) {
+    geo = args.geo;
+  }
+  else if (req && config.get('hc-caas.determineGeoFromRequest')) {
+    let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    if (ip.substr(0, 7) == "::ffff:") {
+      ip = ip.substr(7)
+    }
+    geo = geoip.lookup(ip);
+    if (geo) {
+      geo = geo.timezone;
+    }
+    if (!geo) {
+      geo = ""
+    }
+  }
+
+  console.log("geo:" + geo);
 
   let renderType = "client";
   if (args && args.renderType) {
@@ -99,9 +120,9 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
   });
 
   let bestFitServer = streamingservers[0];
-  if (args && args.geo) {
+  if (geo != "") {
     for (let i = 0; i < streamingservers.length; i++) {
-      if (args.geo.indexOf(streamingservers[i].streamingRegion) != -1 && !streamingservers[i].pingFailed) {
+      if (geo.indexOf(streamingservers[i].streamingRegion) != -1 && !streamingservers[i].pingFailed) {
         bestFitServer = streamingservers[i];
         break;
       }
@@ -137,7 +158,7 @@ exports.getStreamingSession = async (args, extraCheck = true) => {
     bestFitServer.pingFailed = true;
     await bestFitServer.save();
     if (extraCheck) {
-      return await this.getStreamingSession(args,false);
+      return await this.getStreamingSession(args,req,false);
     }
     return { ERROR: "NO Streaming Server Available" };
   }

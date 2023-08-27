@@ -219,6 +219,7 @@ function handleInitialConfiguration() {
       "fullErrorReporting": false,
       "region": "",
       "requireAccessKey": false,
+      "determineGeoFromRequest": false,
       "conversionServer": {
         "name" : "",
         "converterpath": "",

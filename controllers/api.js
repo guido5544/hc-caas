@@ -231,7 +231,7 @@ exports.getUpdated = async (req, res, next) => {
 };
 
 exports.getStreamingSession = async (req, res, next) => {
-    let result = await streamingManager.getStreamingSession(setupAPIArgs(req));
+    let result = await streamingManager.getStreamingSession(setupAPIArgs(req),req);
     res.json(result);
 };
 
