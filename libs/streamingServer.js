@@ -154,8 +154,7 @@ exports.start = async () => {
 exports.startStreamingServer = async (args) => {
     let slot = findFreeSlot();
     if (slot == -1)
-    {
-        console.log("no free slot");
+    {      
         return {ERROR: "No free streaming slot"};
     }
 
@@ -203,6 +202,15 @@ exports.startStreamingServer = async (args) => {
     else {           
         address = global.caas_publicip.replace(/(https?:\/\/)/gi, '').split(":")[0];
     }
+
+
+    if (args && args.accessItems) {
+        let accessResult = await this.serverEnableStreamAccess(item.id, args.accessItems, args);
+        if (accessResult.ERROR) {
+            return accessResult;
+        }
+    }
+
     return {serverurl:address, sessionid:item.id, port:port};
 
 };
