@@ -54,7 +54,7 @@ const conversionitemSchema = new Schema({
     required: true
   },
   storageAvailability: {
-    type: Array,Z
+    type: Array,
     required: false
   },
   streamLocation: {
