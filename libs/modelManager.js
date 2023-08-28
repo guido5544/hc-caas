@@ -353,6 +353,7 @@ exports.requestUploadToken = async (itemname, args) => {
       updated: new Date(),
       created: new Date(),
       webhook: args.webhook,
+      hcVersion: args.hcVersion,
       storageAvailability: storage.resolveInitialAvailability(),
       user: user,
       organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
@@ -430,6 +431,7 @@ exports.createDatabaseEntry = async (itemname, args) => {
     updated: new Date(),
     created: new Date(),
     webhook: args.webhook,
+    hcVersion: args.hcVersion,
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
     user: user,
@@ -531,6 +533,7 @@ exports.createEmpty = async (args) => {
     updated: new Date(),
     created: new Date(),
     webhook: args.webhook,
+    hcVersion: args.hcVersion,
     streamLocation:"",
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
@@ -604,6 +607,9 @@ exports.reconvert = async (itemid, args) => {
     if (args.processShattered)
     {
       item.shattered = args.processShattered;
+    }
+    if (args.hcVersion) {
+      item.hcVersion = args.hcVersion;
     }
 
     item.updated = new Date();

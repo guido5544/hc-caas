@@ -23,7 +23,6 @@ let  converterexepath = '';
 
 const HEimportexportexepath = './ImportExport';   
 
-var converterpath = '';
 
 var HEimportexportpath = '';
 
@@ -56,14 +55,36 @@ exports.start = async () => {
   
   let ip = global.caas_publicip;
 
-  converterpath = config.get('hc-caas.conversionServer.converterpath');
 
-  if (process.platform == "win32") {
-    converterexepath = './converter';
+  function getConverterExePath(converterpath) {
+
+    if (process.platform == "win32") {
+      return './converter';
+    }
+    else {
+      return  converterpath + '/converter';
+    }
   }
-  else {
-    converterexepath = converterpath + '/converter';
+
+  function getConverterPath(item) {
+
+    let cp = config.get('hc-caas.conversionServer.converterpath');
+    if (!Array.isArray(cp)) {
+       return cp;
+    }
+
+    if (!item.hcVersion || cp.length == 1) {
+      return cp[0].path;
+    }
+
+    for (let i=0;i<cp.length;i++) {
+      if (cp[i].version == item.hcVersion) {
+        return cp[i].path;
+      }
+    }
+    return "";
   }
+
 
   HEimportexportpath = config.get('hc-caas.conversionServer.HEimportexportpath');
   tempFileDir = config.get('hc-caas.workingDirectory');
@@ -279,13 +300,14 @@ async function runConverter(item) {
   else
     inputPath = dir + item.storageID + "/zip/" + item.startPath;
 
-
+    let converterPath = getConverterPath(item);
+  
   if (item.shattered == true) {
-    execFile(converterexepath, ['--license', config.get('hc-caas.license'),
+    execFile(getConverterExePath(converterPath), ['--license', config.get('hc-caas.license'),
       '--input', inputPath,
       '--prepare_shattered_scs_parts', dir + item.storageID + "/scs",
       '--prepare_shattered_xml', dir + item.storageID + "/" + "shattered.xml"], {
-      cwd: converterpath
+      cwd: converterPath
     }, async function (err, data) {
       if (err == null) {
         console.log(data);
@@ -310,10 +332,9 @@ async function runConverter(item) {
     }
     else {
       if (!GLTFSpecialHandling(inputPath, dir, item)) {
-
         let commandLine = setupCommandLine(inputPath, dir, item);
-        execFile(converterexepath, commandLine, {
-          cwd: converterpath
+        execFile(getConverterExePath(converterPath), commandLine, {
+          cwd: converterPath
         }, async function (err, data) {
           if (err == null) {
             if (fs.existsSync(dir + item.storageID + "/output/" + item.name + "_.scz")) {
