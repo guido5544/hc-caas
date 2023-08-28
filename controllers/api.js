@@ -405,3 +405,9 @@ exports.injectStats = async (req, res, next) => {
     let response = await stats.injectStats(req,setupAPIArgs(req));
     res.json(response);
 };
+
+
+exports.updatePassword = async (req, res, next) => {
+    let response = await authorization.updatePassword(req,setupAPIArgs(req));
+    res.json(response);
+};

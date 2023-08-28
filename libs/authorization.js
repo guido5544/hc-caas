@@ -214,6 +214,24 @@ function findOrg(orgid,user) {
     }
 }
 
+exports.updatePassword = async (req, args) => {
+    let user = await this.getUserAdmin(args,args.email,args.password);
+    if (user == -1) {
+        return { ERROR: "Not authorized" };
+    }
+
+    if (!args.newpassword) {
+        return { ERROR: "New password required" };
+    }
+ 
+    let password = await bcrypt.hash(args.newpassword, 10);
+    }
+    user.password = password;
+    await user.save();
+    return {success:true};
+}
+
+    
 exports.updateUser = async (req, args) => {
     let user = await this.getUserAdmin(args,args.email,args.password);
     if (user == -1) {
