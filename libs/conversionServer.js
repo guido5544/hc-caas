@@ -45,46 +45,42 @@ let queueaddress = "";
 let imageservice = null;
 
 
-exports.start = async () => {
+function getConverterExePath(converterpath) {
 
-  
+  if (process.platform == "win32") {
+    return './converter';
+  }
+  else {
+    return  converterpath + '/converter';
+  }
+}
+
+function getConverterPath(item) {
+
+  let cp = config.get('hc-caas.conversionServer.converterpath');
+  if (!Array.isArray(cp)) {
+     return cp;
+  }
+
+  if (!item.hcVersion || cp.length == 1) {
+    return cp[0].path;
+  }
+
+  for (let i=0;i<cp.length;i++) {
+    if (cp[i].version == item.hcVersion) {
+      return cp[i].path;
+    }
+  }
+  return "";
+}
+
+exports.start = async () => {
 
   storage = require('./permanentStorage').getStorage();
 
   queue.cleanup();
   
   let ip = global.caas_publicip;
-
-
-  function getConverterExePath(converterpath) {
-
-    if (process.platform == "win32") {
-      return './converter';
-    }
-    else {
-      return  converterpath + '/converter';
-    }
-  }
-
-  function getConverterPath(item) {
-
-    let cp = config.get('hc-caas.conversionServer.converterpath');
-    if (!Array.isArray(cp)) {
-       return cp;
-    }
-
-    if (!item.hcVersion || cp.length == 1) {
-      return cp[0].path;
-    }
-
-    for (let i=0;i<cp.length;i++) {
-      if (cp[i].version == item.hcVersion) {
-        return cp[i].path;
-      }
-    }
-    return "";
-  }
-
 
   HEimportexportpath = config.get('hc-caas.conversionServer.HEimportexportpath');
   tempFileDir = config.get('hc-caas.workingDirectory');
