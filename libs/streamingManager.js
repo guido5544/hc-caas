@@ -180,8 +180,7 @@ exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) =
     item = await Streamingsessionitem.findOne({ _id:sessionid });
   }
   catch (e) {
-    console.log(e);
-    return;
+    return {ERROR: "NO SESSION FOUND"};
   }
 
   if (item) {
