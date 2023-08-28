@@ -225,7 +225,7 @@ exports.updatePassword = async (req, args) => {
     }
  
     let password = await bcrypt.hash(args.newpassword, 10);
-    }
+    
     user.password = password;
     await user.save();
     return {success:true};
