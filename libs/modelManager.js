@@ -1,5 +1,7 @@
 const config = require('config');
 const Conversionitem = require('../models/conversionitem');
+const User = require('../models/UserManagement/User');
+
 const fs = require('fs');
 const conversionQueue = require('./conversionServer');
 const { v4: uuidv4 } = require('uuid');
@@ -716,28 +718,46 @@ async function sendConversionRequest() {
 }
 
 
-exports.getItems = async (args) => {
-
-  let user = await authorization.getUser(args);
-
-  if (user == -1) {
-    return { ERROR: "Not authorized" };
-  }
+exports.getItems = async (args, organization = undefined) => {
 
   let models;
-  if (user) {
-    models = await Conversionitem.find({ organization: user.defaultOrganization});
+  if (!organization) {
+    let user = await authorization.getUser(args);
+
+    if (user == -1) {
+      return { ERROR: "Not authorized" };
+    }  
+    if (user) {
+      models = await Conversionitem.find({ organization:  user.defaultOrganization });
+    }
+    else {
+      models = await Conversionitem.find();
+    }
   }
   else {
-    models = await Conversionitem.find();
+    models = await Conversionitem.find({ organization: organization });
   }
 
   let cleanedModels = [];
 
+  let userhash = [];
   for (let i = 0; i < models.length; i++) {
     let returnItem = JSON.parse(JSON.stringify(models[i]));
     returnItem.__v = undefined;
     returnItem._id = undefined;
+    if (returnItem.user) {
+      if (!userhash[returnItem.user]) {
+        let user = await User.findOne({ _id: returnItem.user });
+        if (user) {
+          userhash[returnItem.user] = user.email;
+        }
+        else {  
+          userhash[returnItem.user] = undefined;
+        }
+      }      
+      returnItem.user = userhash[returnItem.user];
+           
+    }
     cleanedModels.push(returnItem);
   }
   return { "itemarray": cleanedModels };

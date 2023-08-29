@@ -416,3 +416,9 @@ exports.updatePassword = async (req, res, next) => {
     let response = await authorization.updatePassword(req,setupAPIArgs(req));
     res.json(response);
 };
+
+
+exports.getFiles = async (req, res, next) => {
+    let response = await authorization.getFiles(req,setupAPIArgs(req));
+    res.json(response);
+};

@@ -3,6 +3,9 @@ const Invite = require('../models/UserManagement/Invites');
 const Organization = require('../models/UserManagement/Organization');
 const APIKey = require('../models/UserManagement/ApiKey');
 const Conversionitem = require('../models/conversionitem');
+const modelManager = require('./modelManager');
+
+
 
 const stats = require('./stats');
 
@@ -683,4 +686,16 @@ exports.editAPIKey = async (req,args) => {
     }
 
     return { ERROR: "Key not found" };
+}
+
+
+
+exports.getFiles = async (req,args) => {
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user || (findOrgRole(req.params.orgid,user) > 2 && !user.superuser)) {
+        return { ERROR: "Not authorized" };
+    }
+
+    let result = await modelManager.getItems(args,req.params.orgid);
+    return result;
 }
