@@ -200,11 +200,16 @@ exports.get = async (itemid,type,args) => {
   if (item) {
     let blob;
 
+    try {
     if (item.name.indexOf("." + type) != -1) {
       blob = await readFileWithCache(item.storageID,item.name, item);
     }
     else {
       blob = await readFileWithCache(item.storageID,item.name + "." + type, item);
+    }
+    }
+    catch (e) {
+      return { ERROR: "File not found" };
     }
     if (!blob) {
       return { ERROR: "File not found" };
@@ -220,15 +225,19 @@ exports.get = async (itemid,type,args) => {
 };
 
 
-exports.getByName = async (itemid,name,args) => {
+exports.getByName = async (itemid, name, args) => {
   let item = await authorization.getConversionItem(itemid, args);
   if (item) {
-    let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + name);
-    return ({data:blob});
+    try {
+      let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + name);
+      return ({ data: blob });
+    }
+    catch (e) {
+      return { ERROR: "File not found" };
+    }
   }
-  else
-  {
-    return {ERROR: "Item not found"};
+  else {
+    return { ERROR: "Item not found" };
   }
 };
 
@@ -717,7 +726,7 @@ exports.getItems = async (args) => {
 
   let models;
   if (user) {
-    models = await Conversionitem.find({ user: user });
+    models = await Conversionitem.find({ organization: user.defaultOrganization});
   }
   else {
     models = await Conversionitem.find();

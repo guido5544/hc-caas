@@ -59,7 +59,12 @@ exports.postFileUpload = async (req, res, next) => {
             await modelManager.create(item, req.file.destination, req.file.originalname, args);
         }
         else {
-             modelManager.create(item, req.file.destination, req.file.originalname, args);
+            if (args.skipConversion) {
+                await modelManager.create(item, req.file.destination, req.file.originalname, args);
+            }
+            else {
+                modelManager.create(item, req.file.destination, req.file.originalname, args);
+            }
         }
 
         res.json({itemid:item.storageID});

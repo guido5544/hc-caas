@@ -33,7 +33,11 @@ exports.getUser = async (args) => {
         }
         key.usedAt = new Date();
         await key.save();
-        return await User.findOne(key.user);
+        let user = await User.findOne(key.user);
+        if (!user) {
+            return -1;
+        }
+        return user;
     }
     catch (err) {
         return -1;
@@ -118,6 +122,7 @@ exports.conversionComplete = async (item) => {
 exports.getConversionItem = async (itemid, args, action = this.actionType.dataAccess, useNames = false) => {
     let user;
     let org;
+    let orgid;
     let recordStats = false;
     if (config.get('hc-caas.requireAccessKey')) {
         if (!args || !args.accessKey) {
@@ -139,6 +144,10 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
         }
 
         user = await User.findOne({ _id: key.user });
+        if (!user) {
+            return null;
+        }
+        orgid = user.defaultOrganization;
 
         if (action == this.actionType.streamingAccess) {
             org = await Organization.findOne({ _id: user.defaultOrganization });
@@ -170,7 +179,7 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
     }
 
     if (!Array.isArray(itemid)) {
-        let item =  await Conversionitem.findOne({ storageID: itemid, user: { $in: [user, null] } });
+        let item =  await Conversionitem.findOne({ storageID: itemid, organization: { $in: [orgid, null] } });
         if (recordStats) {
             stats.add(stats.type.streamingAccess, user, org,item.name);
         }
@@ -179,10 +188,10 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
     else {
         let items;
         if (useNames) {
-            items = await Conversionitem.find({ 'name': { $in: itemid }, user: { $in: [user, null] }  });
+            items = await Conversionitem.find({ 'name': { $in: itemid }, organization: { $in: [orgid, null] }  });
         }
         else {
-            items = await Conversionitem.find({ storageID: { $in: itemid },  user: { $in: [user, null] } });
+            items = await Conversionitem.find({ storageID: { $in: itemid },  organization: { $in: [orgid, null] } });
         }
         if (recordStats) {
             for (let i=0;i<items.length;i++) {
