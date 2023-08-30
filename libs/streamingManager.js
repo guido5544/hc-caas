@@ -139,7 +139,7 @@ exports.getStreamingSession = async (args, req = null, extraCheck = true) => {
   let res;
   console.log("Best Fit Server:" +  bestFitServer.address);
   const controller = new AbortController();
-  let to = setTimeout(() => controller.abort(), 2000);
+  let to = setTimeout(() => controller.abort(), 6000);
 
   try {
     if (!args) {
