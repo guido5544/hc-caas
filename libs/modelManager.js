@@ -197,28 +197,34 @@ async function readFileWithCache(itemid, name, item) {
   }
 }
 
+
+exports.getFromItem  = async (item,type) => {
+  let blob;
+
+  try {
+  if (!type || item.name.indexOf("." + type) != -1) {
+    blob = await readFileWithCache(item.storageID,item.name, item);
+  }
+  else {
+    blob = await readFileWithCache(item.storageID,item.name + "." + type, item);
+  }
+  }
+  catch (e) {
+    return { ERROR: "File not found" };
+  }
+  if (!blob) {
+    return { ERROR: "File not found" };
+  }
+  else {
+    return ({data:blob});
+  }
+}
+
+
 exports.get = async (itemid,type,args) => {
   let item = await authorization.getConversionItem(itemid, args);
   if (item) {
-    let blob;
-
-    try {
-    if (item.name.indexOf("." + type) != -1) {
-      blob = await readFileWithCache(item.storageID,item.name, item);
-    }
-    else {
-      blob = await readFileWithCache(item.storageID,item.name + "." + type, item);
-    }
-    }
-    catch (e) {
-      return { ERROR: "File not found" };
-    }
-    if (!blob) {
-      return { ERROR: "File not found" };
-    }
-    else {
-      return ({data:blob});
-    }
+    await this.getFromItem(item,type);
   }
   else
   {

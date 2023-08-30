@@ -52,5 +52,6 @@ router.put('/injectStats/:orgid', apiController.injectStats);
 router.put('/updatePassword', apiController.updatePassword);
 router.get('/getFiles/:orgid', apiController.getFiles);
 router.put('/deleteAuth/:orgid/:itemid', apiController.deleteAuth);
+router.get('/getItemFromType/:orgid/:itemid/:type?', apiController.getItemFromType);
 
 module.exports = router;

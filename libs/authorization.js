@@ -723,3 +723,19 @@ exports.deleteAuth = async (req,args) => {
         return { ERROR: "Item not found" };
     }   
 }
+
+
+exports.getItemFromType = async (req,args) => {
+    let user = await this.getUserAdmin(args, args.email, args.password);    
+    if (user == -1 || !user || (findOrgRole(req.params.orgid,user) > 1 && !user.superuser)) {
+        return { ERROR: "Not authorized" };
+    }
+    let item =  await Conversionitem.findOne({ storageID: req.params.itemid, organization:req.params.orgid });    
+    if (item) {
+        let result = await modelManager.getFromItem(item,req.params.type);
+        return result;
+    }
+    else {
+        return { ERROR: "Item not found" };
+    }   
+}

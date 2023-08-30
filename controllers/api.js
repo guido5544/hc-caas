@@ -428,3 +428,15 @@ exports.deleteAuth = async (req, res, next) => {
     let response = await authorization.deleteAuth(req,setupAPIArgs(req));
     res.json(response);
 };
+
+exports.getItemFromType = async (req, res, next) => {
+    let result = await authorization.getItemFromType(req,setupAPIArgs(req));
+    if (result.data) {    
+        return res.send(Buffer.from(result.data));
+    }
+    else
+    {        
+        res.status(404).json(result);
+    }
+};
+
