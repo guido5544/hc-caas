@@ -51,5 +51,6 @@ router.get('/getStatsByMonth/:orgid/:month/:year', apiController.getStatsByMonth
 router.put('/injectStats/:orgid', apiController.injectStats);
 router.put('/updatePassword', apiController.updatePassword);
 router.get('/getFiles/:orgid', apiController.getFiles);
+router.put('/deleteAuth/:orgid/:itemid', apiController.deleteAuth);
 
 module.exports = router;

@@ -127,8 +127,14 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
     let org;
     let orgid;
     let recordStats = false;
+
+    // let allowAccess = false;
+    // if (config.get('hc-caas.accessPassword') != "" && (args && config.get('hc-caas.accessPassword') == args.accessPassword)) {
+    //     allowAccess = true;
+    // }
+
     if (config.get('hc-caas.requireAccessKey')) {
-        if (!args || !args.accessKey) {
+        if (!args || !args.accessKey) {            
             return null;
         }
 
@@ -196,7 +202,7 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
         else {
             items = await Conversionitem.find({ storageID: { $in: itemid },  organization: { $in: [orgid, null] } });
         }
-        if (recordStats) {
+        if (recordStats && user && org) {
             for (let i=0;i<items.length;i++) {
                 stats.add(stats.type.streamingAccess, user, org,items[i].name);
             }
@@ -698,4 +704,22 @@ exports.getFiles = async (req,args) => {
 
     let result = await modelManager.getItems(args,req.params.orgid);
     return result;
+}
+
+
+
+
+exports.deleteAuth = async (req,args) => {
+    let user = await this.getUserAdmin(args, args.email, args.password);    
+    if (user == -1 || !user || (findOrgRole(req.params.orgid,user) > 1 && !user.superuser)) {
+        return { ERROR: "Not authorized" };
+    }
+    let item =  await Conversionitem.findOne({ storageID: req.params.itemid, organization:req.params.orgid });
+    if (item) {
+        let result = await modelManager.deleteConversionitem2(item);
+        return {success:true};
+    }
+    else {
+        return { ERROR: "Item not found" };
+    }   
 }

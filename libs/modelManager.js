@@ -470,7 +470,7 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
     await storage.store(inpath, "conversiondata/" + item.storageID + "/" + filename);
   }
   catch (err) {
-    this.deleteConversionitem(item.storageID);
+    this.deleteConversionitem(item.storageID,args);
     return err;
   }
   await conversionQueue.getQueue().add({ item: item });
@@ -480,7 +480,7 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
   
   let res = await this.get(item.storageID,type);
   
-  this.deleteConversionitem(item.storageID);
+  this.deleteConversionitem(item.storageID,args);
   
   if (res.ERROR) {
     return res;
@@ -660,14 +660,21 @@ function waitUntilConversionDone(itemid) {
 
 
 
+exports.deleteConversionitem2 = async (item) => {
+
+    let itemid = item.storageID;
+    console.log("Deleting item: " + itemid + " " + item.name);
+    storage.delete("conversiondata/" + item.storageID, item);
+    lastUpdated = new Date();
+    await Conversionitem.deleteOne({ storageID: itemid }); 
+};
+
+
 exports.deleteConversionitem = async (itemid, args) => {
 
   let item = await authorization.getConversionItem(itemid, args, authorization.actionType.other);
   if (item) {
-    console.log("Deleting item: " + itemid + " " + item.name);
-    storage.delete("conversiondata/" + item.storageID, item);
-    lastUpdated = new Date();
-    await Conversionitem.deleteOne({ storageID: itemid });
+    await this.deleteConversionitem2(item);
   }
   else {
     return {ERROR: "Item not found"};

@@ -422,3 +422,9 @@ exports.getFiles = async (req, res, next) => {
     let response = await authorization.getFiles(req,setupAPIArgs(req));
     res.json(response);
 };
+
+
+exports.deleteAuth = async (req, res, next) => {
+    let response = await authorization.deleteAuth(req,setupAPIArgs(req));
+    res.json(response);
+};

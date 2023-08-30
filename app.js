@@ -31,11 +31,16 @@ function getPublicIP() {
   return new Promise((resolve, reject) => {
     var http = require('http');
 
+    try {
     http.get({ 'host': 'api.ipify.org', 'port': 80, 'path': '/' }, function (resp) {
       resp.on('data', function (ip) {
         resolve(ip);
       });
     });
+  }
+  catch {
+    reject();
+  }
   });
 }
 
@@ -43,12 +48,19 @@ exports.start = async function (mongoose_in, customCallback) {
   handleInitialConfiguration();
 
 
-  if (!config.has('hc-caas.serviceIP') || config.get('hc-caas.serviceIP') == "") {
-    global.caas_publicip = (await getPublicIP()).toString();
+  try {
+    if (!config.has('hc-caas.serviceIP') || config.get('hc-caas.serviceIP') == "") {
+      global.caas_publicip = (await getPublicIP()).toString();
+    }
+    else {
+      global.caas_publicip = config.get('hc-caas.serviceIP');
+    }
   }
-  else {
-    global.caas_publicip = config.get('hc-caas.serviceIP');
+  catch {
+    console.log("ERROR - Unable to determine public IP address.  Please set hc-caas.serviceIP in config file.");
+    global.caas_publicip = "";
   }
+
 
   try {
     config.get('hc-caas');
