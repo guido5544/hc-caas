@@ -334,8 +334,9 @@ exports.acceptInvite = async (req, res, next) => {
     res.json(response);
 };
 
-exports.getUsers = async (req, res, next) => {
-    let response = await authorization.getUsers(req,setupAPIArgs(req));
+
+exports.getAllUsers = async (req, res, next) => {
+    let response = await authorization.getAllUsers(req,setupAPIArgs(req));
     res.json(response);
 };
 

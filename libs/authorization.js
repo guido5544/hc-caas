@@ -590,6 +590,23 @@ exports.getUsers = async (req,args) => {
 }
 
 
+exports.getAllUsers = async (req,args) => {
+
+    let user = await this.getUserAdmin(args, req.params.email, req.params.password);
+    if (user == -1 || !user || !user.superuser) {
+        return { ERROR: "Not authorized" };
+    }
+
+    let users = await User.find();
+
+    let result = [];
+    for (let i=0;i<users.length;i++) {
+        result.push(users[i]);
+    }
+    return {users:result};
+}
+
+
 
 exports.getOrganizations = async (req,args) => {
 
