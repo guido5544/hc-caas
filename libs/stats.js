@@ -22,12 +22,12 @@ function findOrgRole(orgid,user) {
 
 
 exports.add = async (type,user, organization, value) => {
-   
+    
     const stat = new Stat({
         type: type,
         user: user,
         organization: organization,
-        value: value
+        value: value ? value : "empty"
     });
 
     stat.save();
