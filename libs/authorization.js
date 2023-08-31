@@ -188,7 +188,13 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
     }
 
     if (!Array.isArray(itemid)) {
-        let item =  await Conversionitem.findOne({ storageID: itemid, organization: { $in: [orgid, null] } });
+        let item;
+        if (user && user.superuser) {
+            let item =  await Conversionitem.findOne({ storageID: itemid});
+        }
+        else {
+            item =  await Conversionitem.findOne({ storageID: itemid, organization: { $in: [orgid, null] } });
+        }
         if (recordStats) {
             stats.add(stats.type.streamingAccess, user, org,item.name);
         }
@@ -196,11 +202,21 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
     }
     else {
         let items;
-        if (useNames) {
-            items = await Conversionitem.find({ 'name': { $in: itemid }, organization: { $in: [orgid, null] }  });
+        if (user && user.superuser) {
+            if (useNames) {
+                items = await Conversionitem.find({ 'name': { $in: itemid } });
+            }
+            else {
+                items = await Conversionitem.find({ storageID: { $in: itemid } });
+            }
         }
         else {
-            items = await Conversionitem.find({ storageID: { $in: itemid },  organization: { $in: [orgid, null] } });
+            if (useNames) {
+                items = await Conversionitem.find({ 'name': { $in: itemid }, organization: { $in: [orgid, null] } });
+            }
+            else {
+                items = await Conversionitem.find({ storageID: { $in: itemid }, organization: { $in: [orgid, null] } });
+            }
         }
         if (recordStats && user && org) {
             for (let i=0;i<items.length;i++) {
