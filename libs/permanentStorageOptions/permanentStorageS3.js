@@ -317,7 +317,7 @@ function _getPresignedUrlPut(filename, item) {
         const s3Params = {
             Bucket: bucket,
             Key: filename,
-            Expires: 60 * 60 * 60,
+            Expires: 60 * 60,
             ContentType: contentType
         };
 
@@ -337,7 +337,7 @@ function _getPresignedUrlS3(bucket,filename) {
         const s3Params = {
             Bucket: bucket,
             Key: filename,
-            Expires: 60 * 60 * 60,
+            Expires: 60,
             ContentType:null
             };
 
