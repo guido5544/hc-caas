@@ -239,6 +239,7 @@ function handleInitialConfiguration() {
         "HEInstallPath": "",
         "maxConversions": 4,
         "polling": false,
+        "allowSCSConversion": true,
         "imageServicePort": "3002",
         "priority": 0,
       },

@@ -323,7 +323,7 @@ async function runConverter(item) {
 
   }
   else {
-    if (item.name.indexOf(".scs") != -1 || item.name.indexOf(".scz") != -1) {
+    if (config.get("hc-caas.conversionServer.allowSCSConversion") && (item.name.indexOf(".scs") != -1 || item.name.indexOf(".scz") != -1)) {
         await scSpecialHandling(inputPath, dir, item);
     }
     else {
@@ -379,7 +379,8 @@ async function scSpecialHandling(inputPath, dir, item, customImageCode) {
     if (item.name.indexOf(".scz") == -1) {
       if (!imageservice) {
         imageservice = require('ts3d-hc-imageservice');
-        await imageservice.start({ viewerPort: config.get('hc-caas.conversionServer.imageServicePort') });
+        await imageservice.start({ viewerPort: config.get('hc-caas.conversionServer.imageServicePort'),
+        puppeteerArgs:["--no-sandbox"] });
       }
 
       let width = 640, height = 480;
@@ -395,7 +396,7 @@ async function scSpecialHandling(inputPath, dir, item, customImageCode) {
 
       let data = await imageservice.generateImage(inputPath, api_arg);
 
-      fs.writeFileSync(dir + item.storageID + "/" + item.name + ".png", Buffer.from(data));
+      fs.writeFileSync(dir + item.storageID + "/output/" + item.name + ".png", Buffer.from(data));
     }
 
   }
