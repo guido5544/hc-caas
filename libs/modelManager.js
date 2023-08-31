@@ -188,6 +188,9 @@ async function readFileWithCache(itemid, name, item) {
     }
     else {
       const data = await storage.readFile("conversiondata/" + itemid + "/" + name, item);
+      if (!data) {
+        return null;
+      }
       localCache.cacheFile(itemid, name, data);
       return data;
     }
