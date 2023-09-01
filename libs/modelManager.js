@@ -227,7 +227,7 @@ exports.getFromItem  = async (item,type) => {
 exports.get = async (itemid,type,args) => {
   let item = await authorization.getConversionItem(itemid, args);
   if (item) {
-    await this.getFromItem(item,type);
+    return await this.getFromItem(item,type);
   }
   else
   {

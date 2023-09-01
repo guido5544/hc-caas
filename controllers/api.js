@@ -335,8 +335,8 @@ exports.acceptInvite = async (req, res, next) => {
 };
 
 
-exports.getAllUsers = async (req, res, next) => {
-    let response = await authorization.getAllUsers(req,setupAPIArgs(req));
+exports.getUsers = async (req, res, next) => {
+    let response = await authorization.getUsers(req,setupAPIArgs(req));
     res.json(response);
 };
 
@@ -351,6 +351,18 @@ exports.removeUser = async (req, res, next) => {
     let response = await authorization.removeUser(req,setupAPIArgs(req));
     res.json(response);
 };
+
+
+exports.deleteUser = async (req, res, next) => {
+    let response = await authorization.deleteUser(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.setSuperUser = async (req, res, next) => {
+    let response = await authorization.setSuperUser(req,setupAPIArgs(req));
+    res.json(response);
+};
+
 
 exports.addOrganization = async (req, res, next) => {
     let response = await authorization.addOrganization(req,setupAPIArgs(req));

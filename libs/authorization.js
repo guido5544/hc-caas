@@ -335,6 +335,23 @@ exports.removeUser = async (req, args) => {
 }
 
 
+
+exports.deleteUser = async (req, args) => {
+    
+    let user = await this.getUserAdmin(args, args.email, args.password);    
+    if (user == -1 || !user || !user.superuser) {
+        return { ERROR: "Not authorized" };        
+    }
+    let ruser = await User.findOne({ email: req.params.targetemail });
+    if (!ruser) {
+        return { ERROR: "User not found" };
+    }
+
+    await APIKey.deleteMany({ user: ruser.id });
+    await User.deleteOne({ email: req.params.targetemail });
+    return {success:true};
+}
+
 exports.addUser = async (req, args) => {
     
     let user = await this.getUserAdmin(args,args.email,args.password);
@@ -567,46 +584,53 @@ exports.acceptInvite = async (req,args) => {
 
 exports.getUsers = async (req,args) => {
 
-    let user = await this.getUserAdmin(args, req.params.email, req.params.password);
-    if (user == -1 || !user || (findOrgRole(req.params.orgid,user) > 2 && !user.superuser)) {
-        return { ERROR: "Not authorized" };
-    }
-
-    let users = await User.find({'organizations.id': req.params.orgid });
-
     let result = [];
-    for (let i=0;i<users.length;i++) {
-        let accepted = findOrg(req.params.orgid,users[i]).accepted;
-        let inviteid;
-        if (!accepted) {
-            let invite = await Invite.findOne({ user: users[i].id });
-            if (invite) {
-                inviteid = invite.id;
-            }
+    if (!req.params.orgid) {
+
+        let user = await this.getUserAdmin(args, req.params.email, req.params.password);
+        if (user == -1 || !user || !user.superuser) {
+            return { ERROR: "Not authorized" };
         }
-        result.push({firstName:users[i].firstName, lastName:users[i].lastName, email:users[i].email, role:findOrgRole(req.params.orgid,users[i]), accepted:accepted, inviteid:inviteid});
+
+        let users = await User.find();
+
+        let orghash = [];
+
+        for (let i = 0; i < users.length; i++) {
+            let r = { created: users[i].createdAt,firstName: users[i].firstName, lastName: users[i].lastName, email: users[i].email,superuser:users[i].superuser, organizations: [] };
+            for (let j=0;j<users[i].organizations.length;j++) {
+                if (!orghash[users[i].organizations[j].id]) {
+                    let org = await Organization.findOne({ _id: users[i].organizations[j].id });
+                    orghash[users[i].organizations[j].id] = org.name;
+                }
+                r.organizations.push({name:orghash[users[i].organizations[j].id],id:users[i].organizations[j].id,role:users[i].organizations[j].role,accepted:users[i].organizations[j].accepted});          
+            }
+            result.push(r);
+        }
     }
-    return {users:result};
+    else {
+
+        let user = await this.getUserAdmin(args, req.params.email, req.params.password);
+        if (user == -1 || !user || (findOrgRole(req.params.orgid, user) > 2 && !user.superuser)) {
+            return { ERROR: "Not authorized" };
+        }
+
+        let users = await User.find({ 'organizations.id': req.params.orgid });
+
+        for (let i = 0; i < users.length; i++) {
+            let accepted = findOrg(req.params.orgid, users[i]).accepted;
+            let inviteid;
+            if (!accepted) {
+                let invite = await Invite.findOne({ user: users[i].id });
+                if (invite) {
+                    inviteid = invite.id;
+                }
+            }
+            result.push({ firstName: users[i].firstName, lastName: users[i].lastName, email: users[i].email, role: findOrgRole(req.params.orgid, users[i]), accepted: accepted, inviteid: inviteid });
+        }
+    }
+    return { users: result };
 }
-
-
-exports.getAllUsers = async (req,args) => {
-
-    let user = await this.getUserAdmin(args, req.params.email, req.params.password);
-    if (user == -1 || !user || !user.superuser) {
-        return { ERROR: "Not authorized" };
-    }
-
-    let users = await User.find();
-
-    let result = [];
-    for (let i=0;i<users.length;i++) {
-        result.push(users[i]);
-    }
-    return {users:result};
-}
-
-
 
 exports.getOrganizations = async (req,args) => {
 
@@ -771,4 +795,28 @@ exports.getItemFromType = async (req,args) => {
     else {
         return { ERROR: "Item not found" };
     }   
+}
+
+
+
+exports.setSuperUser = async (req,args) => {
+    let user = await this.getUserAdmin(args, args.email, args.password);    
+    if (user == -1 || !user || !user.superuser) {
+        return { ERROR: "Not authorized" };        
+    }
+
+    let ruser = await User.findOne({ email: req.params.targetemail });
+    if (!ruser) {
+        return { ERROR: "User not found" };
+    }
+
+    if (req.params.superuser == 'true' || req.params.superuser == '1') {
+        ruser.superuser = true;
+    }
+    else {
+        ruser.superuser = false;
+    }
+    await ruser.save();
+
+    return { success: true };
 }

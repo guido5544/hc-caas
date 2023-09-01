@@ -37,9 +37,10 @@ router.put('/changeOrgName/:email/:password/:orgid/:orgname', apiController.chan
 router.put('/updateOrgTokens/:orgid/:tokens', apiController.updateOrgTokens);
 router.get('/retrieveInvite/:inviteid', apiController.retrieveInvite);
 router.put('/acceptInvite/:inviteid/:password?', apiController.acceptInvite);
-router.get('/getUsers/:email/:password/:orgid', apiController.getUsers);
-router.get('/getAllUsers/:email/:password', apiController.getAllUsers);
+router.get('/getUsers/:email/:password/:orgid?', apiController.getUsers);
 router.put('/removeUser/:targetemail/:orgid', apiController.removeUser);
+router.put('/deleteUser/:targetemail', apiController.deleteUser);
+router.put('/setSuperUser/:targetemail/:superuser', apiController.setSuperUser);
 router.put('/addOrganization/:orgname', apiController.addOrganization);
 router.post('/updateUser', apiController.updateUser);
 router.get('/getOrganizations/:getAll?', apiController.getOrganizations);
