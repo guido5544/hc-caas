@@ -93,7 +93,7 @@ exports.getUploadToken = async (req, res, next) => {
 
     console.log("upload token send");
 
-    let result = await modelManager.requestUploadToken(req.params.name, setupAPIArgs(req));
+    let result = await modelManager.requestUploadToken(req.params.name,req.params.size, setupAPIArgs(req));
     res.json(result);
 };
 

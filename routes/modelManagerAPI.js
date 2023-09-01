@@ -20,7 +20,7 @@ router.put('/delete/:itemid', apiController.putDelete);
 router.get('/items', apiController.getItems);
 
 router.get('/custom', apiController.getCustom);
-router.get('/uploadToken/:name', apiController.getUploadToken);
+router.get('/uploadToken/:name/:size', apiController.getUploadToken);
 router.get('/downloadToken/:itemid/:type', apiController.getDownloadToken);
 
 router.get('/shattered/:itemid/:name', apiController.getShattered);

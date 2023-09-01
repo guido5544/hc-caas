@@ -221,8 +221,11 @@ async function conversionComplete(err, item) {
       const files = await readDir(tempFileDir + "/" + item.storageID + "/output");
       for (var i = 0; i < files.length; i++) {
         if ((item.name) != files[i] && files[i] != "zip") {
-          savedFiles.push(files[i]);          
-          await storage.store(tempFileDir + "/" + item.storageID + "/output/" + files[i], "conversiondata/" + item.storageID + "/" + files[i], item);
+                 
+          let res = await storage.store(tempFileDir + "/" + item.storageID + "/output/" + files[i], "conversiondata/" + item.storageID + "/" + files[i], item);
+          if (!res.ERROR) {
+            savedFiles.push(files[i]);
+          } 
         }
       }
     }

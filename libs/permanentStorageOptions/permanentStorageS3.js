@@ -178,7 +178,7 @@ exports.store = (inputfile, s3target, item) => {
     return new Promise((resolve, reject) => {
         fs.readFile(inputfile, function (err, data) {
             _storeInS3(s3target, data, item).then(() => {
-                resolve();
+                resolve(data.length);
             });
         });
     });
@@ -253,9 +253,9 @@ exports.delete = (name, item) => {
     }
 };
 
-exports.requestUploadToken = async (filename, item) => {
+exports.requestUploadToken = async (filename, item,size) => {
 
-    return await _getPresignedUrlPut(filename, item);
+    return await _getPresignedUrlPut(filename, item,size);
 
 };
 
@@ -301,7 +301,7 @@ exports.requestDownloadToken = async (filename, item) => {
 };
 
 
-function _getPresignedUrlPut(filename, item) {
+function _getPresignedUrlPut(filename, item,size) {
 
     let bucket = config.get('hc-caas.storage.destination');
     if (item && item.storageAvailability) {
@@ -318,7 +318,8 @@ function _getPresignedUrlPut(filename, item) {
             Bucket: bucket,
             Key: filename,
             Expires: 60 * 60,
-            ContentType: contentType
+            ContentType: contentType,
+            contentLength: size
         };
 
         try {

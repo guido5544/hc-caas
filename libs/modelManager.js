@@ -314,7 +314,10 @@ exports.append = async (directory, itemname, itemid, args) => {
   let item = await authorization.getConversionItem(itemid, args,authorization.actionType.other);
   if (item) {
     if (directory) {
-      await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
+      let res =await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
+      if (res.ERROR) {
+        return res;
+      }
     }
     let newfile = true;
     for (let i = 0; i < item.files.length; i++) {
@@ -344,7 +347,7 @@ exports.append = async (directory, itemname, itemid, args) => {
   }
 };
 
-exports.requestUploadToken = async (itemname, args) => {
+exports.requestUploadToken = async (itemname,size, args) => {
 
   let user = await authorization.getUser(args);
 
@@ -382,7 +385,7 @@ exports.requestUploadToken = async (itemname, args) => {
     item.save();
   }
 
-  let token = await storage.requestUploadToken("conversiondata/" + itemid + "/" + itemname);
+  let token = await storage.requestUploadToken("conversiondata/" + itemid + "/" + itemname,undefined, size);
   return { token: token, itemid: itemid };
 };
 
