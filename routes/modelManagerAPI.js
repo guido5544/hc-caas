@@ -55,5 +55,7 @@ router.put('/updatePassword', apiController.updatePassword);
 router.get('/getFiles/:orgid', apiController.getFiles);
 router.put('/deleteAuth/:orgid/:itemid', apiController.deleteAuth);
 router.get('/getItemFromType/:orgid/:itemid/:type?', apiController.getItemFromType);
+router.put('/deleteOrganization/:orgid', apiController.deleteOrganization);
+
 
 module.exports = router;

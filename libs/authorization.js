@@ -338,6 +338,10 @@ exports.removeUser = async (req, args) => {
 
 exports.deleteUser = async (req, args) => {
     
+    if (args.email == req.params.targetemail) {
+        return { ERROR: "Cannot delete yourself" };
+    }
+
     let user = await this.getUserAdmin(args, args.email, args.password);    
     if (user == -1 || !user || !user.superuser) {
         return { ERROR: "Not authorized" };        
@@ -644,7 +648,10 @@ exports.getOrganizations = async (req,args) => {
         let orgs = await Organization.find();
         let result = [];
         for (let i = 0; i < orgs.length; i++) {
-            result.push({ name: orgs[i].name, id: orgs[i].id });
+            let r = { name: orgs[i].name, id: orgs[i].id, tokens: orgs[i].tokens, created: orgs[i].createdAt };
+            let users = await User.find({ 'organizations.id': orgs[i].id });
+            r.numusers = users.length;
+            result.push(r);
         }
         return { organizations: result };
     }
@@ -819,4 +826,44 @@ exports.setSuperUser = async (req,args) => {
     await ruser.save();
 
     return { success: true };
+}
+
+
+exports.deleteOrganization = async (req, args) => {
+    
+    let user = await this.getUserAdmin(args, args.email, args.password);    
+    if (user == -1 || !user || !user.superuser) {
+        return { ERROR: "Not authorized" };        
+    }
+
+    let org = await Organization.findOne({ _id: req.params.orgid });
+    if (org.protected) {
+        return { ERROR: "Cannot delete protected organization" };
+    }
+    if (!org) {
+        return { ERROR: "Organization not found" };
+    }
+    let users = await User.find({ 'organizations.id': org.id });
+    for (let j = 0; j < users.length; j++) {
+        let ruser = users[j];
+        for (let i = 0; i < ruser.organizations.length; i++) {
+            if (ruser.organizations[i].id == req.params.orgid) {
+                ruser.organizations.splice(i, 1);
+                await ruser.save();
+                break;
+            }
+        }
+        if (ruser.organizations.length == 0) {
+            await User.deleteOne(ruser);
+        }
+    }
+
+    await Organization.deleteOne({ _id: req.params.orgid });
+
+    let citems =  await Conversionitem.find({ organization:req.params.orgid });
+    for (let i=0;i<citems.length;i++) {
+        modelManager.deleteConversionitem2(citems[i]);
+    }
+ 
+    return {success:true};
 }

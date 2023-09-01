@@ -358,6 +358,12 @@ exports.deleteUser = async (req, res, next) => {
     res.json(response);
 };
 
+
+exports.deleteOrganization = async (req, res, next) => {
+    let response = await authorization.deleteOrganization(req,setupAPIArgs(req));
+    res.json(response);
+};
+
 exports.setSuperUser = async (req, res, next) => {
     let response = await authorization.setSuperUser(req,setupAPIArgs(req));
     res.json(response);
