@@ -190,7 +190,7 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
     if (!Array.isArray(itemid)) {
         let item;
         if (user && user.superuser) {
-            let item =  await Conversionitem.findOne({ storageID: itemid});
+            item =  await Conversionitem.findOne({ storageID: itemid});
         }
         else {
             item =  await Conversionitem.findOne({ storageID: itemid, organization: { $in: [orgid, null] } });
