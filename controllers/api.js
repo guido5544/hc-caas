@@ -8,6 +8,8 @@ const status = require('../libs/status');
 
 const authorization = require('../libs/authorization');
 const stats = require('../libs/stats');
+const fs = require('fs');
+
 
 function setupAPIArgs(req) {
 
@@ -34,6 +36,21 @@ exports.getStatus = async (req, res, next) => {
     }
 };
 
+
+
+function getFileSize(itempath) {
+    return new Promise((resolve, reject) => {
+      fs.stat(itempath, (err, stats) => {
+        if (err) {
+          reject(err);
+        }
+        else {
+          resolve(stats.size);
+        }
+      });
+    });
+  }
+
 exports.postFileUpload = async (req, res, next) => {
 
     console.log("upload start");
@@ -45,6 +62,8 @@ exports.postFileUpload = async (req, res, next) => {
     
     let args = setupAPIArgs(req);
 
+    args.size= await getFileSize(req.file.destination + "/" + req.file.originalname);
+    
     if (args.itemid != undefined) {
         let data = await modelManager.append(req.file.destination, req.file.originalname, args.itemid,setupAPIArgs(req));     
         res.json(data);
@@ -74,7 +93,15 @@ exports.postFileUpload = async (req, res, next) => {
 
 exports.postFileUploadArray = async (req, res, next) => {
 
-    let data = await modelManager.createMultiple(req.files, setupAPIArgs(req));
+    let args = setupAPIArgs(req);
+
+    let totalsize = 0;
+    for (let i=0;i<req.files.length;i++) {
+        totalsize += await getFileSize(req.files[i].destination + "/" + req.files[i].originalname);
+    }
+    args.size = totalsize;
+
+    let data = await modelManager.createMultiple(req.files, args);
     res.json(data);
 };
 
@@ -93,7 +120,7 @@ exports.getUploadToken = async (req, res, next) => {
 
     console.log("upload token send");
 
-    let result = await modelManager.requestUploadToken(req.params.name,req.params.size, setupAPIArgs(req));
+    let result = await modelManager.requestUploadToken(req.params.name,parseInt(req.params.size), setupAPIArgs(req));
     res.json(result);
 };
 

@@ -65,6 +65,10 @@ const conversionitemSchema = new Schema({
     type: String,
     required: false
   },
+  size: {
+    type: Number,
+    required: false
+  },
   user: {
     type: Schema.Types.ObjectId,
     ref: 'Users',

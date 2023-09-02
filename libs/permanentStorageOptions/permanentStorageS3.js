@@ -38,7 +38,7 @@ exports.initialize = () => {
 readFileIntenal = (bucket,filename) => {
 
     return new Promise((resolve, reject) => {
-        var s3Params = {
+        let s3Params = {
             Bucket: bucket,
             Key: filename
         };
@@ -253,9 +253,9 @@ exports.delete = (name, item) => {
     }
 };
 
-exports.requestUploadToken = async (filename, item,size) => {
+exports.requestUploadToken = async (filename, item) => {
 
-    return await _getPresignedUrlPut(filename, item,size);
+    return await _getPresignedUrlPut(filename, item);
 
 };
 
@@ -301,7 +301,7 @@ exports.requestDownloadToken = async (filename, item) => {
 };
 
 
-function _getPresignedUrlPut(filename, item,size) {
+function _getPresignedUrlPut(filename, item) {
 
     let bucket = config.get('hc-caas.storage.destination');
     if (item && item.storageAvailability) {
@@ -318,8 +318,7 @@ function _getPresignedUrlPut(filename, item,size) {
             Bucket: bucket,
             Key: filename,
             Expires: 60 * 60,
-            ContentType: contentType,
-            contentLength: size
+            ContentType: contentType,    
         };
 
         try {

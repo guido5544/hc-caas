@@ -360,9 +360,9 @@ exports.requestUploadToken = async (itemname,size, args) => {
     return { ERROR: "Not available for this storage type" };
   }
 
-  if (args && args.itemid != undefined) {
-    let data = await this.append(null, itemname, args.itemid);
-    itemid = args.itemid;
+  if (args && args.storageid != undefined) {
+    let data = await this.append(null, itemname, args.storageid,args);
+    itemid = args.storageid;
   }
   else {
 
@@ -379,13 +379,14 @@ exports.requestUploadToken = async (itemname,size, args) => {
       hcVersion: args.hcVersion,
       storageAvailability: storage.resolveInitialAvailability(),
       user: user,
+      size: size,
       organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
 
     });
     item.save();
   }
 
-  let token = await storage.requestUploadToken("conversiondata/" + itemid + "/" + itemname,undefined, size);
+  let token = await storage.requestUploadToken("conversiondata/" + itemid + "/" + itemname);
   return { token: token, itemid: itemid };
 };
 
@@ -420,7 +421,7 @@ exports.createMultiple = async (files, args) => {
     if (rootFileIndex == i) {
       continue;
     }
-    proms.push(this.append(files[i].destination, files[i].originalname, itemid));
+    proms.push(this.append(files[i].destination, files[i].originalname, itemid,args));
   }
 
   await Promise.all(proms);
@@ -455,6 +456,7 @@ exports.createDatabaseEntry = async (itemname, args) => {
     created: new Date(),
     webhook: args.webhook,
     hcVersion: args.hcVersion,
+    size: args.size,
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
     user: user,
@@ -506,10 +508,8 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
 };
 
 
-
 exports.create = async (item, directory, itemname, args) => {
  
-
   await storage.store(directory + "/" + itemname, "conversiondata/" + item.storageID + "/" + itemname);
 
   if (await authorization.conversionAllowed(args)) {
