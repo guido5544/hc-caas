@@ -69,6 +69,20 @@ exports.getUserAdmin = async (args, email,password) => {
 
 
 
+exports.updateStorage = async (item, itemsize) => {
+    
+    let org = await Organization.findOne({ _id: item.organization});
+
+    if (!org) {
+        return false;
+    }
+
+    if (org.storage == undefined) {
+        org.storage = 0;
+    }
+    org.storage += itemsize;
+    await org.save();
+}
 
 
 exports.conversionAllowed = async (args) => {

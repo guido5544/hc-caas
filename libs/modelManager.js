@@ -23,6 +23,21 @@ var totalConversions = 0;
 
 var customCallback;
 
+
+function getFileSize(itempath) {
+  return new Promise((resolve, reject) => {
+    fs.stat(itempath, (err, stats) => {
+      if (err) {
+        reject(err);
+      }
+      else {
+        resolve(stats.size);
+      }
+    });
+  });
+}
+
+
 async function purgeFiles() {
   let files = await Conversionitem.find();
 
@@ -313,12 +328,21 @@ exports.appendFromBuffer = async (buffer, itemname, itemid) => {
 exports.append = async (directory, itemname, itemid, args) => {
   let item = await authorization.getConversionItem(itemid, args,authorization.actionType.other);
   if (item) {
+    let isize;
     if (directory) {
+      isize = getFileSize(directory + "/" + itemname);
       let res =await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
       if (res.ERROR) {
         return res;
       }
     }
+    else {
+      isize = args.size;
+    }
+   
+     item.size += isize;
+    await exports.updateStorage(item,isize);   
+    
     let newfile = true;
     for (let i = 0; i < item.files.length; i++) {
       if (item.files[i] == itemname) {
@@ -510,6 +534,10 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
 
 exports.create = async (item, directory, itemname, args) => {
  
+  item.size = getFileSize(directory + "/" + itemname);
+  await item.save();
+  await authorization.updateStorage(item,size);
+
   await storage.store(directory + "/" + itemname, "conversiondata/" + item.storageID + "/" + itemname);
 
   if (await authorization.conversionAllowed(args)) {
@@ -674,6 +702,7 @@ function waitUntilConversionDone(itemid) {
 
 exports.deleteConversionitem2 = async (item) => {
 
+    await authorization.updateStorage(item,item.size);
     let itemid = item.storageID;
     console.log("Deleting item: " + itemid + " " + item.name);
     storage.delete("conversiondata/" + item.storageID, item);
@@ -687,6 +716,7 @@ exports.deleteConversionitem = async (itemid, args) => {
   let item = await authorization.getConversionItem(itemid, args, authorization.actionType.other);
   if (item) {
     await this.deleteConversionitem2(item);
+    authorization.updateStorage(args,-item.size);
   }
   else {
     return {ERROR: "Item not found"};
