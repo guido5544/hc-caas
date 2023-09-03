@@ -421,6 +421,10 @@ exports.updateOrgTokens = async (req, res, next) => {
     res.json(response);
 };
 
+exports.updateOrgMaxStorage = async (req, res, next) => {
+    let response = await authorization.updateOrgMaxStorage(req,setupAPIArgs(req));
+    res.json(response);
+};
 
 
 exports.getStatsByMonth = async (req, res, next) => {

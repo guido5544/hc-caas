@@ -534,6 +534,24 @@ exports.updateOrgTokens = async (req,args) => {
     return {orgName: org.name};
 };
 
+
+exports.updateOrgMaxStorage = async (req,args) => {
+
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user || !user.superuser) {
+        return { ERROR: "Not authorized" };
+    }
+
+    let org = await Organization.findOne({ _id: req.params.orgid });
+    if (!org) {
+        return { ERROR: "Organization not found" };
+    }
+    org.maxStorage = req.params.maxstorage;
+    await org.save();
+    return {orgName: org.name};
+};
+
+
 exports.addOrganization = async (req,args) => {
 
     let user = await this.getUserAdmin(args, args.email, args.password);
@@ -662,7 +680,7 @@ exports.getOrganizations = async (req,args) => {
         let orgs = await Organization.find();
         let result = [];
         for (let i = 0; i < orgs.length; i++) {
-            let r = { name: orgs[i].name, id: orgs[i].id, tokens: orgs[i].tokens, created: orgs[i].createdAt };
+            let r = { name: orgs[i].name, id: orgs[i].id, maxStorage: orgs[i].maxStorage, storage: orgs[i].storage, tokens: orgs[i].tokens, created: orgs[i].createdAt };
             let users = await User.find({ 'organizations.id': orgs[i].id });
             r.numusers = users.length;
             result.push(r);
@@ -689,7 +707,7 @@ exports.getOrganization = async (req,args) => {
     }
    let org = await Organization.findOne({ _id: req.params.orgid });
 
-    return {orgname:org.name, tokens:org.tokens};
+    return {orgname:org.name, tokens:org.tokens,maxStorage: org.maxStorage, storage: org.storage};
 }
 
 
