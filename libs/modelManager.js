@@ -326,12 +326,14 @@ exports.appendFromBuffer = async (buffer, itemname, itemid) => {
 };
 
 exports.append = async (directory, itemname, itemid, args) => {
-  let item = await authorization.getConversionItem(itemid, args,authorization.actionType.other);
+  let item = await authorization.getConversionItem(itemid, args, authorization.actionType.other);
   if (item) {
     let isize;
     if (directory) {
-      isize = getFileSize(directory + "/" + itemname);
-      let res =await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
+      if (!args.multiConvert) {
+        isize = await getFileSize(directory + "/" + itemname);
+      }
+      let res = await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
       if (res.ERROR) {
         return res;
       }
@@ -339,10 +341,15 @@ exports.append = async (directory, itemname, itemid, args) => {
     else {
       isize = args.size;
     }
-   
-     item.size += isize;
-    await exports.updateStorage(item,isize);   
-    
+    if (!item.size) {
+      item.size = 0;
+    }
+
+    if (isize != undefined) {
+      item.size += isize;
+      await authorization.updateStorage(item, isize);
+    }
+
     let newfile = true;
     for (let i = 0; i < item.files.length; i++) {
       if (item.files[i] == itemname) {
@@ -385,6 +392,7 @@ exports.requestUploadToken = async (itemname,size, args) => {
   }
 
   if (args && args.storageid != undefined) {
+    args.size = size;
     let data = await this.append(null, itemname, args.storageid,args);
     itemid = args.storageid;
   }
@@ -408,6 +416,7 @@ exports.requestUploadToken = async (itemname,size, args) => {
 
     });
     item.save();
+    await authorization.updateStorage(item, size);
   }
 
   let token = await storage.requestUploadToken("conversiondata/" + itemid + "/" + itemname);
@@ -441,14 +450,20 @@ exports.createMultiple = async (files, args) => {
   await this.create(item, files[rootFileIndex].destination, files[rootFileIndex].originalname, args);
   let itemid = item.storageID;
   let proms= [];
+  let totalsize = 0;
   for (let i = 0; i < files.length; i++) {
     if (rootFileIndex == i) {
       continue;
     }
+    totalsize += await getFileSize(files[i].destination + "/" + files[i].originalname);
     proms.push(this.append(files[i].destination, files[i].originalname, itemid,args));
   }
 
   await Promise.all(proms);
+  item.size += totalsize;
+  await item.save();
+  await authorization.updateStorage(item,totalsize);
+
   if (!skipConversion) {
     await this.reconvert(itemid, args);
   }
@@ -534,9 +549,9 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
 
 exports.create = async (item, directory, itemname, args) => {
  
-  item.size = getFileSize(directory + "/" + itemname);
+  item.size = await getFileSize(directory + "/" + itemname);
   await item.save();
-  await authorization.updateStorage(item,size);
+  await authorization.updateStorage(item,item.size);
 
   await storage.store(directory + "/" + itemname, "conversiondata/" + item.storageID + "/" + itemname);
 
@@ -702,7 +717,9 @@ function waitUntilConversionDone(itemid) {
 
 exports.deleteConversionitem2 = async (item) => {
 
-    await authorization.updateStorage(item,item.size);
+    if (item.size != undefined) {
+        await authorization.updateStorage(item,-item.size);
+    }
     let itemid = item.storageID;
     console.log("Deleting item: " + itemid + " " + item.name);
     storage.delete("conversiondata/" + item.storageID, item);
