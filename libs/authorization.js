@@ -70,20 +70,22 @@ exports.getUserAdmin = async (args, email,password) => {
 
 
 exports.updateStorage = async (item, itemsize) => {
-    
-    let org = await Organization.findOne({ _id: item.organization});
+    const org = await Organization.findOne({ _id: item.organization });
 
     if (!org) {
         return false;
     }
 
-    if (org.storage == undefined) {
-        org.storage = 0;
+    if (org.storage == undefined || org.storage < 0) {
+        // Set the storage field to itemsize if it doesn't exist or is less than 0.
+        await Organization.updateOne({ _id: item.organization }, { $set: { storage: itemsize } });
+    } else {
+        // Atomically increment the storage field by itemsize.
+        await Organization.updateOne({ _id: item.organization }, { $inc: { storage: itemsize } });
     }
-    org.storage += itemsize;
-    await org.save();
-}
 
+    return true;
+}
 
 exports.conversionAllowed = async (args) => {
     if (!config.get('hc-caas.requireAccessKey')) {
