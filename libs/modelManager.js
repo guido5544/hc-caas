@@ -46,7 +46,7 @@ async function purgeFiles() {
       let timeDiff = Math.abs(new Date() - files[i].updated);
       let diffHours = Math.ceil(timeDiff / (1000 * 60 * 60));
       if (diffHours > 24) {
-          exports.deleteConversionitem(files[i].storageID, { accessPassword: config.get('hc-caas.accessPassword') });
+        exports.deleteConversionitem2(files[i]);
       }
     }
   }
