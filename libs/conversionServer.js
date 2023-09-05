@@ -352,6 +352,15 @@ async function runConverter(item) {
             cleanupDir(tempFileDir + "/", item);
             let founditem = await Conversionitem.findOne({ storageID: item.storageID });
             founditem.conversionState = "ERROR - Conversion Error";
+            let etemp = err.message.split("\n");
+            if (etemp.length) {
+              let etext = ""
+              for (let i = 1; i < etemp.length; i++) {
+                etext += etemp[i] + "\n";
+              }
+
+              founditem.detailedError = etext;
+            }
             founditem.updated = new Date();
             await founditem.save();
             updateConversionStatus(founditem);

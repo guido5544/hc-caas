@@ -19,7 +19,10 @@ const conversionitemSchema = new Schema({
     type: String,
     required: true
   },
-
+  detailedError: {
+    type: String,
+    required: false
+  },
   updated: {
     type:Date,
     required: true
