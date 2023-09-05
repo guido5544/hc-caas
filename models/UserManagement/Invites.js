@@ -11,7 +11,7 @@ const InviteSchema = new Schema({
   organization: {
     type: Schema.Types.ObjectId,
     ref: 'Organizations',
-    required: true
+    required: false
   },
 }, {timestamps:true});
 

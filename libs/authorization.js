@@ -584,7 +584,7 @@ exports.retrieveInvite = async (req,args) => {
     let organization = await Organization.findOne(invite.organization);
 
     return {email: user.email, hasPassword: user.password ? true : false,
-        organization: organization.name, organizationID: organization.id};
+        organization:organization ? organization.name : null, organizationID: organization ? organization.id : null};
 };
 
 
@@ -603,15 +603,17 @@ exports.acceptInvite = async (req,args) => {
         await user.save();
     }
 
-    let org = await Organization.findOne(invite.organization);
+    if (invite.organization) {
+        let org = await Organization.findOne(invite.organization);
 
-    
-    let orgs = user.organizations;
-    for (let i = 0; i < orgs.length; i++) {
-        if (orgs[i].id == org.id) {
-            orgs[i].accepted = true;
-            await user.save();
-            break;
+
+        let orgs = user.organizations;
+        for (let i = 0; i < orgs.length; i++) {
+            if (orgs[i].id == org.id) {
+                orgs[i].accepted = true;
+                await user.save();
+                break;
+            }
         }
     }
 
@@ -901,3 +903,26 @@ exports.deleteOrganization = async (req, args) => {
  
     return {success:true};
 }
+
+
+exports.resetPassword = async (req, args) => {
+    
+    let user = await this.getUserAdmin(args, args.email, args.password);    
+    if (user == -1 || !user || !user.superuser) {
+        return { ERROR: "Not authorized" };        
+    }
+
+    let ruser = await User.findOne({ email: req.params.targetemail });
+    if (!ruser) {
+        return { ERROR: "User not found" };
+    }
+    ruser.password = undefined;
+    await ruser.save();
+    
+    let newinvite = new Invite({
+        user: ruser
+    });
+    await newinvite.save();
+    return { inviteid: newinvite.id };
+}
+

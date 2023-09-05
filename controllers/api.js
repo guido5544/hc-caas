@@ -457,6 +457,11 @@ exports.deleteAuth = async (req, res, next) => {
     res.json(response);
 };
 
+exports.resetPassword = async (req, res, next) => {
+    let response = await authorization.resetPassword(req,setupAPIArgs(req));
+    res.json(response);
+};
+
 exports.getItemFromType = async (req, res, next) => {
     let result = await authorization.getItemFromType(req,setupAPIArgs(req));
     if (result.data) {    
