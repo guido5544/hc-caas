@@ -133,6 +133,24 @@ exports.start = async (callback) => {
   console.log('Model Manager started');
 };
 
+
+exports.getDataFromItem = async (item) => {
+  let returnItem = JSON.parse(JSON.stringify(item));
+
+  returnItem.__v = undefined;
+  returnItem._id = undefined;
+
+  returnItem.storageAvailability = undefined;
+  returnItem.webhook = undefined;
+  if (item.user) {
+    let user = await User.findOne({ _id: item.user });
+    if (user) {
+      returnItem.user = user.email;
+    }
+  }
+  return returnItem;
+};
+
 exports.getData = async (itemid, args) => {
 
 
@@ -148,13 +166,7 @@ exports.getData = async (itemid, args) => {
     let item = await authorization.getConversionItem(itemids[0], args,authorization.actionType.info);
 
     if (item) {
-      let returnItem = JSON.parse(JSON.stringify(item));
-      returnItem.__v = undefined;
-      returnItem._id = undefined;
-      returnItem.user = undefined;
-      returnItem.storageAvailability = undefined;
-      returnItem.webhook = undefined;
-      return returnItem;
+      return await this.getDataFromItem(item);     
     } else {
       return { ERROR: "Item not found" };
     }

@@ -54,6 +54,7 @@ router.get('/getStatsByMonth/:orgid/:month/:year', apiController.getStatsByMonth
 router.put('/injectStats/:orgid', apiController.injectStats);
 router.put('/updatePassword', apiController.updatePassword);
 router.get('/getFiles/:orgid', apiController.getFiles);
+router.get('/getDataAuth/:itemid/:orgid', apiController.getDataAuth);
 router.put('/deleteAuth/:orgid/:itemid', apiController.deleteAuth);
 router.get('/getItemFromType/:orgid/:itemid/:type?', apiController.getItemFromType);
 router.put('/deleteOrganization/:orgid', apiController.deleteOrganization);

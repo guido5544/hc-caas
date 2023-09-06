@@ -811,6 +811,23 @@ exports.getFiles = async (req,args) => {
 
 
 
+exports.getDataAuth = async (req,args) => {
+    let user = await this.getUserAdmin(args, args.email, args.password);
+    if (user == -1 || !user || (findOrgRole(req.params.orgid,user) > 2 && !user.superuser)) {
+        return { ERROR: "Not authorized" };
+    }
+
+    let item =  await Conversionitem.findOne({ storageID: req.params.itemid, organization:req.params.orgid });
+    if (!item) {
+        return { ERROR: "Item not found" };
+    }
+    let result = await modelManager.getDataFromItem(item);
+
+    return result;
+}
+
+
+
 
 exports.deleteAuth = async (req,args) => {
     let user = await this.getUserAdmin(args, args.email, args.password);    
