@@ -494,8 +494,24 @@ function setupCommandLine(inputPath, dir, item) {
   else {  
     
     let hasInput = false;
+
     for (let i = 0; i < item.conversionCommandLine.length; i += 2) {
       
+      if (i==0 && item.conversionCommandLine[0] == "*") {
+        commandLine.push('--input', inputPath,
+        '--output_scs', dir + item.storageID + "/output/" + item.name + ".scs",
+        '--output_sc', dir + item.storageID + "/output/" + item.name + "_",
+        '--output_png', dir + item.storageID + "/output/" + item.name + ".png",
+        '--background_color', "1,1,1",
+        '--sc_export_attributes', 'true',
+        '--ifc_import_openings', 'false',
+        '--import_hidden_objects', hidden,
+        '--png_transparent_background', '1',
+        '--sc_create_scz', 'true',
+        '--sc_compress_scz', '1');
+        hasInput = true;
+        i++;
+      }
 
       commandLine.push(item.conversionCommandLine[i]);
 
@@ -516,6 +532,14 @@ function setupCommandLine(inputPath, dir, item) {
           } else {
             commandLine.push(dir + item.storageID + "/output/" + item.name + "." + type);
           }
+        }
+      }
+      else if (item.conversionCommandLine[i].indexOf("--prepare_shattered_xml") != -1) {
+        if (item.conversionCommandLine[i+1] != null && item.conversionCommandLine[i+1] != "") {
+          commandLine.push(dir + item.storageID + "/output/" + item.conversionCommandLine[i+1]);
+        }
+        else {
+            commandLine.push(dir + item.storageID + "/output/" + item.name + "." + "xml");
         }
       }
       else {
