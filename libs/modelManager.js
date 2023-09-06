@@ -380,7 +380,8 @@ exports.append = async (directory, itemname, itemid, args) => {
 
 exports.requestUploadToken = async (itemname,size, args) => {
 
-  let user = await authorization.getUser(args);
+  let keyinfo = {name: undefined}
+  let user = await authorization.getUser(args,keyinfo);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -412,6 +413,7 @@ exports.requestUploadToken = async (itemname,size, args) => {
       storageAvailability: storage.resolveInitialAvailability(),
       user: user,
       size: size,
+      accessKey: keyinfo.name,
       organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
 
     });
@@ -476,7 +478,8 @@ exports.createDatabaseEntry = async (itemname, args) => {
 
   let itemid = uuidv4();
   let startState = "PENDING";
-  let user = await authorization.getUser(args);
+  let keyinfo = {name: undefined}
+  let user = await authorization.getUser(args,keyinfo);
 
   if (user == -1) {
     return null;
@@ -498,6 +501,7 @@ exports.createDatabaseEntry = async (itemname, args) => {
     size: args.size,
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
+    accessKey: keyinfo.name,
     user: user,
     organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
 
@@ -578,7 +582,8 @@ exports.create = async (item, directory, itemname, args) => {
 
 
 exports.createEmpty = async (args) => {
-  let user = await authorization.getUser(args);
+  let keyinfo = {name: undefined}
+  let user = await authorization.getUser(args, keyinfo);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -603,6 +608,7 @@ exports.createEmpty = async (args) => {
     streamLocation:"",
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
+    accessKey: keyinfo.name,
     user: user,
     organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
   });

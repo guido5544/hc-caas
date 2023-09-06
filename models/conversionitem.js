@@ -81,6 +81,10 @@ const conversionitemSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'Organization',
     required: false
+  },
+  accessKey: {
+    type: String,  
+    required: false
   }
 
 });
