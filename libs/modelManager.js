@@ -13,6 +13,7 @@ const fetch = require('node-fetch');
 const localCache = require('./localCache');
 
 const authorization = require('./authorization');
+const APIKey = require('../models/UserManagement/ApiKey');
 
 
 var storage;
@@ -142,6 +143,15 @@ exports.getDataFromItem = async (item) => {
 
   returnItem.storageAvailability = undefined;
   returnItem.webhook = undefined;
+
+  if (item.apiKey) {
+    let key = await APIKey.findOne({ _id: item.apiKey });
+    if (key) {
+      returnItem.accessKey = key.name;
+    }
+    item.apiKey = undefined;
+  }
+
   if (item.user) {
     let user = await User.findOne({ _id: item.user });
     if (user) {
@@ -392,8 +402,7 @@ exports.append = async (directory, itemname, itemid, args) => {
 
 exports.requestUploadToken = async (itemname,size, args) => {
 
-  let keyinfo = {name: undefined}
-  let user = await authorization.getUser(args,keyinfo);
+  let user = await authorization.getUser(args);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -425,7 +434,7 @@ exports.requestUploadToken = async (itemname,size, args) => {
       storageAvailability: storage.resolveInitialAvailability(),
       user: user,
       size: size,
-      accessKey: keyinfo.name,
+      apiKey: args.accessKey,
       organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
 
     });
@@ -490,8 +499,7 @@ exports.createDatabaseEntry = async (itemname, args) => {
 
   let itemid = uuidv4();
   let startState = "PENDING";
-  let keyinfo = {name: undefined}
-  let user = await authorization.getUser(args,keyinfo);
+  let user = await authorization.getUser(args);
 
   if (user == -1) {
     return null;
@@ -513,7 +521,7 @@ exports.createDatabaseEntry = async (itemname, args) => {
     size: args.size,
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
-    accessKey: keyinfo.name,
+    apiKey: args.accessKey,
     user: user,
     organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
 
@@ -594,8 +602,7 @@ exports.create = async (item, directory, itemname, args) => {
 
 
 exports.createEmpty = async (args) => {
-  let keyinfo = {name: undefined}
-  let user = await authorization.getUser(args, keyinfo);
+  let user = await authorization.getUser(args);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -620,7 +627,7 @@ exports.createEmpty = async (args) => {
     streamLocation:"",
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
-    accessKey: keyinfo.name,
+    apiKey: args.accessKey,
     user: user,
     organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
   });
@@ -825,10 +832,26 @@ exports.getItems = async (args, organization = undefined) => {
   let cleanedModels = [];
 
   let userhash = [];
+  let accessKeyHash = [];
   for (let i = 0; i < models.length; i++) {
     let returnItem = JSON.parse(JSON.stringify(models[i]));
     returnItem.__v = undefined;
     returnItem._id = undefined;
+
+    if (returnItem.apiKey) {
+      if (!accessKeyHash[returnItem.apiKey]) {
+        let key = await APIKey.findOne({ _id: returnItem.apiKey });
+        if (key) {
+          accessKeyHash[returnItem.apiKey] = key.name;
+        }
+        else {  
+          accessKeyHash[returnItem.apiKey] = undefined;
+        }
+      }      
+      returnItem.accessKey = accessKeyHash[returnItem.apiKey];
+      returnItem.apiKey = undefined;
+    }
+
     if (returnItem.user) {
       if (!userhash[returnItem.user]) {
         let user = await User.findOne({ _id: returnItem.user });

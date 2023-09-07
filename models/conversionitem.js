@@ -85,6 +85,11 @@ const conversionitemSchema = new Schema({
   accessKey: {
     type: String,  
     required: false
+  },
+  apiKey: {
+    type: Schema.Types.ObjectId,
+    ref: 'ApiKey',
+    required: false
   }
 
 });

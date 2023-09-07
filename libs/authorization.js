@@ -21,7 +21,7 @@ exports.actionType = {
 };
 
 
-exports.getUser = async (args,keyinfo = null) => {
+exports.getUser = async (args) => {
     if (!config.get('hc-caas.requireAccessKey')) {
         return undefined;
     }
@@ -39,10 +39,7 @@ exports.getUser = async (args,keyinfo = null) => {
         let user = await User.findOne(key.user);
         if (!user) {
             return -1;
-        }
-        if (keyinfo) {
-            keyinfo.name = key.name;
-        }
+        }        
         return user;
     }
     catch (err) {
