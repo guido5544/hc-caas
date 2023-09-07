@@ -604,18 +604,15 @@ async function sendToWebHook(item, files) {
   }
 }
 
-var lastJob = null;
+
 async function getConversionJobFromQueue() {
-  if (simConversions < maxConversions) {
-    const job = await queue.checkout(5);
+  if (simConversions < maxConversions) {    
+    const job = await queue.checkout(5);   
     if (job != null) {
 
       if (job.payload.name && job.payload.name != config.get('hc-caas.conversionServer.name')) {
-        console.log("Job not for this server");
-        if (!lastJob || lastJob._id.toString() != job._id.toString()) {
-          lastJob = job;
-          getConversionJobFromQueue();
-        }
+        console.log("Job not for this server");    
+        getConversionJobFromQueue();
         return;
       }
 
@@ -646,6 +643,18 @@ async function getConversionJobFromQueue() {
           runConverter(job.payload.item);
         }
       }
+    }
+    else {
+      const jobs = await queue.get();
+      for (let i=0;i<jobs.length;i++) {
+        if (!jobs[i].deleted && (!jobs[i].payload.name || jobs[i].payload.name == config.get('hc-caas.conversionServer.name'))) {
+          setTimeout(async function () {
+            await getConversionJobFromQueue();
+          }, 1000);
+          break;
+        }
+      }
+
     }
   }
   else {
