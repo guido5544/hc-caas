@@ -314,6 +314,10 @@ function _getPresignedUrlPut(filename, item) {
         if (path.extname(filename) == ".zip") {
             contentType = "application/x-zip-compressed";
         }
+        else if (path.extname(filename) == ".pdf") {
+            contentType = "application/pdf";
+        }
+        
         const s3Params = {
             Bucket: bucket,
             Key: filename,

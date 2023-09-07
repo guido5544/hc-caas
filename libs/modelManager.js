@@ -23,7 +23,7 @@ let lastUpdated  = new Date();
 var totalConversions = 0;
 
 var customCallback;
-
+var conversionPriorityCallback;
 
 function getFileSize(itempath) {
   return new Promise((resolve, reject) => {
@@ -95,9 +95,10 @@ async function refreshServerAvailability() {
   }
 }
 
-exports.start = async (callback) => {
+exports.start = async (callback, conversionPriorityCallback_in) => {
 
   customCallback = callback;
+  conversionPriorityCallback = conversionPriorityCallback_in;
  
   storage = require('./permanentStorage').getStorage();
 
@@ -549,10 +550,8 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
   catch (err) {
     this.deleteConversionitem(item.storageID,args);
     return err;
-  }
-  await conversionQueue.getQueue().add({ item: item });
-    
-  sendConversionRequest();
+  }    
+  sendConversionRequest({ item: item });
   await waitUntilConversionDone(item.storageID);
   
   let res = await this.get(item.storageID,type);
@@ -581,9 +580,7 @@ exports.create = async (item, directory, itemname, args) => {
 
   if (await authorization.conversionAllowed(args)) {
     if (!args.skipConversion) {
-      await conversionQueue.getQueue().add({ item: item });
-
-      sendConversionRequest();
+      await sendConversionRequest({ item: item });
 
       if (args.waitUntilConversionDone) {
         await waitUntilConversionDone(item.storageID);
@@ -657,8 +654,7 @@ exports.generateCustomImage = async (itemid, args) => {
    
     item.updated = new Date();
     await item.save();
-    await conversionQueue.getQueue().add({ item: item, customImageCode: args.customImageCode });
-    sendConversionRequest();
+    await sendConversionRequest({ item: item, customImageCode: args.customImageCode });
     return {SUCCESS: true};
   }
   else {
@@ -709,9 +705,8 @@ exports.reconvert = async (itemid, args) => {
     if (args.overrideItem) {
       item.name = args.overrideItem;
     }
-   
-    await conversionQueue.getQueue().add({ item: item });
-    sendConversionRequest();
+    
+    sendConversionRequest({ item: item });
 
     if (args.waitUntilConversionDone) {
       await waitUntilConversionDone(itemid);
@@ -765,14 +760,24 @@ exports.deleteConversionitem = async (itemid, args) => {
   }
 };
 
-async function sendConversionRequest() {
+async function sendConversionRequest(payload) {
+
   let queueservers = await Queueserveritem.find({ region: config.get('hc-caas.region') });
   
-
   queueservers.sort(function (a, b) {
     return  a.pingFailed - b.pingFailed || b.priority - a.priority || b.freeConversionSlots - a.freeConversionSlots;
 
   });
+
+  if (conversionPriorityCallback) {
+    let cResult =  conversionPriorityCallback(queueservers, payload);
+    if (cResult) {
+      queueservers = cResult.servers;
+      payload.name = cResult.name;
+    }
+  }
+
+  conversionQueue.getQueue().add(payload);
 
   if (queueservers && queueservers.length > 0) {
     for (let i = 0; i < queueservers.length; i++) {

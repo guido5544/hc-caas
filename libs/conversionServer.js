@@ -244,6 +244,7 @@ async function conversionComplete(err, item) {
     storage.distributeToRegions(founditem);
     updateConversionStatus(founditem, savedFiles);
     cleanupDir(tempFileDir + "/", item);
+    queue.cleanup();
   }
 }
 
@@ -603,12 +604,22 @@ async function sendToWebHook(item, files) {
   }
 }
 
+var lastJob = null;
 async function getConversionJobFromQueue() {
   if (simConversions < maxConversions) {
-    const job = await queue.checkout(120);
-
+    const job = await queue.checkout(5);
     if (job != null) {
 
+      if (job.payload.name && job.payload.name != config.get('hc-caas.conversionServer.name')) {
+        console.log("Job not for this server");
+        if (!lastJob || lastJob._id.toString() != job._id.toString()) {
+          lastJob = job;
+          getConversionJobFromQueue();
+        }
+        return;
+      }
+
+      queue.ack(job.ack);
       let res;
       if (job.payload.item.multiConvert) {
           res = await getFilesFromStorage(job.payload);
@@ -616,15 +627,12 @@ async function getConversionJobFromQueue() {
       else {
         res = await getFileFromStorage(job.payload);
       }
-      if (!res) {
-        queue.ack(job.ack);
+      if (!res) {       
         return;
       }
 
       simConversions++;
       updateFreeConversionSlots();
-
-      queue.ack(job.ack);
 
       if (job.payload.customImageCode) {
         runCustomImage(job.payload.item, job.payload.customImageCode);

@@ -44,7 +44,7 @@ function getPublicIP() {
   });
 }
 
-exports.start = async function (mongoose_in, customCallback) {
+exports.start = async function (mongoose_in, extraArgs = {}) {
   handleInitialConfiguration();
 
 
@@ -107,12 +107,11 @@ exports.start = async function (mongoose_in, customCallback) {
     }
 
     if (config.get('hc-caas.runModelManager')) {
-      exports.modelManager.start(customCallback);
-       if (config.get('hc-caas.modelManager.runStreamingManager')) {
-          streamingManager.start();
-       }
+      exports.modelManager.start(extraArgs.customCallback, extraArgs.conversionPriorityCallback);
+      if (config.get('hc-caas.modelManager.runStreamingManager')) {
+        streamingManager.start();
+      }
     }
-
 
     if (config.get('hc-caas.runStreamingServer')) {
       streamingServer = require('./libs/streamingServer');
@@ -135,7 +134,6 @@ exports.start = async function (mongoose_in, customCallback) {
           }
         });
       }
-
 
       if (config.get('hc-caas.runModelManager') && config.get('hc-caas.modelManager.listen')) {
         const fileStorage = multer.diskStorage({
@@ -209,8 +207,6 @@ exports.start = async function (mongoose_in, customCallback) {
     exit(0);
   }
 };
-
-
 
 if (require.main === module) {
   this.start();
