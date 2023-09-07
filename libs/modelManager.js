@@ -150,7 +150,7 @@ exports.getDataFromItem = async (item) => {
     if (key) {
       returnItem.accessKey = key.name;
     }
-    item.apiKey = undefined;
+    returnItem.apiKey = undefined;
   }
 
   if (item.user) {
