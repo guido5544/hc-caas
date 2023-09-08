@@ -522,6 +522,10 @@ function setupCommandLine(inputPath, dir, item) {
 
       }
 
+      if (item.conversionCommandLine[i] == "--xml_settings") {     
+        commandLine.push(tempFileDir + "/" + item.storageID + "/" + item.conversionCommandLine[i + 1]);
+      }
+
       if (item.conversionCommandLine[i].indexOf("--output_") != -1) {
         let type = item.conversionCommandLine[i].split("_")[1];
         if (item.conversionCommandLine[i+1] != null && item.conversionCommandLine[i+1] != "") {
