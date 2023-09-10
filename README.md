@@ -79,13 +79,15 @@ To quickly test out CaaS, follow the steps below.
 ## API Module
 To simplify the integration of CaaS into your own application, we have created a separate module that provides a simple API for all CaaS functionality. Please see here for more information: [CAAS-API module](https://github.com/techsoft3d/hc-caas-api)
 
-## Demos
 
+## Docker Container and AMI 
+We have created a Docker container and an AMI for AWS that can be used to quickly deploy CaaS. Please see here for more information: [Docker Container and AMI](https://github.com/techsoft3d/hc-caas-server-deployment)
+
+
+## Demos
 A basic demo application that uses the API directly from JS and which can be used for testing CaaS locally and exploring the REST API usage can be found here: [Basic Demo Github Link](https://github.com/techsoft3d/caas_basic_example). **This demo is the perfect starting point for understanding how to use CaaS in your own application via its REST API.**
 
-A more comprehensive demo that aims to demonstrate a more realistic use-case, includes user and project management and accesses CaaS server-side can be found here: [Advanced Demo Github Link](https://github.com/techsoft3d/caas-demo-app)
-
-Please see here for the User Management Module that includes a demo application: [User Management Module](https://github.com/techsoft3d/hc-caas-usermanagement).
+Please see here for the User Management Module that includes a more advanced demo application: [User Management Module](https://github.com/techsoft3d/hc-caas-usermanagement).
 
 ## Install & Run Using GitHub
 1. Clone [GitHub Project](https://github.com/techsoft3d/hc-caas) 
