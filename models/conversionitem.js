@@ -19,7 +19,10 @@ const conversionitemSchema = new Schema({
     type: String,
     required: true
   },
-
+  detailedError: {
+    type: String,
+    required: false
+  },
   updated: {
     type:Date,
     required: true
@@ -61,11 +64,34 @@ const conversionitemSchema = new Schema({
     type: String,
     required: false
   },
+  hcVersion: {
+    type: String,
+    required: false
+  },
+  size: {
+    type: Number,
+    required: false
+  },
   user: {
     type: Schema.Types.ObjectId,
     ref: 'Users',
     required: false
+  },
+  organization: {
+    type: Schema.Types.ObjectId,
+    ref: 'Organization',
+    required: false
+  },
+  accessKey: {
+    type: String,  
+    required: false
+  },
+  apiKey: {
+    type: Schema.Types.ObjectId,
+    ref: 'ApiKey',
+    required: false
   }
+
 });
 
 module.exports = global.con.model('Conversionitem', conversionitemSchema);

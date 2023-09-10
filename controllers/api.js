@@ -7,6 +7,9 @@ const config = require('config');
 const status = require('../libs/status');
 
 const authorization = require('../libs/authorization');
+const stats = require('../libs/stats');
+const fs = require('fs');
+
 
 function setupAPIArgs(req) {
 
@@ -33,6 +36,7 @@ exports.getStatus = async (req, res, next) => {
     }
 };
 
+
 exports.postFileUpload = async (req, res, next) => {
 
     console.log("upload start");
@@ -43,7 +47,7 @@ exports.postFileUpload = async (req, res, next) => {
     }
     
     let args = setupAPIArgs(req);
-
+    
     if (args.itemid != undefined) {
         let data = await modelManager.append(req.file.destination, req.file.originalname, args.itemid,setupAPIArgs(req));     
         res.json(data);
@@ -58,7 +62,12 @@ exports.postFileUpload = async (req, res, next) => {
             await modelManager.create(item, req.file.destination, req.file.originalname, args);
         }
         else {
-             modelManager.create(item, req.file.destination, req.file.originalname, args);
+            if (args.skipConversion) {
+                await modelManager.create(item, req.file.destination, req.file.originalname, args);
+            }
+            else {
+                modelManager.create(item, req.file.destination, req.file.originalname, args);
+            }
         }
 
         res.json({itemid:item.storageID});
@@ -68,7 +77,9 @@ exports.postFileUpload = async (req, res, next) => {
 
 exports.postFileUploadArray = async (req, res, next) => {
 
-    let data = await modelManager.createMultiple(req.files, setupAPIArgs(req));
+    let args = setupAPIArgs(req);
+    
+    let data = await modelManager.createMultiple(req.files, args);
     res.json(data);
 };
 
@@ -87,7 +98,7 @@ exports.getUploadToken = async (req, res, next) => {
 
     console.log("upload token send");
 
-    let result = await modelManager.requestUploadToken(req.params.name, setupAPIArgs(req));
+    let result = await modelManager.requestUploadToken(req.params.name,parseInt(req.params.size), setupAPIArgs(req));
     res.json(result);
 };
 
@@ -230,7 +241,7 @@ exports.getUpdated = async (req, res, next) => {
 };
 
 exports.getStreamingSession = async (req, res, next) => {
-    let result = await streamingManager.getStreamingSession(setupAPIArgs(req));
+    let result = await streamingManager.getStreamingSession(setupAPIArgs(req),req);
     res.json(result);
 };
 
@@ -266,8 +277,8 @@ exports.enableStreamAccess = async (req, res, next) => {
         res.json({ERROR:"Invalid Stream Access Tokens"});
         return;
     }
-    await streamingManager.enableStreamAccess(req.params.sessionid,items, setupAPIArgs(req), hasNames);  
-    res.json({SUCCESS:true});
+    let result = await streamingManager.enableStreamAccess(req.params.sessionid,items, setupAPIArgs(req), hasNames);  
+    res.json(result);
   
 };
 
@@ -281,9 +292,8 @@ exports.serverEnableStreamAccess = async (req, res, next) => {
         hasNames = JSON.parse(req.get("hasNames"));
     }
 
-    await streamingServer.serverEnableStreamAccess(req.params.sessionid, items, args, hasNames);  
-    res.sendStatus(200);
-  
+    let result = await streamingServer.serverEnableStreamAccess(req.params.sessionid, items, args, hasNames);  
+    res.json(result);
 };
 
 exports.getCustom = (req, res, next) => {   
@@ -293,12 +303,179 @@ exports.getCustom = (req, res, next) => {
 };
 
 
-exports.addUser = (req, res, next) => {
-    let response = authorization.addUser(req,setupAPIArgs(req));
+exports.addUser = async (req, res, next) => {
+    let response = await authorization.addUser(req,setupAPIArgs(req));
     res.json(response);
 };
 
-exports.generateAPIKey = (req, res, next) => {
-    let response = authorization.generateAPIKey(req,setupAPIArgs(req));
+exports.generateAPIKey = async (req, res, next) => {
+    let response = await authorization.generateAPIKey(req,setupAPIArgs(req));
     res.json(response);
 };
+
+exports.checkPassword = async (req, res, next) => {
+    let response = await authorization.checkPassword(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.getUserInfo = async (req, res, next) => {
+    let response = await authorization.getUserInfo(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.changeOrgName = async (req, res, next) => {
+    let response = await authorization.changeOrgName(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.retrieveInvite = async (req, res, next) => {
+    let response = await authorization.retrieveInvite(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.acceptInvite = async (req, res, next) => {
+    let response = await authorization.acceptInvite(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.getUsers = async (req, res, next) => {
+    let response = await authorization.getUsers(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.updateUser = async (req, res, next) => {
+    let response = await authorization.updateUser(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.removeUser = async (req, res, next) => {
+    let response = await authorization.removeUser(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.deleteUser = async (req, res, next) => {
+    let response = await authorization.deleteUser(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.deleteOrganization = async (req, res, next) => {
+    let response = await authorization.deleteOrganization(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.setSuperUser = async (req, res, next) => {
+    let response = await authorization.setSuperUser(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.addOrganization = async (req, res, next) => {
+    let response = await authorization.addOrganization(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.getOrganizations = async (req, res, next) => {
+    let response = await authorization.getOrganizations(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.getOrganization = async (req, res, next) => {
+    let response = await authorization.getOrganization(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.switchOrganization = async (req, res, next) => {
+    let response = await authorization.switchOrganization(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.getAPIKeys = async (req, res, next) => {
+    let response = await authorization.getAPIKeys(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.invalidateAPIKey = async (req, res, next) => {
+    let response = await authorization.invalidateAPIKey(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+
+exports.editAPIKey = async (req, res, next) => {
+    let response = await authorization.editAPIKey(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.updateOrgTokens = async (req, res, next) => {
+    let response = await authorization.updateOrgTokens(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.updateOrgMaxStorage = async (req, res, next) => {
+    let response = await authorization.updateOrgMaxStorage(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.getStatsByMonth = async (req, res, next) => {
+    let response = await stats.getStatsByMonth(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+
+exports.injectStats = async (req, res, next) => {
+    let response = await stats.injectStats(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.updatePassword = async (req, res, next) => {
+    let response = await authorization.updatePassword(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.getFiles = async (req, res, next) => {
+    let response = await authorization.getFiles(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.deleteAuth = async (req, res, next) => {
+    let response = await authorization.deleteAuth(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+
+exports.getDataAuth = async (req, res, next) => {
+    let response = await authorization.getDataAuth(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.resetPassword = async (req, res, next) => {
+    let response = await authorization.resetPassword(req,setupAPIArgs(req));
+    res.json(response);
+};
+
+exports.getItemFromType = async (req, res, next) => {
+    let result = await authorization.getItemFromType(req,setupAPIArgs(req));
+    if (result.data) {    
+        return res.send(Buffer.from(result.data));
+    }
+    else
+    {        
+        res.status(404).json(result);
+    }
+};
+

@@ -31,24 +31,36 @@ function getPublicIP() {
   return new Promise((resolve, reject) => {
     var http = require('http');
 
+    try {
     http.get({ 'host': 'api.ipify.org', 'port': 80, 'path': '/' }, function (resp) {
       resp.on('data', function (ip) {
         resolve(ip);
       });
     });
+  }
+  catch {
+    reject();
+  }
   });
 }
 
-exports.start = async function (mongoose_in, customCallback) {
+exports.start = async function (mongoose_in, extraArgs = {}) {
   handleInitialConfiguration();
 
 
-  if (!config.has('hc-caas.serviceIP') || config.get('hc-caas.serviceIP') == "") {
-    global.caas_publicip = (await getPublicIP()).toString();
+  try {
+    if (!config.has('hc-caas.serviceIP') || config.get('hc-caas.serviceIP') == "") {
+      global.caas_publicip = (await getPublicIP()).toString();
+    }
+    else {
+      global.caas_publicip = config.get('hc-caas.serviceIP');
+    }
   }
-  else {
-    global.caas_publicip = config.get('hc-caas.serviceIP');
+  catch {
+    console.log("ERROR - Unable to determine public IP address.  Please set hc-caas.serviceIP in config file.");
+    global.caas_publicip = "";
   }
+
 
   try {
     config.get('hc-caas');
@@ -95,12 +107,11 @@ exports.start = async function (mongoose_in, customCallback) {
     }
 
     if (config.get('hc-caas.runModelManager')) {
-      exports.modelManager.start(customCallback);
-       if (config.get('hc-caas.modelManager.runStreamingManager')) {
-          streamingManager.start();
-       }
+      exports.modelManager.start(extraArgs.customCallback, extraArgs.conversionPriorityCallback);
+      if (config.get('hc-caas.modelManager.runStreamingManager')) {
+        streamingManager.start();
+      }
     }
-
 
     if (config.get('hc-caas.runStreamingServer')) {
       streamingServer = require('./libs/streamingServer');
@@ -117,13 +128,12 @@ exports.start = async function (mongoose_in, customCallback) {
         app.use(function (req, res, next) {
           if (req.get("CS-API-Arg")) {
             let args = JSON.parse(req.get("CS-API-Arg"));
-            if (args.accessPassword == config.get('hc-caas.accessPassword')) {
+            if (args.accessPassword == config.get('hc-caas.accessPassword') || (args.accessKey && config.get('hc-caas.requireAccessKey'))) {
               return next();
             }
           }
         });
       }
-
 
       if (config.get('hc-caas.runModelManager') && config.get('hc-caas.modelManager.listen')) {
         const fileStorage = multer.diskStorage({
@@ -198,8 +208,6 @@ exports.start = async function (mongoose_in, customCallback) {
   }
 };
 
-
-
 if (require.main === module) {
   this.start();
 } 
@@ -219,6 +227,7 @@ function handleInitialConfiguration() {
       "fullErrorReporting": false,
       "region": "",
       "requireAccessKey": false,
+      "determineGeoFromRequest": false,
       "conversionServer": {
         "name" : "",
         "converterpath": "",
@@ -226,6 +235,7 @@ function handleInitialConfiguration() {
         "HEInstallPath": "",
         "maxConversions": 4,
         "polling": false,
+        "allowSCSConversion": true,
         "imageServicePort": "3002",
         "priority": 0,
       },

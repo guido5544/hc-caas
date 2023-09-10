@@ -1,26 +1,8 @@
 # CaaS (Communicator as a Service): Conversion and Streaming Server Backend for HOOPS Communicator
 
-## Version Update (0.10.5) 
-* Version update for CaaS Server Depolyment Release
-* Access Control Support
-* Various improvements and bugfixes
-
-## Version Update (0.9.18) 
-* SSR support
-
-## Version Update (0.9.14) 
-* `convertSingle` function added to server to simplify direct single file conversion via API
-
-## Version Update (0.9.10) 
-* Support for new user management module (see [here](https://github.com/techsoft3d/hc-caas-usermanagement))
-* Support for relative workingDirectory paths
-
-## Version Update (0.9.7) 
-* Improved configuration management
-* Various bugfixes 
-
-## Version Update (0.9.0) 
-*  Azure Blob Storage Support (beta)
+## Version Update (0.11.89) 
+* Account Support
+* Various Updates and Enhancements
 
 ## Main Features
 * Conversion Queue for distributed CAD Conversions.
@@ -37,16 +19,12 @@
 * Access to all converter command-line options for conversion
 * Run via NPX directly or embed into your Node.js application as a module
 
-## Limitations
-* **This library is not an officially supported part of HOOPS Communicator and provided as-is.**
-* No account/user management or security. This is BY DESIGN. CaaS is meant to be accessed behind a firewall from the server-side business logic of your application. An optional seperate node module for user management is available as well. See [here](https://github.com/techsoft3d/hc-caas-usermanagement) for more information.
-* Only tested on Windows
+## Disclaimer
+**This library is not an officially supported part of HOOPS Communicator and provided as-is.**
 
 ## ToDo
 
-* Linux Testing
 * Azure Blob Storage Region Support
-* Module JS API documentation
 * Plugin Support to allow for User Defined Storage Options
 
 ## Feedback
@@ -62,9 +40,11 @@ To quickly test out CaaS, follow the steps below.
 {
     "hc-caas": {      
       "license": "HOOPS_COMMUNICATOR_LICENSE_KEY",
-      "runStreamingManager": false,
       "runStreamingServer": false,
-      "queue": {
+      "modelManager": {
+        "runStreamingManager": false
+      },  
+      "conversionServer": {
         "converterpath": "PATH_TO_COMMUNICATOR_DIRECTORY/authoring/converter/bin/win64",
       }   
     }
@@ -75,9 +55,9 @@ To quickly test out CaaS, follow the steps below.
 {
     "hc-caas": {      
       "license": "HOOPS_COMMUNICATOR_LICENSE_KEY",
-      "queue": {
+      "conversionServer": {
         "converterpath": "PATH_TO_COMMUNICATOR_DIRECTORY/authoring/converter/bin/win64",
-      },
+      },  
       "streamingServer": {
         "scserverpath": "PATH_TO_COMMUNICATOR_DIRECTORY/server/bin/win64",      
     },
@@ -96,6 +76,9 @@ To quickly test out CaaS, follow the steps below.
 5. Run CaaS with the following command: **npx ts3d.hc.caas**. It is now accessible on port 3001
 6. Run the Basic Demo below on the same machine CaaS is running on.
 
+## API Module
+To simplify the integration of CaaS into your own application, we have created a separate module that provides a simple API for all CaaS functionality. Please see here for more information: [CAAS-API module](https://github.com/techsoft3d/hc-caas-api)
+
 ## Demos
 
 A basic demo application that uses the API directly from JS and which can be used for testing CaaS locally and exploring the REST API usage can be found here: [Basic Demo Github Link](https://github.com/techsoft3d/caas_basic_example). **This demo is the perfect starting point for understanding how to use CaaS in your own application via its REST API.**
@@ -110,58 +93,65 @@ Please see here for the User Management Module that includes a demo application:
 
 ```json
 {
-  "hc-caas": {
-    "mongodbURI": "mongodb://localhost:27017/conversions",
-    "workingDirectory": "PATH_TO_WORKINGDIRECTORY",
-    "serviceIP": "localhost",
-    "port": "3001",
-    "runConversionServer": true,
-    "runModelManager": true,
-    "runStreamingManager": true,
-    "runStreamingServer": true,
-    "license": "",
-    "fullErrorReporting": false,
-    "region": "",
-    "conversionServer": {
-      "converterpath": "ABSOLUTE_PATH_TO_COMMUNICATOR/authoring/converter/bin/win64",
-      "HEimportexportpath": "ABSOLUTE_PATH_TO_CAAS/HE/ImportExport/x64/Release",
-      "HEInstallPath": "ABSOLUTE_PATH_TO_EXCHANGE/bin/win64_v140",
-      "maxConversions": 4,
-      "polling": false,
-      "imageServicePort": "3002"
-    },
-    "server": {
-      "listen": true
-    },
-    "streamingServer": {
-      "scserverpath": "ABSOLUTE_PATH_TO_COMMUNICATOR/server/bin/win64",
-      "maxStreamingSessions" : 10,
-      "useSymLink": false,
-      "publicURL": "",
-      "publicPort": "",
-      "startPort": 3006,
-      "listenPort":3200
-    },      
-    "storage": {      
-      "type": "filesystem",
-      "destination": "",
-      "copyDestinations": [],
-      "replicate": false,
-      "externalReplicate": false,
+  "mongodbURI": "mongodb://127.0.0.1:27017/conversions",
+      "accessPassword": "",
+      "workingDirectory": "caasTemp",
+      "serviceIP": "localhost",
+      "port": "3001",
+      "runModelManager": true,
+      "runConversionServer": true,
+      "runStreamingServer": true,
+      "license": "",
+      "licenseFile": "",
+      "fullErrorReporting": false,
+      "region": "",
+      "requireAccessKey": false,
+      "determineGeoFromRequest": false,
+      "conversionServer": {
+        "name" : "",
+        "converterpath": "",
+        "HEimportexportpath": "",
+        "HEInstallPath": "",
+        "maxConversions": 4,
+        "polling": false,
+        "allowSCSConversion": true,
+        "imageServicePort": "3002",
+        "priority": 0,
+      },
+      "modelManager": {
+        "listen": true,
+        "purgeFiles": false,
+        "runStreamingManager": true,
+      },
+      "streamingServer": {
+        "streamingRegion": "",
+        "scserverpath": "",
+        "renderType": "client",
+        "useEGL": false,
+        "maxStreamingSessions": 10,
+        "useSymLink": false,
+        "publicURL": "",
+        "publicPort": "",
+        "startPort": 3006,
+        "listenPort": 3200,
+        "name" : "",
+        "priority": 0,
+      },
+      "storage": {
+        "type": "filesystem",
+        "destination": "",
+        "copyDestinations": [],      
+        "replicate": false,
+        "externalReplicate": false,
         "ABS": {
-        "connectionString":"",
-        "accountName": ""
+          "connectionString":"",
+          "accountName": ""
+        }
+      },
+      "localCache": {
+        "directory": "",
+        "maxSize": 0
       }
-    },
-    "localCache": {
-      "directory": "",
-      "maxSize": 0
-    },
-    "proxy": {
-      "keyPath": "",
-      "certPath": ""
-    }
-  }
 }
 ```
 
@@ -248,6 +238,8 @@ It might be desirable to run the streaming service via a proxy, so that all requ
 
 
 ## REST API Reference
+
+** OUTDATED - NEEDS UPDATE. PLEASE REFER TO THE [CAAS-API module](https://github.com/techsoft3d/hc-caas-api) FOR THE MOST UP TO DATE API **
 
 
 ### **/caas_api/upload**

@@ -97,11 +97,10 @@ exports.store = (inputfile, s3target) => {
         fs.readFile(inputfile, function (err, data) {
             if (err) {
                 console.log(err);
-                reject({ERROR: "Error reading file " + inputfile});
-                return;
+                resolve({ERROR: "Error reading file " + inputfile});
             }
             _storeInFS(s3target, data).then(() => {
-                resolve();
+                resolve(data.length);
             });
         });
     });

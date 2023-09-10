@@ -7,6 +7,9 @@ const fetch = require('node-fetch');
 
 const Conversionitem = require('../models/conversionitem');
 const Queueserveritem = require('../models/queueserveritem');
+
+const authorization = require('./authorization');
+
 const decompress = require('decompress');
 
 var storage;
@@ -20,7 +23,6 @@ let  converterexepath = '';
 
 const HEimportexportexepath = './ImportExport';   
 
-var converterpath = '';
 
 var HEimportexportpath = '';
 
@@ -43,24 +45,42 @@ let queueaddress = "";
 let imageservice = null;
 
 
-exports.start = async () => {
+function getConverterExePath(converterpath) {
 
-  
+  if (process.platform == "win32") {
+    return './converter';
+  }
+  else {
+    return  converterpath + '/converter';
+  }
+}
+
+function getConverterPath(item) {
+
+  let cp = config.get('hc-caas.conversionServer.converterpath');
+  if (!Array.isArray(cp)) {
+     return cp;
+  }
+
+  if (!item.hcVersion || cp.length == 1) {
+    return cp[0].path;
+  }
+
+  for (let i=0;i<cp.length;i++) {
+    if (cp[i].version == item.hcVersion) {
+      return cp[i].path;
+    }
+  }
+  return "";
+}
+
+exports.start = async () => {
 
   storage = require('./permanentStorage').getStorage();
 
   queue.cleanup();
   
   let ip = global.caas_publicip;
-
-  converterpath = config.get('hc-caas.conversionServer.converterpath');
-
-  if (process.platform == "win32") {
-    converterexepath = './converter';
-  }
-  else {
-    converterexepath = converterpath + '/converter';
-  }
 
   HEimportexportpath = config.get('hc-caas.conversionServer.HEimportexportpath');
   tempFileDir = config.get('hc-caas.workingDirectory');
@@ -188,6 +208,8 @@ async function getFileFromStorage(payload) {
 
 async function conversionComplete(err, item) {
 
+
+
   let savedFiles = [];
   if (err != null)
     console.log(err);
@@ -199,13 +221,18 @@ async function conversionComplete(err, item) {
       const files = await readDir(tempFileDir + "/" + item.storageID + "/output");
       for (var i = 0; i < files.length; i++) {
         if ((item.name) != files[i] && files[i] != "zip") {
-          savedFiles.push(files[i]);          
-          await storage.store(tempFileDir + "/" + item.storageID + "/output/" + files[i], "conversiondata/" + item.storageID + "/" + files[i], item);
+                 
+          let res = await storage.store(tempFileDir + "/" + item.storageID + "/output/" + files[i], "conversiondata/" + item.storageID + "/" + files[i], item);
+          if (!res.ERROR) {
+            savedFiles.push(files[i]);
+          } 
         }
       }
     }
 
     let founditem = await Conversionitem.findOne({ storageID: item.storageID });
+    authorization.conversionComplete(founditem);
+    
     founditem.conversionState = "SUCCESS";
     founditem.updated =  new Date();
     for (let i=0;i<savedFiles.length;i++)
@@ -217,6 +244,7 @@ async function conversionComplete(err, item) {
     storage.distributeToRegions(founditem);
     updateConversionStatus(founditem, savedFiles);
     cleanupDir(tempFileDir + "/", item);
+    queue.cleanup();
   }
 }
 
@@ -272,13 +300,14 @@ async function runConverter(item) {
   else
     inputPath = dir + item.storageID + "/zip/" + item.startPath;
 
-
+    let converterPath = getConverterPath(item);
+  
   if (item.shattered == true) {
-    execFile(converterexepath, ['--license', config.get('hc-caas.license'),
+    execFile(getConverterExePath(converterPath), ['--license', config.get('hc-caas.license'),
       '--input', inputPath,
       '--prepare_shattered_scs_parts', dir + item.storageID + "/scs",
       '--prepare_shattered_xml', dir + item.storageID + "/" + "shattered.xml"], {
-      cwd: converterpath
+      cwd: converterPath
     }, async function (err, data) {
       if (err == null) {
         console.log(data);
@@ -298,15 +327,14 @@ async function runConverter(item) {
 
   }
   else {
-    if (item.name.indexOf(".scs") != -1 || item.name.indexOf(".scz") != -1) {
+    if (config.get("hc-caas.conversionServer.allowSCSConversion") && (item.name.indexOf(".scs") != -1 || item.name.indexOf(".scz") != -1)) {
         await scSpecialHandling(inputPath, dir, item);
     }
     else {
       if (!GLTFSpecialHandling(inputPath, dir, item)) {
-
         let commandLine = setupCommandLine(inputPath, dir, item);
-        execFile(converterexepath, commandLine, {
-          cwd: converterpath
+        execFile(getConverterExePath(converterPath), commandLine, {
+          cwd: converterPath
         }, async function (err, data) {
           if (err == null) {
             if (fs.existsSync(dir + item.storageID + "/output/" + item.name + "_.scz")) {
@@ -325,6 +353,15 @@ async function runConverter(item) {
             cleanupDir(tempFileDir + "/", item);
             let founditem = await Conversionitem.findOne({ storageID: item.storageID });
             founditem.conversionState = "ERROR - Conversion Error";
+            let etemp = err.message.split("\n");
+            if (etemp.length) {
+              let etext = ""
+              for (let i = 1; i < etemp.length; i++) {
+                etext += etemp[i] + "\n";
+              }
+
+              founditem.detailedError = etext;
+            }
             founditem.updated = new Date();
             await founditem.save();
             updateConversionStatus(founditem);
@@ -355,7 +392,8 @@ async function scSpecialHandling(inputPath, dir, item, customImageCode) {
     if (item.name.indexOf(".scz") == -1) {
       if (!imageservice) {
         imageservice = require('ts3d-hc-imageservice');
-        await imageservice.start({ viewerPort: config.get('hc-caas.conversionServer.imageServicePort') });
+        await imageservice.start({ viewerPort: config.get('hc-caas.conversionServer.imageServicePort'),
+        puppeteerArgs:["--no-sandbox"] });
       }
 
       let width = 640, height = 480;
@@ -371,7 +409,7 @@ async function scSpecialHandling(inputPath, dir, item, customImageCode) {
 
       let data = await imageservice.generateImage(inputPath, api_arg);
 
-      fs.writeFileSync(dir + item.storageID + "/" + item.name + ".png", Buffer.from(data));
+      fs.writeFileSync(dir + item.storageID + "/output/" + item.name + ".png", Buffer.from(data));
     }
 
   }
@@ -457,8 +495,24 @@ function setupCommandLine(inputPath, dir, item) {
   else {  
     
     let hasInput = false;
+
     for (let i = 0; i < item.conversionCommandLine.length; i += 2) {
       
+      if (i==0 && item.conversionCommandLine[0] == "*") {
+        commandLine.push('--input', inputPath,
+        '--output_scs', dir + item.storageID + "/output/" + item.name + ".scs",
+        '--output_sc', dir + item.storageID + "/output/" + item.name + "_",
+        '--output_png', dir + item.storageID + "/output/" + item.name + ".png",
+        '--background_color', "1,1,1",
+        '--sc_export_attributes', 'true',
+        '--ifc_import_openings', 'false',
+        '--import_hidden_objects', hidden,
+        '--png_transparent_background', '1',
+        '--sc_create_scz', 'true',
+        '--sc_compress_scz', '1');
+        hasInput = true;
+        i++;
+      }
 
       commandLine.push(item.conversionCommandLine[i]);
 
@@ -466,6 +520,10 @@ function setupCommandLine(inputPath, dir, item) {
         hasInput = true;
         commandLine.push(tempFileDir + "/" + item.storageID + "/" + item.conversionCommandLine[i + 1]);
 
+      }
+
+      if (item.conversionCommandLine[i] == "--xml_settings") {     
+        commandLine.push(tempFileDir + "/" + item.storageID + "/" + item.conversionCommandLine[i + 1]);
       }
 
       if (item.conversionCommandLine[i].indexOf("--output_") != -1) {
@@ -479,6 +537,14 @@ function setupCommandLine(inputPath, dir, item) {
           } else {
             commandLine.push(dir + item.storageID + "/output/" + item.name + "." + type);
           }
+        }
+      }
+      else if (item.conversionCommandLine[i].indexOf("--prepare_shattered_xml") != -1) {
+        if (item.conversionCommandLine[i+1] != null && item.conversionCommandLine[i+1] != "") {
+          commandLine.push(dir + item.storageID + "/output/" + item.conversionCommandLine[i+1]);
+        }
+        else {
+            commandLine.push(dir + item.storageID + "/output/" + item.name + "." + "xml");
         }
       }
       else {
@@ -542,12 +608,19 @@ async function sendToWebHook(item, files) {
   }
 }
 
-async function getConversionJobFromQueue() {
-  if (simConversions < maxConversions) {
-    const job = await queue.checkout(120);
 
+async function getConversionJobFromQueue() {
+  if (simConversions < maxConversions) {    
+    const job = await queue.checkout(5);   
     if (job != null) {
 
+      if (job.payload.name && job.payload.name != config.get('hc-caas.conversionServer.name')) {
+        console.log("Job not for this server");    
+        getConversionJobFromQueue();
+        return;
+      }
+
+      queue.ack(job.ack);
       let res;
       if (job.payload.item.multiConvert) {
           res = await getFilesFromStorage(job.payload);
@@ -555,15 +628,12 @@ async function getConversionJobFromQueue() {
       else {
         res = await getFileFromStorage(job.payload);
       }
-      if (!res) {
-        queue.ack(job.ack);
+      if (!res) {       
         return;
       }
 
       simConversions++;
       updateFreeConversionSlots();
-
-      queue.ack(job.ack);
 
       if (job.payload.customImageCode) {
         runCustomImage(job.payload.item, job.payload.customImageCode);
@@ -577,6 +647,18 @@ async function getConversionJobFromQueue() {
           runConverter(job.payload.item);
         }
       }
+    }
+    else {
+      const jobs = await queue.get();
+      for (let i=0;i<jobs.length;i++) {
+        if (!jobs[i].deleted && (!jobs[i].payload.name || jobs[i].payload.name == config.get('hc-caas.conversionServer.name'))) {
+          setTimeout(async function () {
+            await getConversionJobFromQueue();
+          }, 1000);
+          break;
+        }
+      }
+
     }
   }
   else {

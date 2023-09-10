@@ -1,5 +1,7 @@
 const config = require('config');
 const Conversionitem = require('../models/conversionitem');
+const User = require('../models/UserManagement/User');
+
 const fs = require('fs');
 const conversionQueue = require('./conversionServer');
 const { v4: uuidv4 } = require('uuid');
@@ -11,6 +13,7 @@ const fetch = require('node-fetch');
 const localCache = require('./localCache');
 
 const authorization = require('./authorization');
+const APIKey = require('../models/UserManagement/ApiKey');
 
 
 var storage;
@@ -20,6 +23,21 @@ let lastUpdated  = new Date();
 var totalConversions = 0;
 
 var customCallback;
+var conversionPriorityCallback;
+
+function getFileSize(itempath) {
+  return new Promise((resolve, reject) => {
+    fs.stat(itempath, (err, stats) => {
+      if (err) {
+        reject(err);
+      }
+      else {
+        resolve(stats.size);
+      }
+    });
+  });
+}
+
 
 async function purgeFiles() {
   let files = await Conversionitem.find();
@@ -29,7 +47,7 @@ async function purgeFiles() {
       let timeDiff = Math.abs(new Date() - files[i].updated);
       let diffHours = Math.ceil(timeDiff / (1000 * 60 * 60));
       if (diffHours > 24) {
-          exports.deleteConversionitem(files[i].storageID);
+        exports.deleteConversionitem2(files[i]);
       }
     }
   }
@@ -77,9 +95,10 @@ async function refreshServerAvailability() {
   }
 }
 
-exports.start = async (callback) => {
+exports.start = async (callback, conversionPriorityCallback_in) => {
 
   customCallback = callback;
+  conversionPriorityCallback = conversionPriorityCallback_in;
  
   storage = require('./permanentStorage').getStorage();
 
@@ -116,6 +135,33 @@ exports.start = async (callback) => {
   console.log('Model Manager started');
 };
 
+
+exports.getDataFromItem = async (item) => {
+  let returnItem = JSON.parse(JSON.stringify(item));
+
+  returnItem.__v = undefined;
+  returnItem._id = undefined;
+
+  returnItem.storageAvailability = undefined;
+  returnItem.webhook = undefined;
+
+  if (item.apiKey) {
+    let key = await APIKey.findOne({ _id: item.apiKey });
+    if (key) {
+      returnItem.accessKey = key.name;
+    }
+    returnItem.apiKey = undefined;
+  }
+
+  if (item.user) {
+    let user = await User.findOne({ _id: item.user });
+    if (user) {
+      returnItem.user = user.email;
+    }
+  }
+  return returnItem;
+};
+
 exports.getData = async (itemid, args) => {
 
 
@@ -128,21 +174,15 @@ exports.getData = async (itemid, args) => {
   }
 
   if (itemids.length == 1) {
-    let item = await authorization.getConversionItem(itemids[0], args);
+    let item = await authorization.getConversionItem(itemids[0], args,authorization.actionType.info);
 
     if (item) {
-      let returnItem = JSON.parse(JSON.stringify(item));
-      returnItem.__v = undefined;
-      returnItem._id = undefined;
-      returnItem.user = undefined;
-      returnItem.storageAvailability = undefined;
-      returnItem.webhook = undefined;
-      return returnItem;
+      return await this.getDataFromItem(item);     
     } else {
       return { ERROR: "Item not found" };
     }
   } else {
-    let items = await authorization.getConversionItem(itemids, args);
+    let items = await authorization.getConversionItem(itemids, args,args,authorization.actionType.info);
     if (items.length > 0) {
       let returnItems = items.map((item) => {
         let returnItem = JSON.parse(JSON.stringify(item));
@@ -186,6 +226,9 @@ async function readFileWithCache(itemid, name, item) {
     }
     else {
       const data = await storage.readFile("conversiondata/" + itemid + "/" + name, item);
+      if (!data) {
+        return null;
+      }
       localCache.cacheFile(itemid, name, data);
       return data;
     }
@@ -195,23 +238,34 @@ async function readFileWithCache(itemid, name, item) {
   }
 }
 
+
+exports.getFromItem  = async (item,type) => {
+  let blob;
+
+  try {
+  if (!type || item.name.indexOf("." + type) != -1) {
+    blob = await readFileWithCache(item.storageID,item.name, item);
+  }
+  else {
+    blob = await readFileWithCache(item.storageID,item.name + "." + type, item);
+  }
+  }
+  catch (e) {
+    return { ERROR: "File not found" };
+  }
+  if (!blob) {
+    return { ERROR: "File not found" };
+  }
+  else {
+    return ({data:blob});
+  }
+}
+
+
 exports.get = async (itemid,type,args) => {
   let item = await authorization.getConversionItem(itemid, args);
   if (item) {
-    let blob;
-
-    if (item.name.indexOf("." + type) != -1) {
-      blob = await readFileWithCache(item.storageID,item.name, item);
-    }
-    else {
-      blob = await readFileWithCache(item.storageID,item.name + "." + type, item);
-    }
-    if (!blob) {
-      return { ERROR: "File not found" };
-    }
-    else {
-      return ({data:blob});
-    }
+    return await this.getFromItem(item,type);
   }
   else
   {
@@ -220,15 +274,19 @@ exports.get = async (itemid,type,args) => {
 };
 
 
-exports.getByName = async (itemid,name,args) => {
+exports.getByName = async (itemid, name, args) => {
   let item = await authorization.getConversionItem(itemid, args);
   if (item) {
-    let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + name);
-    return ({data:blob});
+    try {
+      let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + name);
+      return ({ data: blob });
+    }
+    catch (e) {
+      return { ERROR: "File not found" };
+    }
   }
-  else
-  {
-    return {ERROR: "Item not found"};
+  else {
+    return { ERROR: "Item not found" };
   }
 };
 
@@ -291,11 +349,30 @@ exports.appendFromBuffer = async (buffer, itemname, itemid) => {
 };
 
 exports.append = async (directory, itemname, itemid, args) => {
-  let item = await authorization.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args, authorization.actionType.other);
   if (item) {
+    let isize;
     if (directory) {
-      await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
+      if (!args.multiConvert) {
+        isize = await getFileSize(directory + "/" + itemname);
+      }
+      let res = await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
+      if (res.ERROR) {
+        return res;
+      }
     }
+    else {
+      isize = args.size;
+    }
+    if (!item.size) {
+      item.size = 0;
+    }
+
+    if (isize != undefined) {
+      item.size += isize;
+      await authorization.updateStorage(item, isize);
+    }
+
     let newfile = true;
     for (let i = 0; i < item.files.length; i++) {
       if (item.files[i] == itemname) {
@@ -324,7 +401,7 @@ exports.append = async (directory, itemname, itemid, args) => {
   }
 };
 
-exports.requestUploadToken = async (itemname, args) => {
+exports.requestUploadToken = async (itemname,size, args) => {
 
   let user = await authorization.getUser(args);
 
@@ -337,9 +414,10 @@ exports.requestUploadToken = async (itemname, args) => {
     return { ERROR: "Not available for this storage type" };
   }
 
-  if (args && args.itemid != undefined) {
-    let data = await this.append(null, itemname, args.itemid);
-    itemid = args.itemid;
+  if (args && args.storageid != undefined) {
+    args.size = size;
+    let data = await this.append(null, itemname, args.storageid,args);
+    itemid = args.storageid;
   }
   else {
 
@@ -353,10 +431,16 @@ exports.requestUploadToken = async (itemname, args) => {
       updated: new Date(),
       created: new Date(),
       webhook: args.webhook,
+      hcVersion: args.hcVersion,
       storageAvailability: storage.resolveInitialAvailability(),
-      user: user
+      user: user,
+      size: size,
+      apiKey: args.accessKey,
+      organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
+
     });
     item.save();
+    await authorization.updateStorage(item, size);
   }
 
   let token = await storage.requestUploadToken("conversiondata/" + itemid + "/" + itemname);
@@ -390,14 +474,20 @@ exports.createMultiple = async (files, args) => {
   await this.create(item, files[rootFileIndex].destination, files[rootFileIndex].originalname, args);
   let itemid = item.storageID;
   let proms= [];
+  let totalsize = 0;
   for (let i = 0; i < files.length; i++) {
     if (rootFileIndex == i) {
       continue;
     }
-    proms.push(this.append(files[i].destination, files[i].originalname, itemid));
+    totalsize += await getFileSize(files[i].destination + "/" + files[i].originalname);
+    proms.push(this.append(files[i].destination, files[i].originalname, itemid,args));
   }
 
   await Promise.all(proms);
+  item.size += totalsize;
+  await item.save();
+  await authorization.updateStorage(item,totalsize);
+
   if (!skipConversion) {
     await this.reconvert(itemid, args);
   }
@@ -428,9 +518,15 @@ exports.createDatabaseEntry = async (itemname, args) => {
     updated: new Date(),
     created: new Date(),
     webhook: args.webhook,
+    hcVersion: args.hcVersion,
+    size: args.size,
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
-    user: user
+    apiKey: args.accessKey,
+    user: user,
+    organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
+
+
   });
   await item.save();
   return item;
@@ -452,17 +548,15 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
     await storage.store(inpath, "conversiondata/" + item.storageID + "/" + filename);
   }
   catch (err) {
-    this.deleteConversionitem(item.storageID);
+    this.deleteConversionitem(item.storageID,args);
     return err;
-  }
-  await conversionQueue.getQueue().add({ item: item });
-    
-  sendConversionRequest();
+  }    
+  sendConversionRequest({ item: item });
   await waitUntilConversionDone(item.storageID);
   
   let res = await this.get(item.storageID,type);
   
-  this.deleteConversionitem(item.storageID);
+  this.deleteConversionitem(item.storageID,args);
   
   if (res.ERROR) {
     return res;
@@ -476,18 +570,21 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
 };
 
 
-
 exports.create = async (item, directory, itemname, args) => {
  
+  item.size = await getFileSize(directory + "/" + itemname);
+  await item.save();
+  await authorization.updateStorage(item,item.size);
 
   await storage.store(directory + "/" + itemname, "conversiondata/" + item.storageID + "/" + itemname);
- 
-  if (!args.skipConversion) {
-    await conversionQueue.getQueue().add({ item: item });
-    
-    sendConversionRequest();
-    if (args.waitUntilConversionDone) {
-      await waitUntilConversionDone(item.storageID);
+
+  if (await authorization.conversionAllowed(args)) {
+    if (!args.skipConversion) {
+      await sendConversionRequest({ item: item });
+
+      if (args.waitUntilConversionDone) {
+        await waitUntilConversionDone(item.storageID);
+      }
     }
   }
 
@@ -523,10 +620,13 @@ exports.createEmpty = async (args) => {
     updated: new Date(),
     created: new Date(),
     webhook: args.webhook,
+    hcVersion: args.hcVersion,
     streamLocation:"",
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
-    user: user
+    apiKey: args.accessKey,
+    user: user,
+    organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
   });
   
   await item.save();
@@ -542,7 +642,7 @@ exports.generateCustomImage = async (itemid, args) => {
   {
     return {ERROR: "Itemid not specified"};
   }
-  let item = await authorization.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args,authorization.actionType.other);
 
   if (item) {
     item.conversionState = "PENDING";
@@ -554,8 +654,7 @@ exports.generateCustomImage = async (itemid, args) => {
    
     item.updated = new Date();
     await item.save();
-    await conversionQueue.getQueue().add({ item: item, customImageCode: args.customImageCode });
-    sendConversionRequest();
+    await sendConversionRequest({ item: item, customImageCode: args.customImageCode });
     return {SUCCESS: true};
   }
   else {
@@ -570,12 +669,16 @@ exports.reconvert = async (itemid, args) => {
   {
     return {ERROR: "Itemid not specified"};
   }
-  let item = await authorization.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(itemid, args,authorization.actionType.other);
+
 
   if (item) {
     item.conversionState = "PENDING";
 
-    
+    if (!await authorization.conversionAllowed(args)) {
+      return { ERROR: "Not authorized" };
+    }
+
     if (args.multiConvert) {
       item.multiConvert = true;
     }
@@ -592,6 +695,9 @@ exports.reconvert = async (itemid, args) => {
     {
       item.shattered = args.processShattered;
     }
+    if (args.hcVersion) {
+      item.hcVersion = args.hcVersion;
+    }
 
     item.updated = new Date();
     await item.save();
@@ -599,9 +705,8 @@ exports.reconvert = async (itemid, args) => {
     if (args.overrideItem) {
       item.name = args.overrideItem;
     }
-   
-    await conversionQueue.getQueue().add({ item: item });
-    sendConversionRequest();
+    
+    sendConversionRequest({ item: item });
 
     if (args.waitUntilConversionDone) {
       await waitUntilConversionDone(itemid);
@@ -630,28 +735,49 @@ function waitUntilConversionDone(itemid) {
 
 
 
-exports.deleteConversionitem = async (itemid, args) => {
+exports.deleteConversionitem2 = async (item) => {
 
-  let item = await authorization.getConversionItem(itemid, args);
-  if (item) {
+    if (item.size != undefined) {
+        await authorization.updateStorage(item,-item.size);
+    }
+    let itemid = item.storageID;
     console.log("Deleting item: " + itemid + " " + item.name);
     storage.delete("conversiondata/" + item.storageID, item);
     lastUpdated = new Date();
-    await Conversionitem.deleteOne({ storageID: itemid });
+    await Conversionitem.deleteOne({ storageID: itemid }); 
+};
+
+
+exports.deleteConversionitem = async (itemid, args) => {
+
+  let item = await authorization.getConversionItem(itemid, args, authorization.actionType.other);
+  if (item) {
+    await this.deleteConversionitem2(item);
+    authorization.updateStorage(args,-item.size);
   }
   else {
     return {ERROR: "Item not found"};
   }
 };
 
-async function sendConversionRequest() {
+async function sendConversionRequest(payload) {
+
   let queueservers = await Queueserveritem.find({ region: config.get('hc-caas.region') });
   
-
   queueservers.sort(function (a, b) {
     return  a.pingFailed - b.pingFailed || b.priority - a.priority || b.freeConversionSlots - a.freeConversionSlots;
 
   });
+
+  if (conversionPriorityCallback) {
+    let cResult =  conversionPriorityCallback(queueservers, payload);
+    if (cResult) {
+      queueservers = cResult.servers;
+      payload.name = cResult.name;
+    }
+  }
+
+  conversionQueue.getQueue().add(payload);
 
   if (queueservers && queueservers.length > 0) {
     for (let i = 0; i < queueservers.length; i++) {
@@ -688,28 +814,62 @@ async function sendConversionRequest() {
 }
 
 
-exports.getItems = async (args) => {
-
-  let user = await authorization.getUser(args);
-
-  if (user == -1) {
-    return { ERROR: "Not authorized" };
-  }
+exports.getItems = async (args, organization = undefined) => {
 
   let models;
-  if (user) {
-    models = await Conversionitem.find({ user: user });
+  if (!organization) {
+    let user = await authorization.getUser(args);
+
+    if (user == -1) {
+      return { ERROR: "Not authorized" };
+    }  
+    if (user) {
+      models = await Conversionitem.find({ organization:  user.defaultOrganization });
+    }
+    else {
+      models = await Conversionitem.find();
+    }
   }
   else {
-    models = await Conversionitem.find();
+    models = await Conversionitem.find({ organization: organization });
   }
 
   let cleanedModels = [];
 
+  let userhash = [];
+  let accessKeyHash = [];
   for (let i = 0; i < models.length; i++) {
     let returnItem = JSON.parse(JSON.stringify(models[i]));
     returnItem.__v = undefined;
     returnItem._id = undefined;
+
+    if (returnItem.apiKey) {
+      if (!accessKeyHash[returnItem.apiKey]) {
+        let key = await APIKey.findOne({ _id: returnItem.apiKey });
+        if (key) {
+          accessKeyHash[returnItem.apiKey] = key.name;
+        }
+        else {  
+          accessKeyHash[returnItem.apiKey] = undefined;
+        }
+      }      
+      returnItem.accessKey = accessKeyHash[returnItem.apiKey];
+      returnItem.apiKey = undefined;
+    }
+
+    if (returnItem.user) {
+      if (!userhash[returnItem.user]) {
+        let user = await User.findOne({ _id: returnItem.user });
+        if (user) {
+          userhash[returnItem.user] = user.email;
+        }
+        else {  
+          userhash[returnItem.user] = undefined;
+        }
+      }      
+      returnItem.user = userhash[returnItem.user];
+           
+    }
     cleanedModels.push(returnItem);
   }
   return { "itemarray": cleanedModels };

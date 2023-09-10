@@ -38,7 +38,7 @@ exports.initialize = () => {
 readFileIntenal = (bucket,filename) => {
 
     return new Promise((resolve, reject) => {
-        var s3Params = {
+        let s3Params = {
             Bucket: bucket,
             Key: filename
         };
@@ -178,7 +178,7 @@ exports.store = (inputfile, s3target, item) => {
     return new Promise((resolve, reject) => {
         fs.readFile(inputfile, function (err, data) {
             _storeInS3(s3target, data, item).then(() => {
-                resolve();
+                resolve(data.length);
             });
         });
     });
@@ -314,11 +314,15 @@ function _getPresignedUrlPut(filename, item) {
         if (path.extname(filename) == ".zip") {
             contentType = "application/x-zip-compressed";
         }
+        else if (path.extname(filename) == ".pdf") {
+            contentType = "application/pdf";
+        }
+        
         const s3Params = {
             Bucket: bucket,
             Key: filename,
-            Expires: 60 * 60 * 60,
-            ContentType: contentType
+            Expires: 60 * 60,
+            ContentType: contentType,    
         };
 
         try {
@@ -337,7 +341,7 @@ function _getPresignedUrlS3(bucket,filename) {
         const s3Params = {
             Bucket: bucket,
             Key: filename,
-            Expires: 60 * 60 * 60,
+            Expires: 60,
             ContentType:null
             };
 

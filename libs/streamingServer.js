@@ -15,10 +15,6 @@ const authorization = require('./authorization');
 
 const execFile = require('child_process').execFile;
 
-var scserverexepath = "";   
-
-var scserverpath = '';
-
 let tempFileDir = "";
 const http = require('http');
 var httpProxy = require('http-proxy');
@@ -50,6 +46,39 @@ function findFreeSlot()
     return -1;
 }
 
+
+
+
+
+function getScserverexepath(scserverpath) {
+
+    if (process.platform == "win32") {
+      return './ts3d_sc_server';
+    }
+    else {
+      return  scserverpath + '/ts3d_sc_server';
+    }
+  }
+
+  function getScserverpath(version) {
+
+    let cp = config.get('hc-caas.streamingServer.scserverpath');
+    if (!Array.isArray(cp)) {
+       return cp;
+    }
+
+    if (!version || cp.length == 1) {
+      return cp[0].path;
+    }
+
+    for (let i=0;i<cp.length;i++) {
+      if (cp[i].version == version) {
+        return cp[i].path;
+      }
+    }
+    return "";
+  }
+
 exports.start = async () => {
     maxStreamingSessions = config.get('hc-caas.streamingServer.maxStreamingSessions');
     startport = config.get('hc-caas.streamingServer.startPort');
@@ -58,16 +87,6 @@ exports.start = async () => {
         slots[i] = true;
     }
   
-    scserverpath = config.get('hc-caas.streamingServer.scserverpath');
-
-
-    if (process.platform == "win32") {
-        scserverexepath = './ts3d_sc_server';
-    }
-    else {
-        scserverexepath = scserverpath + '/ts3d_sc_server';
-    }
-
     tempFileDir = config.get('hc-caas.workingDirectory');
   
     storage = require('./permanentStorage').getStorage();
@@ -154,8 +173,7 @@ exports.start = async () => {
 exports.startStreamingServer = async (args) => {
     let slot = findFreeSlot();
     if (slot == -1)
-    {
-        console.log("no free slot");
+    {      
         return {ERROR: "No free streaming slot"};
     }
 
@@ -166,7 +184,7 @@ exports.startStreamingServer = async (args) => {
 
     let streamingLocation;
     if (args && args.startItem) {
-        let citem = await authorization.getConversionItem(args.startItem, args);
+        let citem = await authorization.getConversionItem(args.startItem, args,authorization.actionType.streamingAccess);
         if (citem && citem.streamingLocation) {
             item.streamingLocation = args.streamingLocation;
             streamingLocation = args.streamingLocation;
@@ -177,7 +195,7 @@ exports.startStreamingServer = async (args) => {
 
     let sessiondir = tempFileDir + "/" + item.id;
     fs.mkdirSync(sessiondir);
-    await runStreamingServer(slot, item.id, streamingLocation, args ? args.renderType : null);
+    await runStreamingServer(slot, item.id, streamingLocation, args ? args.renderType : null, args ? args.version : null);
 
     let streamingserver = await Streamingserveritem.findOne({ address: serveraddress });
     streamingserver.freeStreamingSlots = maxStreamingSessions - simStreamingSessions;
@@ -203,6 +221,15 @@ exports.startStreamingServer = async (args) => {
     else {           
         address = global.caas_publicip.replace(/(https?:\/\/)/gi, '').split(":")[0];
     }
+
+
+    if (args && args.accessItems) {
+        let accessResult = await this.serverEnableStreamAccess(item.id, args.accessItems, args);
+        if (accessResult.ERROR) {
+            return accessResult;
+        }
+    }
+
     return {serverurl:address, sessionid:item.id, port:port};
 
 };
@@ -259,7 +286,7 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
     }
     catch (e) {
         console.log(e);
-        return;
+        return { ERROR: "No session found" };
     }
 
     if (session && itemids) {
@@ -267,11 +294,15 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
         let items;
 
         if (!hasNames) {
-            items = await authorization.getConversionItem(itemids, args);
+            items = await authorization.getConversionItem(itemids, args,authorization.actionType.streamingAccess);
         }
         else {
-            items = await authorization.getConversionItem(itemids, args, true);
+            items = await authorization.getConversionItem(itemids, args, authorization.actionType.streamingAccess,true);
 
+        }
+
+        if (!items) {
+            return { ERROR: "No items found" };
         }
 
         let subdirectory = "";
@@ -320,11 +351,16 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
         }
         var endtime = new Date();
 //        console.log("storage load time:" + (endtime - starttime));
+        return { success: true };
     }
+    else {    
+        return { ERROR: "No session found" };
+    }
+
 };
 
 
-async function runStreamingServer(slot,sessionid, streamingLocation, renderType) {
+async function runStreamingServer(slot,sessionid, streamingLocation, renderType, version) {
  
     simStreamingSessions++;
     totalStreamingSessionsSoFar++;
@@ -334,7 +370,9 @@ async function runStreamingServer(slot,sessionid, streamingLocation, renderType)
     console.log("Streaming Session Started at " + new Date());
     console.log("Total sessions:" + totalStreamingSessionsSoFar + " Concurrent Sessions:" + simStreamingSessions +" Max Concurrent sessions:" + maxStreamingSessionsSoFar);
     let commandLine = setupCommandLine(slot + startport,sessionid, streamingLocation, renderType);
-    execFile(scserverexepath, commandLine, {
+    let scserverpath = getScserverpath(version);
+
+    execFile(getScserverexepath(scserverpath), commandLine, {
       cwd: scserverpath
     }, async function (err, data) {
         simStreamingSessions--;

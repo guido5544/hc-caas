@@ -178,7 +178,7 @@ exports.store = (inputfile, target, item) => {
     return new Promise((resolve, reject) => {
         fs.readFile(inputfile, function (err, data) {
             _storeInAzure(target, data, item).then(() => {
-                resolve();
+                resolve(data.length);
             });
         });
     });
