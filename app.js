@@ -14,6 +14,7 @@ const app = express();
 var serverapiRoutes;
 var queueapiRoutes;
 var streamingserverapiRoutes;
+var accountRoutes;
 
 var conversionQueue;
 var streamingServer;
@@ -161,6 +162,12 @@ exports.start = async function (mongoose_in, extraArgs = {}) {
         serverapiRoutes = require('./routes/modelManagerAPI');
         app.use("/caas_api", serverapiRoutes);
       }
+
+      if (config.get('hc-caas.runModelManager') && config.get('hc-caas.requireAccessKey')) {
+        accountRoutes = require('./routes/accountAPI');
+        app.use("/caas_api/accounts/", accountRoutes);
+      }
+
       if (config.get('hc-caas.runConversionServer')) {
         queueapiRoutes = require('./routes/conversionServerAPI');
         app.use("/caas_api", queueapiRoutes);
