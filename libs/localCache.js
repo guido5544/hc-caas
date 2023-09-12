@@ -49,12 +49,12 @@ const dirSize = async directory => {
 })();
 
 
-exports.isInCache = (itemid, name) => {
+exports.isInCache = (storageID, name) => {
 
-    if (cachedFiles[itemid] != undefined) {
-        for (let i=0;i<cachedFiles[itemid].files.length;i++) {
-            if (cachedFiles[itemid].files[i] == name) {
-                cachedFiles[itemid].timestamp = Date.now(); 
+    if (cachedFiles[storageID] != undefined) {
+        for (let i=0;i<cachedFiles[storageID].files.length;i++) {
+            if (cachedFiles[storageID].files[i] == name) {
+                cachedFiles[storageID].timestamp = Date.now(); 
                 return true;
             }
         }
@@ -64,10 +64,10 @@ exports.isInCache = (itemid, name) => {
 
 
 
-exports.createSymLink = (itemid,name, target) => {
+exports.createSymLink = (storageID,name, target) => {
     return new Promise((resolve, reject) => {
 
-        fs.symlink(cachePath + "/" + itemid + "/" +  name,target,"file", function (err) {
+        fs.symlink(cachePath + "/" + storageID + "/" +  name,target,"file", function (err) {
             if (err)
                 resolve(null);
             else
@@ -78,10 +78,10 @@ exports.createSymLink = (itemid,name, target) => {
 };
 
 
-exports.readFile = (itemid,name) => {
+exports.readFile = (storageID,name) => {
     return new Promise((resolve, reject) => {
 
-        fs.readFile(cachePath + "/" + itemid + "/" +  name, function (err, data) {
+        fs.readFile(cachePath + "/" + storageID + "/" +  name, function (err, data) {
             if (err)
                 resolve(null);
             else
@@ -91,27 +91,27 @@ exports.readFile = (itemid,name) => {
     });
 };
 
-exports.cacheFile = async (itemid, name, data) => {
+exports.cacheFile = async (storageID, name, data) => {
 
     if (maxSize > 0) {
-        let cpath = cachePath + "/" + itemid;
+        let cpath = cachePath + "/" + storageID;
         if (!fs.existsSync(cpath)) {
             fs.mkdirSync(cpath);
         }
 
         await writeFile(cpath + "/" + name, data);
-        if (cachedFiles[itemid] != undefined) {
-            totalSize -= cachedFiles[itemid].size;
+        if (cachedFiles[storageID] != undefined) {
+            totalSize -= cachedFiles[storageID].size;
         }
         let size = dirSize(cpath) / 1024 / 1024;
         totalSize += size;
-        if (cachedFiles[itemid] == undefined) {
-            cachedFiles[itemid] = { "size": size, "files": [name], timestamp: Date.now() };
+        if (cachedFiles[storageID] == undefined) {
+            cachedFiles[storageID] = { "size": size, "files": [name], timestamp: Date.now() };
         }
         else {
-            cachedFiles[itemid].size = size;
-            cachedFiles[itemid].files.push(name);
-            cachedFiles[itemid].timestamp = Date.now();
+            cachedFiles[storageID].size = size;
+            cachedFiles[storageID].files.push(name);
+            cachedFiles[storageID].timestamp = Date.now();
         }
         cleanup();
     }
@@ -122,17 +122,17 @@ async function cleanup() {
     if (totalSize > maxSize) {
         let clist = [];
         for (let i in cachedFiles) {
-            clist.push({itemid: i, file:cachedFiles[i]});          
+            clist.push({storageID: i, file:cachedFiles[i]});          
         }
         clist.sort(function (a, b) {
             return a.file.timestamp - b.file.timestamp;
         });
 
         for (let i=0;i<clist.length;i++) {
-            let itemid = clist[i].itemid;
-            totalSize -= cachedFiles[itemid].size;
-            delete cachedFiles[itemid];
-            await del(cachePath + "/" + itemid,{force: true});
+            let storageID = clist[i].storageID;
+            totalSize -= cachedFiles[storageID].size;
+            delete cachedFiles[storageID];
+            await del(cachePath + "/" + storageID,{force: true});
             if (totalSize <= maxSize)
                 break;
         }

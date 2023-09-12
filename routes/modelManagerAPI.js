@@ -9,22 +9,22 @@ router.get('/updated', apiController.getUpdated);
 
 router.post('/upload', apiController.postFileUpload);
 router.post('/uploadArray', apiController.postFileUploadArray);
-router.get('/data/:itemid', apiController.getData);
-router.get('/file/:itemid/:type', apiController.getFileByType);
-router.get('/fileByName/:itemid/:name', apiController.getFileByName);
-router.get('/original/:itemid', apiController.getOriginal);
+router.get('/data/:storageID', apiController.getData);
+router.get('/file/:storageID/:type', apiController.getFileByType);
+router.get('/fileByName/:storageID/:name', apiController.getFileByName);
+router.get('/original/:storageID', apiController.getOriginal);
 router.put('/create/', apiController.putCreate);
-router.put('/customImage/:itemid', apiController.putCustomImage);
-router.put('/reconvert/:itemid', apiController.putReconvert);
-router.put('/delete/:itemid', apiController.putDelete);
+router.put('/customImage/:storageID', apiController.putCustomImage);
+router.put('/reconvert/:storageID', apiController.putReconvert);
+router.put('/delete/:storageID', apiController.putDelete);
 router.get('/items', apiController.getItems);
 
 router.get('/custom', apiController.getCustom);
 router.get('/uploadToken/:name/:size', apiController.getUploadToken);
-router.get('/downloadToken/:itemid/:type', apiController.getDownloadToken);
+router.get('/downloadToken/:storageID/:type', apiController.getDownloadToken);
 
-router.get('/shattered/:itemid/:name', apiController.getShattered);
-router.get('/shatteredXML/:itemid', apiController.getShatteredXML);
+router.get('/shattered/:storageID/:name', apiController.getShattered);
+router.get('/shatteredXML/:storageID', apiController.getShatteredXML);
 
 router.get('/streamingSession', apiController.getStreamingSession);
 router.put('/enableStreamAccess/:sessionid', apiController.enableStreamAccess);

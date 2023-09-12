@@ -173,7 +173,7 @@ exports.getStreamingSession = async (args, req = null, extraCheck = true) => {
 };
 
 
-exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) => {
+exports.enableStreamAccess = async (sessionid,storageIDs, args, hasNames = false) => {
 
   let item;
   try {
@@ -192,10 +192,10 @@ exports.enableStreamAccess = async (sessionid,itemids, args, hasNames = false) =
     let sares;
     try {
       if (args) {
-        sares = await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'CS-API-Arg': JSON.stringify(args), 'items': JSON.stringify(itemids), hasNames: hasNames } });
+        sares = await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'CS-API-Arg': JSON.stringify(args), 'items': JSON.stringify(storageIDs), hasNames: hasNames } });
       }
       else {
-        sares = await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'items': JSON.stringify(itemids), hasNames: hasNames } });
+        sares = await fetch("http://" + ip + '/caas_api/serverEnableStreamAccess/' + sessionid, { method: 'PUT', headers: { 'items': JSON.stringify(storageIDs), hasNames: hasNames } });
       }
     }
     catch (e) {

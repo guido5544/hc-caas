@@ -162,19 +162,19 @@ exports.getDataFromItem = async (item) => {
   return returnItem;
 };
 
-exports.getData = async (itemid, args) => {
+exports.getData = async (storageID, args) => {
 
 
-  let itemids;
-  if (args && args.itemids) {
-    itemids = args.itemids;
+  let storageIDs;
+  if (args && args.storageIDs) {
+    storageIDs = args.storageIDs;
   }
   else {
-    itemids = [itemid];
+    storageIDs = [storageID];
   }
 
-  if (itemids.length == 1) {
-    let item = await authorization.getConversionItem(itemids[0], args,authorization.actionType.info);
+  if (storageIDs.length == 1) {
+    let item = await authorization.getConversionItem(storageIDs[0], args,authorization.actionType.info);
 
     if (item) {
       return await this.getDataFromItem(item);     
@@ -182,7 +182,7 @@ exports.getData = async (itemid, args) => {
       return { ERROR: "Item not found" };
     }
   } else {
-    let items = await authorization.getConversionItem(itemids, args,args,authorization.actionType.info);
+    let items = await authorization.getConversionItem(storageIDs, args,args,authorization.actionType.info);
     if (items.length > 0) {
       let returnItems = items.map((item) => {
         let returnItem = JSON.parse(JSON.stringify(item));
@@ -200,16 +200,16 @@ exports.getData = async (itemid, args) => {
   }
 };
 
-exports.requestDownloadToken = async (itemid,type,args) => {
+exports.requestDownloadToken = async (storageID,type,args) => {
   if (!storage.requestDownloadToken)
   {
     return {ERROR: "Not available for this storage type"};
   }
-  let item = await authorization.getConversionItem(itemid, args);
+  let item = await authorization.getConversionItem(storageID, args);
 
   if (item) {
     let token = await storage.requestDownloadToken("conversiondata/" + item.storageID + "/" + item.name + "." + type, item);
-    return { token: token, itemid: itemid };
+    return { token: token, storageID: storageID };
   }
   else
   {
@@ -217,24 +217,24 @@ exports.requestDownloadToken = async (itemid,type,args) => {
   }
 };
 
-async function readFileWithCache(itemid, name, item) {
+async function readFileWithCache(storageID, name, item) {
   if (name.indexOf(".scs") != -1) {
-    if (localCache.isInCache(itemid, name)) {
+    if (localCache.isInCache(storageID, name)) {
       console.log("file loaded from cache");
-      const data = await localCache.readFile(itemid, name);
+      const data = await localCache.readFile(storageID, name);
       return data;
     }
     else {
-      const data = await storage.readFile("conversiondata/" + itemid + "/" + name, item);
+      const data = await storage.readFile("conversiondata/" + storageID + "/" + name, item);
       if (!data) {
         return null;
       }
-      localCache.cacheFile(itemid, name, data);
+      localCache.cacheFile(storageID, name, data);
       return data;
     }
   }
   else {
-    return await storage.readFile("conversiondata/" + itemid + "/" + name, item);
+    return await storage.readFile("conversiondata/" + storageID + "/" + name, item);
   }
 }
 
@@ -262,8 +262,8 @@ exports.getFromItem  = async (item,type) => {
 }
 
 
-exports.get = async (itemid,type,args) => {
-  let item = await authorization.getConversionItem(itemid, args);
+exports.get = async (storageID,type,args) => {
+  let item = await authorization.getConversionItem(storageID, args);
   if (item) {
     return await this.getFromItem(item,type);
   }
@@ -274,8 +274,8 @@ exports.get = async (itemid,type,args) => {
 };
 
 
-exports.getByName = async (itemid, name, args) => {
-  let item = await authorization.getConversionItem(itemid, args);
+exports.getByName = async (storageID, name, args) => {
+  let item = await authorization.getConversionItem(storageID, args);
   if (item) {
     try {
       let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + name);
@@ -290,8 +290,8 @@ exports.getByName = async (itemid, name, args) => {
   }
 };
 
-exports.getShattered = async (itemid, name,args) => {
-  let item = await authorization.getConversionItem(itemid, args);
+exports.getShattered = async (storageID, name,args) => {
+  let item = await authorization.getConversionItem(storageID, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/scs/" + name);
     return ({ data: blob });
@@ -301,8 +301,8 @@ exports.getShattered = async (itemid, name,args) => {
   }
 };
 
-exports.getShatteredXML = async (itemid,args) => {
-  let item = await authorization.getConversionItem(itemid, args);
+exports.getShatteredXML = async (storageID,args) => {
+  let item = await authorization.getConversionItem(storageID, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/shattered.xml");
     return ({ data: blob });
@@ -313,8 +313,8 @@ exports.getShatteredXML = async (itemid,args) => {
 };
 
 
-exports.getOriginal = async (itemid, args) => {
-  let item = await authorization.getConversionItem(itemid, args);
+exports.getOriginal = async (storageID, args) => {
+  let item = await authorization.getConversionItem(storageID, args);
   if (item) {
     let blob = await storage.readFile("conversiondata/" + item.storageID + "/" + item.name);
     return ({ data: blob });
@@ -325,10 +325,10 @@ exports.getOriginal = async (itemid, args) => {
 };
 
 
-exports.appendFromBuffer = async (buffer, itemname, itemid) => {
-  let item = await Conversionitem.findOne({ storageID: itemid });
+exports.appendFromBuffer = async (buffer, itemname, storageID) => {
+  let item = await Conversionitem.findOne({ storageID: storageID });
   if (item) {
-    await storage.storeFromBuffer(buffer, "conversiondata/" + itemid + "/" + itemname, item);
+    await storage.storeFromBuffer(buffer, "conversiondata/" + storageID + "/" + itemname, item);
     let newfile = true;
     for (let i = 0; i < item.files.length; i++) {
       if (item.files[i] == itemname) {
@@ -341,22 +341,22 @@ exports.appendFromBuffer = async (buffer, itemname, itemid) => {
     }
     item.updated = new Date();
     await item.save();
-    return { itemid: itemid };
+    return { storageID: storageID };
   }
   else {
     return { ERROR: "Item not found" };
   }
 };
 
-exports.append = async (directory, itemname, itemid, args) => {
-  let item = await authorization.getConversionItem(itemid, args, authorization.actionType.other);
+exports.append = async (directory, itemname, storageID, args) => {
+  let item = await authorization.getConversionItem(storageID, args, authorization.actionType.other);
   if (item) {
     let isize;
     if (directory) {
       if (!args.multiConvert) {
         isize = await getFileSize(directory + "/" + itemname);
       }
-      let res = await storage.store(directory + "/" + itemname, "conversiondata/" + itemid + "/" + itemname, item);
+      let res = await storage.store(directory + "/" + itemname, "conversiondata/" + storageID + "/" + itemname, item);
       if (res.ERROR) {
         return res;
       }
@@ -394,7 +394,7 @@ exports.append = async (directory, itemname, itemid, args) => {
       });
     }
 
-    return { itemid: itemid };
+    return { storageID: storageID };
   }
   else {
     return { ERROR: "Item not found" };
@@ -409,7 +409,7 @@ exports.requestUploadToken = async (itemname,size, args) => {
     return { ERROR: "Not authorized to upload" };
   }
 
-  let itemid;
+  let storageID;
   if (!storage.requestUploadToken) {
     return { ERROR: "Not available for this storage type" };
   }
@@ -417,16 +417,16 @@ exports.requestUploadToken = async (itemname,size, args) => {
   if (args && args.storageID != undefined) {
     args.size = size;
     let data = await this.append(null, itemname, args.storageID,args);
-    itemid = args.storageID;
+    storageID = args.storageID;
   }
   else {
 
-    itemid = uuidv4();
+    storageID = uuidv4();
 
     let startState = "UPLOADING";
     const item = new Conversionitem({
       name: itemname,
-      storageID: itemid,
+      storageID: storageID,
       conversionState: startState,
       updated: new Date(),
       created: new Date(),
@@ -443,8 +443,8 @@ exports.requestUploadToken = async (itemname,size, args) => {
     await authorization.updateStorage(item, size);
   }
 
-  let token = await storage.requestUploadToken("conversiondata/" + itemid + "/" + itemname);
-  return { token: token, itemid: itemid };
+  let token = await storage.requestUploadToken("conversiondata/" + storageID + "/" + itemname);
+  return { token: token, storageID: storageID };
 };
 
 
@@ -472,7 +472,7 @@ exports.createMultiple = async (files, args) => {
     return { ERROR: "Can't Upload. Not authorized" };
   }
   await this.create(item, files[rootFileIndex].destination, files[rootFileIndex].originalname, args);
-  let itemid = item.storageID;
+  let storageID = item.storageID;
   let proms= [];
   let totalsize = 0;
   for (let i = 0; i < files.length; i++) {
@@ -480,7 +480,7 @@ exports.createMultiple = async (files, args) => {
       continue;
     }
     totalsize += await getFileSize(files[i].destination + "/" + files[i].originalname);
-    proms.push(this.append(files[i].destination, files[i].originalname, itemid,args));
+    proms.push(this.append(files[i].destination, files[i].originalname, storageID,args));
   }
 
   await Promise.all(proms);
@@ -489,16 +489,16 @@ exports.createMultiple = async (files, args) => {
   await authorization.updateStorage(item,totalsize);
 
   if (!skipConversion) {
-    await this.reconvert(itemid, args);
+    await this.reconvert(storageID, args);
   }
-  return { itemid: itemid };
+  return { storageID: storageID };
 };
 
 
 
 exports.createDatabaseEntry = async (itemname, args) => {
 
-  let itemid = uuidv4();
+  let storageID = uuidv4();
   let startState = "PENDING";
   let user = await authorization.getUser(args);
 
@@ -511,7 +511,7 @@ exports.createDatabaseEntry = async (itemname, args) => {
     startState = "SUCCESS";
   const item = new Conversionitem({
     name: itemname,
-    storageID: itemid,
+    storageID: storageID,
     startPath: args.startPath,
     conversionState: startState,
     shattered: args.processShattered,
@@ -565,7 +565,7 @@ exports.convertSingle = async (inpath,outpath,type, inargs) => {
     if (outpath) {
       fs.writeFileSync(outpath, res.data);
     }
-    return { itemid: item.storageID, buffer:res.data};
+    return { storageID: item.storageID, buffer:res.data};
   }
 };
 
@@ -605,7 +605,7 @@ exports.createEmpty = async (args) => {
     return { ERROR: "Not authorized to upload" };
   }
 
-  var itemid = uuidv4();
+  var storageID = uuidv4();
 
   let startState = "PENDING";
   if (args.skipConversion) {
@@ -613,7 +613,7 @@ exports.createEmpty = async (args) => {
   }
   const item = new Conversionitem({
     name: args.itemname,
-    storageID: itemid,
+    storageID: storageID,
     startPath: args.startPath,
     conversionState: startState,
     shattered: args.processShattered,
@@ -631,18 +631,18 @@ exports.createEmpty = async (args) => {
   
   await item.save();
 
-  return { itemid: itemid };
+  return { storageID: storageID };
 };
 
 
 
-exports.generateCustomImage = async (itemid, args) => {
+exports.generateCustomImage = async (storageID, args) => {
 
-  if (!itemid)
+  if (!storageID)
   {
-    return {ERROR: "Itemid not specified"};
+    return {ERROR: "storageID not specified"};
   }
-  let item = await authorization.getConversionItem(itemid, args,authorization.actionType.other);
+  let item = await authorization.getConversionItem(storageID, args,authorization.actionType.other);
 
   if (item) {
     item.conversionState = "PENDING";
@@ -663,13 +663,13 @@ exports.generateCustomImage = async (itemid, args) => {
 };
 
 
-exports.reconvert = async (itemid, args) => {
+exports.reconvert = async (storageID, args) => {
 
-  if (!itemid)
+  if (!storageID)
   {
-    return {ERROR: "Itemid not specified"};
+    return {ERROR: "storageID not specified"};
   }
-  let item = await authorization.getConversionItem(itemid, args,authorization.actionType.other);
+  let item = await authorization.getConversionItem(storageID, args,authorization.actionType.other);
 
 
   if (item) {
@@ -709,9 +709,9 @@ exports.reconvert = async (itemid, args) => {
     sendConversionRequest({ item: item });
 
     if (args.waitUntilConversionDone) {
-      await waitUntilConversionDone(itemid);
+      await waitUntilConversionDone(storageID);
       totalConversions++;
-      console.log("File " + item.name + " with storageID " + itemid + " converted at " + new Date());   
+      console.log("File " + item.name + " with storageID " + storageID + " converted at " + new Date());   
       console.log("Total Conversions:" + totalConversions);
     }
     return {SUCCESS: true};
@@ -721,10 +721,10 @@ exports.reconvert = async (itemid, args) => {
   }
 };
 
-function waitUntilConversionDone(itemid) {
+function waitUntilConversionDone(storageID) {
   return new Promise((resolve, reject) => {
     let waitInterval = setInterval(async () => {
-      let item = await Conversionitem.findOne({ storageID: itemid });
+      let item = await Conversionitem.findOne({ storageID: storageID });
       if (item.conversionState == "SUCCESS" || item.conversionState.indexOf("ERROR") != -1) {
         clearInterval(waitInterval);
         resolve();
@@ -740,17 +740,17 @@ exports.deleteConversionitem2 = async (item) => {
     if (item.size != undefined) {
         await authorization.updateStorage(item,-item.size);
     }
-    let itemid = item.storageID;
-    console.log("Deleting item: " + itemid + " " + item.name);
+    let storageID = item.storageID;
+    console.log("Deleting item: " + storageID + " " + item.name);
     storage.delete("conversiondata/" + item.storageID, item);
     lastUpdated = new Date();
-    await Conversionitem.deleteOne({ storageID: itemid }); 
+    await Conversionitem.deleteOne({ storageID: storageID }); 
 };
 
 
-exports.deleteConversionitem = async (itemid, args) => {
+exports.deleteConversionitem = async (storageID, args) => {
 
-  let item = await authorization.getConversionItem(itemid, args, authorization.actionType.other);
+  let item = await authorization.getConversionItem(storageID, args, authorization.actionType.other);
   if (item) {
     await this.deleteConversionitem2(item);
     authorization.updateStorage(args,-item.size);

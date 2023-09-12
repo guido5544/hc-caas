@@ -277,7 +277,7 @@ function someTimeout(to) {
     });
 }
 
-exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = false) => {
+exports.serverEnableStreamAccess = async (sessionid, storageIDs, args, hasNames = false) => {
 
     let session;
 
@@ -289,15 +289,15 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
         return { ERROR: "No session found" };
     }
 
-    if (session && itemids) {
+    if (session && storageIDs) {
 
         let items;
 
         if (!hasNames) {
-            items = await authorization.getConversionItem(itemids, args,authorization.actionType.streamingAccess);
+            items = await authorization.getConversionItem(storageIDs, args,authorization.actionType.streamingAccess);
         }
         else {
-            items = await authorization.getConversionItem(itemids, args, authorization.actionType.streamingAccess,true);
+            items = await authorization.getConversionItem(storageIDs, args, authorization.actionType.streamingAccess,true);
 
         }
 
@@ -311,7 +311,7 @@ exports.serverEnableStreamAccess = async (sessionid, itemids, args, hasNames = f
             subdirectory = "/" + args.subDirectory;
         }
     
-        for (let i = 0; i < itemids.length; i++) {
+        for (let i = 0; i < storageIDs.length; i++) {
             let item = items[i];
             if (item) {
                 console.log("Stream Access:" + item.name);

@@ -264,7 +264,7 @@ let data = await res.json();
   webhook: "http://localhost:3000/caas_api/webhook",
   startPath: "micro_engine/_micro engine.CATProduct",
   conversionCommandLine:["--output_scs","","--output_png","","background_color","0,0,0","--output_step",""],
-  itemid: "c79dd99e-cbbd-4b6d-ba43-15986b1adc14",
+  storageID: "c79dd99e-cbbd-4b6d-ba43-15986b1adc14",
   processShattered:false,
   skipConversion:false,
 }
@@ -272,14 +272,14 @@ let data = await res.json();
 *webhook* - The ip address to call when the conversion is complete. If not provided polling is required to check the conversion status.  
 *startPath* - If a zip file is uploaded this is the relative path within the zip file to the main assembly file.  
 *conversionCommandLine* - The command line arguments to pass to converter. This will replace the default command line that exports scs and png files (on a white background).  
-*itemid* - If an existing itemid is provided, the uploaded file will be stored alongside the original file and no conversion will be performed.  
+*storageID* - If an existing storageID is provided, the uploaded file will be stored alongside the original file and no conversion will be performed.  
 *processShattered* - If set to true, a shattered version of the CAD assembly will be generated.  
 *skipConversion* - If set to true, the uploaded file will not be converted.  
 
 #### **Returns**
 ID of newly created item
 ```
-{"itemid":"c79dd99e-cbbd-4b6d-ba43-15986b1adc14"}
+{"storageID":"c79dd99e-cbbd-4b6d-ba43-15986b1adc14"}
 ```
 
 
@@ -470,9 +470,9 @@ let res = await fetch(caasURI + '/caas_api/uploadToken', {headers: {'CS-API-Arg'
 *webhook* - The ip address to call when the conversion is complete. If not provided polling is required to check the conversion status.  
 
 #### **Returns**
-JSON containing signed request URL and itemid
+JSON containing signed request URL and storageID
 ```
-{ token: signedRequestURLforS3, itemid: c79dd99e-cbbd-4b6d-ba43-15986b1adc14 };
+{ token: signedRequestURLforS3, storageID: c79dd99e-cbbd-4b6d-ba43-15986b1adc14 };
 ```
 
 ### **/caas_api/downloadToken**

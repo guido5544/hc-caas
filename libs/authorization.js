@@ -138,7 +138,7 @@ exports.conversionComplete = async (item) => {
         }
     }
 }
-exports.getConversionItem = async (itemid, args, action = this.actionType.dataAccess, useNames = false) => {
+exports.getConversionItem = async (storageID, args, action = this.actionType.dataAccess, useNames = false) => {
     let user;
     let org;
     let orgid;
@@ -185,11 +185,11 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
                 return null;
             }
             
-            if (Array.isArray(itemid)) {
-                if (itemid.length > org.tokens) {
+            if (Array.isArray(storageID)) {
+                if (storageID.length > org.tokens) {
                     return null;
                 }
-                org.tokens -= itemid.length;
+                org.tokens -= storageID.length;
                 recordStats = true;
             }
             else {
@@ -203,13 +203,13 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
         }
     }
 
-    if (!Array.isArray(itemid)) {
+    if (!Array.isArray(storageID)) {
         let item;
         if (user && user.superuser) {
-            item =  await Conversionitem.findOne({ storageID: itemid});
+            item =  await Conversionitem.findOne({ storageID: storageID});
         }
         else {
-            item =  await Conversionitem.findOne({ storageID: itemid, organization: { $in: [orgid, null] } });
+            item =  await Conversionitem.findOne({ storageID: storageID, organization: { $in: [orgid, null] } });
         }
         if (recordStats) {
             stats.add(stats.type.streamingAccess, user, org,item.name);
@@ -220,18 +220,18 @@ exports.getConversionItem = async (itemid, args, action = this.actionType.dataAc
         let items;
         if (user && user.superuser) {
             if (useNames) {
-                items = await Conversionitem.find({ 'name': { $in: itemid } });
+                items = await Conversionitem.find({ 'name': { $in: storageID } });
             }
             else {
-                items = await Conversionitem.find({ storageID: { $in: itemid } });
+                items = await Conversionitem.find({ storageID: { $in: storageID } });
             }
         }
         else {
             if (useNames) {
-                items = await Conversionitem.find({ 'name': { $in: itemid }, organization: { $in: [orgid, null] } });
+                items = await Conversionitem.find({ 'name': { $in: storageID }, organization: { $in: [orgid, null] } });
             }
             else {
-                items = await Conversionitem.find({ storageID: { $in: itemid }, organization: { $in: [orgid, null] } });
+                items = await Conversionitem.find({ storageID: { $in: storageID }, organization: { $in: [orgid, null] } });
             }
         }
         if (recordStats && user && org) {
@@ -814,7 +814,7 @@ exports.getDataAuth = async (req,args) => {
         return { ERROR: "Not authorized" };
     }
 
-    let item =  await Conversionitem.findOne({ storageID: req.params.itemid, organization:req.params.orgid });
+    let item =  await Conversionitem.findOne({ storageID: req.params.storageID, organization:req.params.orgid });
     if (!item) {
         return { ERROR: "Item not found" };
     }
@@ -831,7 +831,7 @@ exports.deleteAuth = async (req,args) => {
     if (user == -1 || !user || (findOrgRole(req.params.orgid,user) > 2 && !user.superuser)) {
         return { ERROR: "Not authorized" };
     }
-    let item =  await Conversionitem.findOne({ storageID: req.params.itemid, organization:req.params.orgid });
+    let item =  await Conversionitem.findOne({ storageID: req.params.storageID, organization:req.params.orgid });
     if (item) {
         let result = await modelManager.deleteConversionitem2(item);
         return {success:true};
@@ -847,7 +847,7 @@ exports.getItemFromType = async (req,args) => {
     if (user == -1 || !user || (findOrgRole(req.params.orgid,user) > 2 && !user.superuser)) {
         return { ERROR: "Not authorized" };
     }
-    let item =  await Conversionitem.findOne({ storageID: req.params.itemid, organization:req.params.orgid });    
+    let item =  await Conversionitem.findOne({ storageID: req.params.storageID, organization:req.params.orgid });    
     if (item) {
         let result = await modelManager.getFromItem(item,req.params.type);
         return result;
