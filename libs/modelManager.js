@@ -414,10 +414,10 @@ exports.requestUploadToken = async (itemname,size, args) => {
     return { ERROR: "Not available for this storage type" };
   }
 
-  if (args && args.storageid != undefined) {
+  if (args && args.storageID != undefined) {
     args.size = size;
-    let data = await this.append(null, itemname, args.storageid,args);
-    itemid = args.storageid;
+    let data = await this.append(null, itemname, args.storageID,args);
+    itemid = args.storageID;
   }
   else {
 
