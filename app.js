@@ -235,6 +235,7 @@ function handleInitialConfiguration() {
       "region": "",
       "requireAccessKey": false,
       "determineGeoFromRequest": false,
+      "sessionPlugins": [],
       "conversionServer": {
         "name" : "",
         "converterpath": "",
