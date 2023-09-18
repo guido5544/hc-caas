@@ -19,6 +19,7 @@ var accountRoutes;
 var conversionQueue;
 var streamingServer;
 var streamingManager;
+var sessionHandling;
 
 process.env.ALLOW_CONFIG_MUTATIONS = "true";
 process.env.SUPPRESS_NO_CONFIG_WARNING = 'y';
@@ -97,6 +98,10 @@ exports.start = async function (mongoose_in, extraArgs = {}) {
 
  
   streamingManager = require('./libs/streamingManager');
+
+  sessionHandling = require('./libs/sessionHandling');
+  sessionHandling.start();
+  
   exports.streamingManager = streamingManager;
 
   exports.modelManager = require('./libs/modelManager');

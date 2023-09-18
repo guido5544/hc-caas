@@ -16,6 +16,7 @@ const authorization = require('./authorization');
 const APIKey = require('../models/UserManagement/ApiKey');
 
 
+
 var storage;
 
 let lastUpdated  = new Date();
@@ -24,6 +25,7 @@ var totalConversions = 0;
 
 var customCallback;
 var conversionPriorityCallback;
+
 
 function getFileSize(itempath) {
   return new Promise((resolve, reject) => {
@@ -117,19 +119,6 @@ exports.start = async (callback, conversionPriorityCallback_in) => {
       await purgeFiles();
     }, 1000 * 60 * 60 * 24);
   }
-
-  // let password = await bcrypt.hash("password",10);
-  // const item = new User({
-  //   email: "test@techsoft3d.com",
-  //   password: password
-  // });
-  // await item.save();
-
-
-  //   const item = new APIKey({
-  //   user: "64c7bde9183d10d4f2586641"
-  //  });
-  //  await item.save();
 
 
   console.log('Model Manager started');

@@ -9,33 +9,16 @@ const geoip = require('geoip-lite');
 
 const fetch = require('node-fetch');
 
-let storage;
-
-let started = false;
-
-
-
-exports.start = async () => {
-
-  storage = require('./permanentStorage').getStorage();
-
-  // setTimeout(async function () {
-  //   await queryStreamingServers();  
-  // }, 1000);
-
-  // setInterval(async function () {
-  //   await queryStreamingServers();
-  // }, 1000 * 60 * 60);
-
-
-  console.log('streaming manager started');
-  started = true;
-};
+var storage;
 
 
 class SessionManager {
   constructor(type) {
+    if (!storage) {
+      storage = require('./permanentStorage').getStorage();
+    }
     this._type = type;
+    this.queryServers();
   }
 
 
@@ -54,7 +37,7 @@ class SessionManager {
         }
 
 
-        let res = await fetch("http://" + ip + '/caas_api/pingSessionServer', {
+        let res = await fetch("http://" + ip + '/caas_api/pingSessionServer/' + this._type, {
           signal: controller.signal,
           headers: { 'CS-API-Arg': JSON.stringify({ accessPassword: config.get('hc-caas.accessPassword') }) }
         });

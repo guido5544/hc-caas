@@ -40,7 +40,7 @@ function someTimeout(to) {
     });
 }
 
-exports.start = async () => {
+function start() {
 
     tempFileDir = config.get('hc-caas.workingDirectory');
     serveraddress = global.caas_publicip + ":" + config.get('hc-caas.port');
@@ -49,21 +49,26 @@ exports.start = async () => {
 
 
 
-class CustomSessionItem {
+class CustomSessionServer {
 
-    constructor(type, name, maxSessions, startPort, region, listenPort, priority) {
+    constructor(type, serverinfo) {
+
+        if (!storage) {
+            start();
+        }
 
         this._type = type;
-        this._name = name;
-        this._maxSessions = maxSessions;
-        this._startPort = startPort;
+        this._name = serverinfo.name;
+        this._maxSessions = serverinfo.maxSessions ? serverinfo.maxSessions : 10;
+        this._startPort = serverinfo.startPort;
         this._slots = [];
-        this._region = region;
-        this._priority = priority;
-        this._listenPort = listenPort;
-        this._publicPort = publicPort;
+        this._region = serverinfo.region ? serverinfo.region : "";
+        this._priority = serverinfo.priority != undefined ? serverinfo.priority :0;
+        this._listenPort = serverinfo.listenPort;
+        this._publicPort = serverinfo.publicPort ? serverinfo.publicPort : "";
+        this._publicURL = serverinfo.publicURL ? serverinfo.publicURL : "";
         this._simStreamingSessions = 0;
-
+        this.start();
     }
 
 
@@ -82,7 +87,7 @@ class CustomSessionItem {
     async start() {
 
         for (let i = 0; i < this._maxSessions; i++) {
-            slots[i] = true;
+            this._slots[i] = true;
         }
 
 
@@ -131,6 +136,9 @@ class CustomSessionItem {
 
 
         var proxyServer = http.createServer(function (req, res) {
+
+            let i=0;
+
         });
 
 
@@ -168,7 +176,7 @@ class CustomSessionItem {
     async startServer(args) {
         let slot = this.findFreeSlot();
         if (slot == -1) {
-            return { ERROR: "No free streaming slot" };
+            return { ERROR: "No free slots" };
         }
 
         const item = new SessionItem({
@@ -255,4 +263,4 @@ class CustomSessionItem {
 }
 
 
-module.exports = CustomSessionItem;
+module.exports = CustomSessionServer;

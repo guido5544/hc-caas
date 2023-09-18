@@ -2,6 +2,7 @@ const conversionServer = require('../libs/conversionServer');
 const modelManager = require('../libs/modelManager');
 const streamingManager = require('../libs/streamingManager');
 const streamingServer = require('../libs/streamingServer');
+const sessionHandling = require('../libs/sessionHandling');
 
 const config = require('config');
 const status = require('../libs/status');
@@ -479,3 +480,13 @@ exports.getItemFromType = async (req, res, next) => {
     }
 };
 
+
+exports.pingSessionServer = async (req, res, next) => {
+    let exists = await sessionHandling.serverExists(req.params.type);
+    if (!exists) {
+        res.sendStatus(404);
+    }
+    else {
+        res.json({SUCCESS:true});
+    }
+};

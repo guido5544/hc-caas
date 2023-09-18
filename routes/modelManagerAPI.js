@@ -29,4 +29,8 @@ router.get('/shatteredXML/:storageID', apiController.getShatteredXML);
 router.get('/streamingSession', apiController.getStreamingSession);
 router.put('/enableStreamAccess/:sessionid', apiController.enableStreamAccess);
 
+router.get('/pingSessionServer/:type', apiController.pingSessionServer);
+
+
+
 module.exports = router;
