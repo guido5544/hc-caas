@@ -69,6 +69,7 @@ class CustomSessionServer {
         this._simSessions = 0;
         this._exePath = serverinfo.exePath;
         this._path = serverinfo.path;
+        this._dllPath = serverinfo.dllPath;
 
         this.start();
     }
@@ -188,6 +189,13 @@ class CustomSessionServer {
 
         let sessiondir = tempFileDir + "/" + item.id;
         fs.mkdirSync(sessiondir);
+
+
+        if (args.storageID != undefined) {
+            let conversionItem = await authorization.getConversionItem(args.storageID, args);
+            await getFileFromStorage(conversionItem, item.id, conversionItem.name + ".prc");
+        }
+
         await this.runSessionServer(slot, item.id, streamingLocation);
 
         let sessionServer = await SessionServerItem.findOne({ type: this._type, address: serveraddress });
@@ -261,52 +269,36 @@ class CustomSessionServer {
 
         let commandLine;    
         commandLine = [config.get('hc-caas.license')];
+        commandLine.push(this._dllPath);
+   
     
-    
-        commandLine.push(
-             port.toString()
-        );
+        commandLine.push(port.toString());
     
     
         return commandLine;
     }
 
 
-    async getFileFromStorage(item, sessionid, itemname, subdirectory) {
+    async getFileFromStorage(item, sessionid, itemname) {
 
         if (localCache.isInCache(item.storageID, itemname)) {
             console.log("file loaded from cache");
-            if (false) {
-                //        if (config.get('hc-caas.streamingServer.useSymLink')) {            
-                const dir = tempFileDir + "/" + sessionid + subdirectory;
-                await localCache.createSymLink(item.storageID, itemname, dir + "/" + itemname);
-            }
-            else {
-                const data = await localCache.readFile(item.storageID, itemname);
-                if (!data)
-                    return false;
-                const dir = tempFileDir + "/" + sessionid + subdirectory;
-                await fsPromises.writeFile(dir + "/" + itemname, data);
-            }
+            const data = await localCache.readFile(item.storageID, itemname);
+            if (!data)
+                return false;
+            const dir = tempFileDir + "/" + sessionid;
+            await fsPromises.writeFile(dir + "/" + itemname, data);
             return;
         }
 
-        //    if (config.get('hc-caas.storage.type') == 'filesystem' && config.get('hc-caas.streamingServer.useSymLink')) {
-        if (false) {
-            const dir = tempFileDir + "/" + sessionid + subdirectory;
-            await storage.createSymLink("conversiondata/" + item.storageID + "/" + itemname, dir + "/" + itemname);
-        }
-        else {
-            const data = await storage.readFile("conversiondata/" + item.storageID + "/" + itemname);
-            if (!data)
-                return false;
-            const dir = tempFileDir + "/" + sessionid + subdirectory;
+        const data = await storage.readFile("conversiondata/" + item.storageID + "/" + itemname);
+        if (!data)
+            return false;
+        const dir = tempFileDir + "/" + sessionid;
 
-            await fsPromises.writeFile(dir + "/" + itemname, data);
+        await fsPromises.writeFile(dir + "/" + itemname, data);
+        localCache.cacheFile(item.storageID, itemname, data);
 
-            localCache.cacheFile(item.storageID, itemname, data);
-        }
-    }
 }
 
 
