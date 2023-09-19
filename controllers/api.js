@@ -490,3 +490,17 @@ exports.pingSessionServer = async (req, res, next) => {
         res.json({SUCCESS:true});
     }
 };
+
+
+exports.startCustomSession = async (req, res, next) => {
+    let result = await sessionHandling.startCustomSession(setupAPIArgs(req),req);
+    res.json(result);
+};
+
+
+
+
+exports.startCustomSessionServer = async (req, res, next) => {
+    let result = await sessionHandling.startCustomSessionServer(setupAPIArgs(req),req);
+    res.json(result);
+};

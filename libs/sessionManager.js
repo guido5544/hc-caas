@@ -93,7 +93,7 @@ class SessionManager {
     console.log("geo:" + geo);
 
 
-    let servers = await Streamingserveritem.find({ type: this._type, region: config.get('hc-caas.region') });
+    let servers = await SessionServerItem.find({ type: this._type, region: config.get('hc-caas.region') });
 
     if (servers.length == 0) {
       return { ERROR: "No Session Server Available" };;
@@ -126,10 +126,10 @@ class SessionManager {
 
     try {
       if (!args) {
-        res = await fetch("http://" + ip + '/caas_api/startSession' + "/" + this._type, { method: 'PUT', signal: controller.signal });
+        res = await fetch("http://" + ip + '/caas_api/startCustomSessionServer' + "/" + this._type, { signal: controller.signal });
       }
       else {
-        res = await fetch("http://" + ip + '/caas_api/startSession' + "/" + this._type, { method: 'PUT', signal: controller.signal, headers: { 'CS-API-Arg': JSON.stringify(args) } });
+        res = await fetch("http://" + ip + '/caas_api/startCustomSessionServer' + "/" + this._type, { signal: controller.signal, headers: { 'CS-API-Arg': JSON.stringify(args) } });
       }
       if (res.status == 404) {
         throw 'Session Server not found';

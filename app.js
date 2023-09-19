@@ -101,7 +101,7 @@ exports.start = async function (mongoose_in, extraArgs = {}) {
 
   sessionHandling = require('./libs/sessionHandling');
   sessionHandling.start();
-  
+
   exports.streamingManager = streamingManager;
 
   exports.modelManager = require('./libs/modelManager');
@@ -167,6 +167,10 @@ exports.start = async function (mongoose_in, extraArgs = {}) {
         serverapiRoutes = require('./routes/modelManagerAPI');
         app.use("/caas_api", serverapiRoutes);
       }
+
+      let sessioapiRoutes = require('./routes/sessionAPI');
+      app.use("/caas_api", sessioapiRoutes);
+
 
       if (config.get('hc-caas.runModelManager') && config.get('hc-caas.requireAccessKey')) {
         accountRoutes = require('./routes/accountAPI');

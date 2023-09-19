@@ -27,3 +27,26 @@ exports.start = async () => {
 exports.serverExists = (type) => {
     return sessionPluginServers[type] != undefined;
 }
+
+
+
+exports.startCustomSession = async (args,req) => {
+    if (!sessionPluginManagers[req.params.type]) {
+        return { ERROR: "No Session Manager Available" };
+    }
+
+    return await sessionPluginManagers[req.params.type].getSession(args,req);
+
+}
+
+
+
+exports.startCustomSessionServer = async (args,req) => {
+    if (!sessionPluginServers[req.params.type]) {
+        return { ERROR: "No Session Manager Available" };
+    }
+
+    return await sessionPluginServers[req.params.type].startServer(args);
+
+}
+

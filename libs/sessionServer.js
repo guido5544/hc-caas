@@ -29,7 +29,6 @@ var storage;
 
 var serveraddress;
 
-var startport = 4000;
 
 
 function someTimeout(to) {
@@ -67,7 +66,10 @@ class CustomSessionServer {
         this._listenPort = serverinfo.listenPort;
         this._publicPort = serverinfo.publicPort ? serverinfo.publicPort : "";
         this._publicURL = serverinfo.publicURL ? serverinfo.publicURL : "";
-        this._simStreamingSessions = 0;
+        this._simSessions = 0;
+        this._exePath = serverinfo.exePath;
+        this._path = serverinfo.path;
+
         this.start();
     }
 
@@ -135,39 +137,33 @@ class CustomSessionServer {
         });
 
 
-        var proxyServer = http.createServer(function (req, res) {
+        let _this = this;
+        var proxyServer = http.createServer(async function (req, res) {
+            let sessionid = req.headers['sessionid'];
 
-            let i=0;
-
+            let item;
+            try {
+                item = await SessionItem.findOne({ _id: sessionid });
+            }
+            catch (e) {
+                console.log(e);
+                return;
+            }
+            if (item && (item.slot != undefined)) {
+                let port = item.slot + _this._startPort;
+                try {
+                    proxy.web(req, res, { target: 'http://127.0.0.1:' + port });
+                }
+                catch (e) {
+                    console.log("proxy issue:" + e);
+                }
+            }
         });
-
 
         proxy.on('error', function (err, req, res) {
             console.log(err);
         });
-
-        // proxyServer.on('upgrade', async function (req, socket, head) {
-        //     let s = req.url.split("=");
-
-        //     let item;
-        //     try {
-        //         item = await Streamingsessionitem.findOne({ _id: s[1] });
-        //     }
-        //     catch (e) {
-        //         console.log(e);
-        //         return;
-        //     }
-        //     if (item && (item.slot != undefined)) {
-        //         let port = item.slot + startport;
-        //         try {
-        //             proxy.ws(req, socket, head, { target: 'ws://127.0.0.1:' + port });
-        //         }
-        //         catch (e) {
-        //             console.log("proxy issue:" + e);
-        //         }
-        //     }
-        // });
-
+     
         proxyServer.listen(this._listenPort);
         console.log('Streaming Server started');
 
@@ -195,7 +191,7 @@ class CustomSessionServer {
         await this.runSessionServer(slot, item.id, streamingLocation);
 
         let sessionServer = await SessionServerItem.findOne({ type: this._type, address: serveraddress });
-        sessionServer.freeSessionSlots = this._maxSessions - this._simStreamingSessions;
+        sessionServer.freeSessionSlots = this._maxSessions - this._simSessions;
         await sessionServer.save();
 
         let port;
@@ -222,6 +218,57 @@ class CustomSessionServer {
 
         return { serverurl: address, sessionid: item.id, port: port };
 
+    }
+
+    
+    async runSessionServer(slot, sessionid, sessionLocation) {
+
+        this._simSessions++;
+ 
+        console.log("Custom Session Started at " + new Date());
+
+        let commandLine = this.setupCommandLine(slot + this._startPort);
+
+        let _this = this;
+        execFile(this._exePath, commandLine, {
+            cwd: this._path
+        }, async function (err, data) {
+            _this._simSessions--;
+
+            let server = await SessionServerItem.findOne({ address: serveraddress });
+            server.freeStreamingSlots = _this._maxSessions - _this._simSessions;
+            await server.save();
+
+            let item = await SessionItem.findOne({ _id: sessionid });
+            await del(tempFileDir + "/" + item.id, { force: true });
+            item.delete();
+            _this._slots[slot] = true;
+            console.log("Custom session ended");
+            if (err == null) {
+            }
+            else {
+                if (config.get("hc-caas.fullErrorReporting")) {
+                    console.error(err);
+                    console.error(data);
+                }
+                console.error("ERROR: Could not start Session server.");
+            }
+        });
+        await someTimeout(500);
+    }
+
+    setupCommandLine(port) {
+
+        let commandLine;    
+        commandLine = [config.get('hc-caas.license')];
+    
+    
+        commandLine.push(
+             port.toString()
+        );
+    
+    
+        return commandLine;
     }
 
 
