@@ -185,10 +185,10 @@ class CustomSessionServer {
         let conversionItem;
         if (args.storageID != undefined) {
             conversionItem = await authorization.getConversionItem(args.storageID, args);
-            await getFileFromStorage(conversionItem, item.id, conversionItem.name + ".prc");
+            await this.getFileFromStorage(conversionItem, item.id, conversionItem.name + ".prc");
         }
 
-        await this.runSessionServer(slot, sessionid, conversionItem);
+        await this.runSessionServer(slot, item.id, conversionItem);
 
         let sessionServer = await SessionServerItem.findOne({ type: this._type, address: serveraddress });
         sessionServer.freeSessionSlots = this._maxSessions - this._simSessions;
@@ -264,7 +264,7 @@ class CustomSessionServer {
         commandLine.push(this._dllPath);
    
         commandLine.push(port.toString());
-        commandLine.push(tempFileDir + "/" + sessionid + "/" + item.name + ".prc");    
+        commandLine.push(path.resolve(tempFileDir + "/" + sessionid + "/" + item.name + ".prc"));    
         return commandLine;
     }
 
@@ -289,6 +289,7 @@ class CustomSessionServer {
         await fsPromises.writeFile(dir + "/" + itemname, data);
         localCache.cacheFile(item.storageID, itemname, data);
 
+    }
 }
 
 
