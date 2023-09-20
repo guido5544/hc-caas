@@ -4,7 +4,6 @@ const del = require('del');
 const SessionServerItem = require('../models/sessionServerItem');
 const SessionItem = require('../models/sessionItem');
 
-const Conversionitem = require('../models/conversionitem');
 const fsPromises = fs.promises;
 const path = require('path');
 
@@ -38,8 +37,6 @@ function start() {
     storage = require('./permanentStorage').getStorage();
 };
 
-
-
 class CustomSessionServer {
 
     constructor(type, serverinfo) {
@@ -61,12 +58,10 @@ class CustomSessionServer {
         this._simSessions = 0;
         this._exePath = serverinfo.exePath;
         this._path = serverinfo.path;
-        this._dllPath = serverinfo.dllPath;
+        this._startArgs = serverinfo.startArgs;
 
         this.start();
     }
-
-
 
     findFreeSlot() {
         for (let i = 0; i < this._maxSessions; i++) {
@@ -78,14 +73,11 @@ class CustomSessionServer {
         return -1;
     }
 
-
     async start() {
 
         for (let i = 0; i < this._maxSessions; i++) {
             this._slots[i] = true;
         }
-
-
 
         let server = await SessionServerItem.findOne({ type: this._type, address: serveraddress });
         if (!server) {
@@ -112,7 +104,6 @@ class CustomSessionServer {
             server.lastPing = new Date();
             server.save();
         }
-
 
         let dname = "/" + this._type + "temp";
         if (!fs.existsSync(tempFileDir)) {
@@ -178,17 +169,16 @@ class CustomSessionServer {
 
         await item.save();
 
-
         let sessiondir = tempFileDir + "/" + item.id;
         fs.mkdirSync(sessiondir);
 
         let conversionItem;
         if (args.storageID != undefined) {
             conversionItem = await authorization.getConversionItem(args.storageID, args);
-            await this.getFileFromStorage(conversionItem, item.id, conversionItem.name + ".prc");
+            await this.getFileFromStorage(conversionItem, item.id, conversionItem.name + "." + args.extension);
         }
 
-        await this.runSessionServer(slot, item.id, conversionItem);
+        await this.runSessionServer(slot, item.id, conversionItem,args.extension);
 
         let sessionServer = await SessionServerItem.findOne({ type: this._type, address: serveraddress });
         sessionServer.freeSessionSlots = this._maxSessions - this._simSessions;
@@ -219,15 +209,14 @@ class CustomSessionServer {
         return { serverurl: address, sessionid: item.id, port: port };
 
     }
-
     
-    async runSessionServer(slot, sessionid, conversionitem) {
+    async runSessionServer(slot, sessionid, conversionitem, extension) {
 
         this._simSessions++;
  
         console.log("Custom Session Started at " + new Date());
 
-        let commandLine = this.setupCommandLine(slot + this._startPort, sessionid, conversionitem);
+        let commandLine = this.setupCommandLine(slot + this._startPort, sessionid, conversionitem, extension);
 
         let _this = this;
         execFile(this._exePath, commandLine, {
@@ -257,17 +246,19 @@ class CustomSessionServer {
         await someTimeout(500);
     }
 
-    setupCommandLine(port, sessionid, item) {
+    setupCommandLine(port, sessionid, item, extension) {
 
-        let commandLine;    
-        commandLine = [config.get('hc-caas.license')];
-        commandLine.push(this._dllPath);
-   
+        let commandLine = [];
+
+        if (this._startArgs) {
+            for (let i = 0; i < this._startArgs.length; i++) {
+                commandLine.push(this._startArgs[i]);
+            }
+        }
         commandLine.push(port.toString());
-        commandLine.push(path.resolve(tempFileDir + "/" + sessionid + "/" + item.name + ".prc"));    
+        commandLine.push(path.resolve(tempFileDir + "/" + sessionid + "/" + item.name + "." + extension));    
         return commandLine;
     }
-
 
     async getFileFromStorage(item, sessionid, itemname) {
 
@@ -291,6 +282,5 @@ class CustomSessionServer {
 
     }
 }
-
 
 module.exports = CustomSessionServer;

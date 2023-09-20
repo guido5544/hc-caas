@@ -1,16 +1,10 @@
 const config = require('config');
-const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
 const SessionServerItem = require('../models/sessionServerItem');
-const SessionItem = require('../models/sessionItem');
 
 const geoip = require('geoip-lite');
-
-
 const fetch = require('node-fetch');
 
 var storage;
-
 
 class SessionManager {
   constructor(type) {
@@ -20,7 +14,6 @@ class SessionManager {
     this._type = type;
     this.queryServers();
   }
-
 
   async queryServers() {
     let servers = await SessionServerItem.find({ type: this._type });
@@ -35,7 +28,6 @@ class SessionManager {
         if (ip.indexOf(global.caas_publicip) != -1) {
           ip = "localhost" + ":" + config.get('hc-caas.port');
         }
-
 
         let res = await fetch("http://" + ip + '/caas_api/pingSessionServer/' + this._type, {
           signal: controller.signal,
