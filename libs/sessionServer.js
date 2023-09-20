@@ -20,17 +20,9 @@ let tempFileDir = "";
 const http = require('http');
 var httpProxy = require('http-proxy');
 
-
-
-var maxStreamingSessionsSoFar = 0;
-var totalStreamingSessionsSoFar = 0;
-
 var storage;
 
 var serveraddress;
-
-
-
 function someTimeout(to) {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -190,13 +182,13 @@ class CustomSessionServer {
         let sessiondir = tempFileDir + "/" + item.id;
         fs.mkdirSync(sessiondir);
 
-
+        let conversionItem;
         if (args.storageID != undefined) {
-            let conversionItem = await authorization.getConversionItem(args.storageID, args);
+            conversionItem = await authorization.getConversionItem(args.storageID, args);
             await getFileFromStorage(conversionItem, item.id, conversionItem.name + ".prc");
         }
 
-        await this.runSessionServer(slot, item.id, streamingLocation);
+        await this.runSessionServer(slot, sessionid, conversionItem);
 
         let sessionServer = await SessionServerItem.findOne({ type: this._type, address: serveraddress });
         sessionServer.freeSessionSlots = this._maxSessions - this._simSessions;
@@ -229,13 +221,13 @@ class CustomSessionServer {
     }
 
     
-    async runSessionServer(slot, sessionid, sessionLocation) {
+    async runSessionServer(slot, sessionid, conversionitem) {
 
         this._simSessions++;
  
         console.log("Custom Session Started at " + new Date());
 
-        let commandLine = this.setupCommandLine(slot + this._startPort);
+        let commandLine = this.setupCommandLine(slot + this._startPort, sessionid, conversionitem);
 
         let _this = this;
         execFile(this._exePath, commandLine, {
@@ -265,16 +257,14 @@ class CustomSessionServer {
         await someTimeout(500);
     }
 
-    setupCommandLine(port) {
+    setupCommandLine(port, sessionid, item) {
 
         let commandLine;    
         commandLine = [config.get('hc-caas.license')];
         commandLine.push(this._dllPath);
    
-    
         commandLine.push(port.toString());
-    
-    
+        commandLine.push(tempFileDir + "/" + sessionid + "/" + item.name + ".prc");    
         return commandLine;
     }
 
