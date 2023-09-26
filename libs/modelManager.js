@@ -877,10 +877,14 @@ exports.getLastUpdated = async () => {
   }
 };
 
-exports.executeCustom =  (args) => {
-
+exports.executeCustom =  async (args) => {
+  
   if (customCallback)
   {
-    customCallback(args);
+    return await customCallback(args.callbackData);
+  }
+  else
+  {
+    return {ERROR: "No custom callback defined"};
   }
 }

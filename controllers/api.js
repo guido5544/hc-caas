@@ -297,10 +297,22 @@ exports.serverEnableStreamAccess = async (req, res, next) => {
     res.json(result);
 };
 
-exports.getCustom = (req, res, next) => {   
-    let args = setupAPIArgs(req);
-    modelManager.executeCustom(args); 
-    res.sendStatus(200);   
+exports.putCustomCallback = async (req, res, next) => {   
+    let args;
+    if (req.get("CS-API-Arg")) {
+        args = JSON.parse(req.get("CS-API-Arg"));
+    }
+    else {
+        args = {};
+    }
+
+    if (args.accessPassword != config.get('hc-caas.accessPassword') || config.get('hc-caas.accessPassword') == "" ) {
+        res.json({ERROR:"Invalid Access Password or not set"});
+        return;
+    }
+    args = setupAPIArgs(req);
+    let result  = await modelManager.executeCustom(args); 
+    res.json(result);   
 };
 
 

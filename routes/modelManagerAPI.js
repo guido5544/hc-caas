@@ -18,8 +18,7 @@ router.put('/customImage/:storageID', apiController.putCustomImage);
 router.put('/reconvert/:storageID', apiController.putReconvert);
 router.put('/delete/:storageID', apiController.putDelete);
 router.get('/items', apiController.getItems);
-
-router.get('/custom', apiController.getCustom);
+router.put('/customCallback', apiController.putCustomCallback);
 router.get('/uploadToken/:name/:size', apiController.getUploadToken);
 router.get('/downloadToken/:storageID/:type', apiController.getDownloadToken);
 
