@@ -112,8 +112,10 @@ exports.start = async function (mongoose_in, extraArgs = {}) {
       conversionQueue.start();
     }
 
+    exports.modelManager.setCustomCallback(extraArgs.customCallback);
+
     if (config.get('hc-caas.runModelManager')) {
-      exports.modelManager.start(extraArgs.customCallback, extraArgs.conversionPriorityCallback);
+      exports.modelManager.start(extraArgs.conversionPriorityCallback);
       if (config.get('hc-caas.modelManager.runStreamingManager')) {
         streamingManager.start();
       }
@@ -140,6 +142,9 @@ exports.start = async function (mongoose_in, extraArgs = {}) {
           }
         });
       }
+
+      let genericRoutes = require('./routes/genericAPI');
+      app.use("/caas_api", genericRoutes);
 
       if (config.get('hc-caas.runModelManager') && config.get('hc-caas.modelManager.listen')) {
         const fileStorage = multer.diskStorage({

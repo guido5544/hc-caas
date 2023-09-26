@@ -1,5 +1,6 @@
 const config = require('config');
 const Conversionitem = require('../models/conversionitem');
+const Streamingserveritem = require('../models/streamingserveritem');
 const User = require('../models/UserManagement/User');
 
 const fs = require('fs');
@@ -97,9 +98,11 @@ async function refreshServerAvailability() {
   }
 }
 
-exports.start = async (callback, conversionPriorityCallback_in) => {
+exports.setCustomCallback = (customCallback_in) => {
+  customCallback = customCallback_in;
+}
 
-  customCallback = callback;
+exports.start = async (conversionPriorityCallback_in) => {
   conversionPriorityCallback = conversionPriorityCallback_in;
  
   storage = require('./permanentStorage').getStorage();
@@ -877,14 +880,55 @@ exports.getLastUpdated = async () => {
   }
 };
 
-exports.executeCustom =  async (args) => {
-  
+
+exports.executeCustom = async (args) => {
+
+
+  let resArray = [];
+  if (args.sendToAll) {
+    let queueservers = await Queueserveritem.find();
+    let streamServers = await Streamingserveritem.find();
+    let allServers = queueservers.concat(streamServers);
+
+
+    let addressHash = [];
+
+    for (let i = 0; i < allServers.length; i++) {
+      const controller = new AbortController();
+      let to = setTimeout(() => controller.abort(), 2000);
+
+      try {
+        if (addressHash[allServers[i].address]) {
+          continue;
+        }
+        addressHash[allServers[i].address] = true;
+
+        let queserverip = allServers[i].address;
+        if (queserverip.indexOf(global.caas_publicip) != -1) {
+           continue;
+        }
+
+        let res = await fetch("http://" + queserverip + '/caas_api/customCallback', {
+          method: 'PUT', signal: controller.signal,
+          headers: { 'CS-API-Arg': JSON.stringify({ accessPassword: config.get('hc-caas.accessPassword'), callbackData: args.callbackData }) }
+        });
+        if (res.status == 404) {
+          throw "Could not ping Server " + allServers[i].address;
+        }
+        else {
+          resArray.push({ address: allServers[i].name, result: await res.json() });
+        }
+      }
+      catch (e) {
+      }
+      clearTimeout(to);
+    }
+  }
+
   if (customCallback)
   {
-    return await customCallback(args.callbackData);
+     resArray.push({address:"", result: await customCallback(args.callbackData)});
   }
-  else
-  {
-    return {ERROR: "No custom callback defined"};
-  }
+  return { "results": resArray };
+  
 }
