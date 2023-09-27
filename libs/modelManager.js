@@ -192,20 +192,24 @@ exports.getData = async (storageID, args) => {
   }
 };
 
-exports.requestDownloadToken = async (storageID,type,args) => {
-  if (!storage.requestDownloadToken)
-  {
-    return {ERROR: "Not available for this storage type"};
+exports.requestDownloadToken = async (storageID, type, args) => {
+  if (!storage.requestDownloadToken) {
+    return { ERROR: "Not available for this storage type" };
   }
   let item = await authorization.getConversionItem(storageID, args);
 
   if (item) {
-    let token = await storage.requestDownloadToken("conversiondata/" + item.storageID + "/" + item.name + "." + type, item);
+    let token;
+    if (type == "scs" && item.name.indexOf(".scs") != -1) {
+      token = await storage.requestDownloadToken("conversiondata/" + item.storageID + "/" + item.name, item);
+    }
+    else {
+      token = await storage.requestDownloadToken("conversiondata/" + item.storageID + "/" + item.name + "." + type, item);
+    }
     return { token: token, storageID: storageID };
   }
-  else
-  {
-    return {ERROR: "Item not found"};
+  else {
+    return { ERROR: "Item not found" };
   }
 };
 

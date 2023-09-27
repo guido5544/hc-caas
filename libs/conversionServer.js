@@ -327,8 +327,13 @@ async function runConverter(item) {
 
   }
   else {
-    if (config.get("hc-caas.conversionServer.allowSCSConversion") && (item.name.indexOf(".scs") != -1 || item.name.indexOf(".scz") != -1)) {
+    if (item.name.indexOf(".scs") != -1 || item.name.indexOf(".scz") != -1) {
+      if (config.get("hc-caas.conversionServer.allowSCSConversion")) {
         await scSpecialHandling(inputPath, dir, item);
+      }
+      else {
+        conversionComplete(null, item);
+      }
     }
     else {
       if (!GLTFSpecialHandling(inputPath, dir, item)) {
