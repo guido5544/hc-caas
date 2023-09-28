@@ -58,7 +58,10 @@ exports.getUserAdmin = async (args, email,password) => {
         return null;
     }
 
-    let user = await User.findOne({ email: email});
+    let user = await User.findOne({ email: email});    
+    if (!user) {
+        return -1;
+    }
     let result = await bcrypt.compare(password, user.password);
     if (!result) {
         return -1;
