@@ -10,8 +10,8 @@ const ApiKeySchema = new Schema({
     ref: 'Users',
     required: true
   },
-  usedAt: { type: Date, required: false}
-
+  usedAt: { type: Date, required: false},
+  readonly: { type: Boolean, required: false, default:false},
 }, {timestamps:true});
 
 module.exports = global.con.model('ApiKeys', ApiKeySchema);

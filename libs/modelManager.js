@@ -399,7 +399,7 @@ exports.append = async (directory, itemname, storageID, args) => {
 
 exports.requestUploadToken = async (itemname,size, args) => {
 
-  let user = await authorization.getUser(args);
+  let user = await authorization.getUser(args, true);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -496,7 +496,7 @@ exports.createDatabaseEntry = async (itemname, args) => {
 
   let storageID = uuidv4();
   let startState = "PENDING";
-  let user = await authorization.getUser(args);
+  let user = await authorization.getUser(args, true);
 
   if (user == -1) {
     return null;
@@ -595,7 +595,7 @@ exports.create = async (item, directory, itemname, args) => {
 
 
 exports.createEmpty = async (args) => {
-  let user = await authorization.getUser(args);
+  let user = await authorization.getUser(args, true);
 
   if (user == -1) {
     return { ERROR: "Not authorized to upload" };
@@ -814,7 +814,7 @@ exports.getItems = async (args, organization = undefined) => {
 
   let models;
   if (!organization) {
-    let user = await authorization.getUser(args);
+    let user = await authorization.getUser(args,true);
 
     if (user == -1) {
       return { ERROR: "Not authorized" };

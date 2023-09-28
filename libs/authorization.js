@@ -21,7 +21,7 @@ exports.actionType = {
 };
 
 
-exports.getUser = async (args) => {
+exports.getUser = async (args, priviliged = false) => {
     if (!config.get('hc-caas.requireAccessKey')) {
         return undefined;
     }
@@ -31,7 +31,7 @@ exports.getUser = async (args) => {
 
     try {
         let key = await APIKey.findOne({ _id: args.accessKey });
-        if (!key) {
+        if (!key || (priviliged && key.readonly)) {
             return -1;
         }
         key.usedAt = new Date();
@@ -99,7 +99,7 @@ exports.conversionAllowed = async (args) => {
     let key;
     try {
         key = await APIKey.findOne({ _id: args.accessKey });
-        if (!key || !key.valid) {
+        if (!key || !key.valid || key.readonly) {
             return null;
         }
         key.usedAt = new Date();
