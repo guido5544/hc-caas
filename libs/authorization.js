@@ -749,7 +749,7 @@ exports.getAPIKeys = async (req,args) => {
 
     let result = [];
     for (let i = 0; i < keys.length; i++) {
-        result.push({ name: keys[i].name, created: keys[i].createdAt,usedAt: keys[i].usedAt,key: keys[i].id, valid: keys[i].valid });
+        result.push({ name: keys[i].name, readonly: keys[i].readonly, created: keys[i].createdAt,usedAt: keys[i].usedAt,key: keys[i].id, valid: keys[i].valid });
     }
     return { keys: result };
 }
@@ -786,6 +786,7 @@ exports.editAPIKey = async (req,args) => {
     for (let i = 0; i < keys.length; i++) {
         if (keys[i].id == req.params.key) {
             keys[i].name = args.name;
+            keys[i].readonly = args.readonly;
             await keys[i].save();
             return {success:true};
         }
