@@ -27,4 +27,6 @@ router.get('/shatteredXML/:storageID', apiController.getShatteredXML);
 router.get('/streamingSession', apiController.getStreamingSession);
 router.put('/enableStreamAccess/:sessionid', apiController.enableStreamAccess);
 
+router.get('/hcVersion', apiController.getHCVersion);
+
 module.exports = router;

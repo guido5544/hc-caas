@@ -250,6 +250,7 @@ function handleInitialConfiguration() {
       "requireAccessKey": false,
       "determineGeoFromRequest": false,
       "sessionPlugins": [],
+      "hcVersion" : "23.2.0",
       "conversionServer": {
         "name" : "",
         "converterpath": "",

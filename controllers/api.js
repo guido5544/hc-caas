@@ -516,3 +516,10 @@ exports.startCustomSessionServer = async (req, res, next) => {
     let result = await sessionHandling.startCustomSessionServer(setupAPIArgs(req),req);
     res.json(result);
 };
+
+
+
+
+exports.getHCVersion = async (req, res, next) => {  
+    res.json({hcVersion: config.get('hc-caas.hcVersion')});    
+};
