@@ -516,6 +516,9 @@ function setupCommandLine(inputPath, dir, item) {
         '--sc_create_scz', 'true',
         '--sc_compress_scz', '1');
         hasInput = true;
+        if (item.conversionCommandLine.length == 1) {
+          break;
+        } 
         i++;
       }
 
