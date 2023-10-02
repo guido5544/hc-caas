@@ -13,6 +13,8 @@ const localCache = require('./localCache');
 const authorization = require('./authorization');
 
 
+const decompress = require('decompress');
+
 const execFile = require('child_process').execFile;
 
 let tempFileDir = "";
@@ -235,6 +237,17 @@ exports.startStreamingServer = async (args) => {
 };
 
 
+async function getZipFromStorage(item, sessionid) {
+    if (localCache.isInCache(item.storageID)) {
+        return;
+    }
+    const data = await storage.readFile("conversiondata/" + item.storageID + "/" + item.name);
+    const dir = tempFileDir + "/" + sessionid;
+    await fsPromises.writeFile(dir + "/" + item.name, data);
+    await decompress(dir + "/" + item.name, dir);
+}
+
+
 async function getFileFromStorage(item, sessionid, itemname, subdirectory) {
 
     if (localCache.isInCache(item.storageID,itemname)) {
@@ -329,6 +342,9 @@ exports.serverEnableStreamAccess = async (sessionid, storageIDs, args, hasNames 
 
                 if (item.name.indexOf(".scz") != -1) {
                     item.files.push(item.name);
+                }
+                else if (item.name.indexOf(".zip" != -1) && item.startPath && item.startPath.indexOf(".scz") != -1) {
+                    await getZipFromStorage(item, sessionid, item.name)
                 }
                 for (let j = 0; j < item.files.length; j++) {
                     if (item.files[j].indexOf(".scz") != -1) {

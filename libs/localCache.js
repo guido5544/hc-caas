@@ -52,6 +52,9 @@ const dirSize = async directory => {
 exports.isInCache = (storageID, name) => {
 
     if (cachedFiles[storageID] != undefined) {
+        if (!name) {
+            return true;
+        }
         for (let i=0;i<cachedFiles[storageID].files.length;i++) {
             if (cachedFiles[storageID].files[i] == name) {
                 cachedFiles[storageID].timestamp = Date.now(); 
