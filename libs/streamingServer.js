@@ -326,6 +326,7 @@ exports.serverEnableStreamAccess = async (sessionid, storageIDs, args, hasNames 
             subdirectory = "/" + args.subDirectory;
         }
     
+        let storagePromises = [];
         for (let i = 0; i < storageIDs.length; i++) {
             let item = items[i];
             if (item) {
@@ -352,12 +353,13 @@ exports.serverEnableStreamAccess = async (sessionid, storageIDs, args, hasNames 
                     if (item.files[j].indexOf(".scz") != -1) {
                         let itemname = item.files[j];
                         if (!fs.existsSync(tempFileDir + "/" + sessionid + subdirectory + "/" + itemname)) {
-                            await getFileFromStorage(item, sessionid,itemname, subdirectory);
+                            storagePromises.push(getFileFromStorage(item, sessionid,itemname, subdirectory));
                         }
                     }
                 }
             }
         }
+        await Promise.all(storagePromises);
         
         if (config.get('hc-caas.storage.type') == 'S3') {
        //     await someTimeout(300);
