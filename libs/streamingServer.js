@@ -239,12 +239,14 @@ exports.startStreamingServer = async (args) => {
 
 async function getZipFromStorage(item, sessionid) {
     if (localCache.isInCache(item.storageID)) {
+        await localCache.readDirectory(item.storageID,tempFileDir + "/" + sessionid);
         return;
     }
     const data = await storage.readFile("conversiondata/" + item.storageID + "/" + item.name);
     const dir = tempFileDir + "/" + sessionid;
     await fsPromises.writeFile(dir + "/" + item.name, data);
     await decompress(dir + "/" + item.name, dir);
+    await localCache.cacheZip(item.storageID,dir + "/" + item.name);
 }
 
 

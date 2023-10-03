@@ -283,16 +283,27 @@ async function runConverter(item) {
   let inputPath;
   const dir = tempFileDir + "/";
 
-  if (item.startPath == undefined && path.extname(item.name) == ".zip") {
-    cleanupDir(dir, item);
-    let founditem = await Conversionitem.findOne({ storageID: item.storageID });
+  if (path.extname(item.name) == ".zip") {
+    if (item.startPath == undefined) {
+      cleanupDir(dir, item);
+      let founditem = await Conversionitem.findOne({ storageID: item.storageID });
 
-    founditem.conversionState = "ERROR - Specify startPath with ZIP";
-    founditem.updated =  new Date();
-    await founditem.save();
-    updateConversionStatus(founditem);
+      founditem.conversionState = "ERROR - Specify startPath with ZIP";
+      founditem.updated = new Date();
+      await founditem.save();
+      updateConversionStatus(founditem);
 
-    return;
+      return;
+    }
+    if (item.startPath.indexOf(".scz") != -1) {
+      cleanupDir(dir, item);
+      let founditem = await Conversionitem.findOne({ storageID: item.storageID });
+      founditem.conversionState = "SUCCESS";
+      founditem.updated = new Date();
+      await founditem.save();
+      updateConversionStatus(founditem);
+      return;
+    }
   }
 
   if (item.startPath == undefined || path.extname(item.name) != ".zip")

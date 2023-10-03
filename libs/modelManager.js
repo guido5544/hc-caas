@@ -431,7 +431,7 @@ exports.requestUploadToken = async (itemname,size, args) => {
       storageAvailability: storage.resolveInitialAvailability(),
       user: user,
       size: size,
-      apiKey: args.accessKey,
+      apiKey: (args.accessKey && args.accessKey != "") ? args.accessKey : undefined,
       organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
 
     });
@@ -518,7 +518,7 @@ exports.createDatabaseEntry = async (itemname, args) => {
     size: args.size,
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
-    apiKey: args.accessKey,
+    apiKey: (args.accessKey && args.accessKey != "") ? args.accessKey : undefined,
     user: user,
     organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
 
@@ -620,7 +620,7 @@ exports.createEmpty = async (args) => {
     streamLocation:"",
     conversionCommandLine: args.conversionCommandLine,
     storageAvailability: storage.resolveInitialAvailability(),
-    apiKey: args.accessKey,
+    apiKey: (args.accessKey && args.accessKey != "") ? args.accessKey : undefined,
     user: user,
     organization: (user && user.defaultOrganization) ? user.defaultOrganization : undefined
   });

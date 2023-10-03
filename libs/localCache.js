@@ -3,11 +3,61 @@ const config = require('config');
 const path = require('path');
 const del = require('del');
 const { readdir, stat,writeFile } = require('fs/promises');
+const decompress = require('decompress');
+
 
 var cachedFiles = [];
 var cachePath;
 var maxSize = 0;
 var totalSize = 0;
+
+
+
+const fsp = require('fs').promises;
+
+
+async function exists(path) {
+    try {
+        await fs.stat(path);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function copyDirectory(src, dest) {
+    try {
+        if (!await fsp.stat(src)) {
+            console.error("Source directory does not exist:", src);
+            return;
+        }
+    
+        if (!await exists(dest)) {
+            await fsp.mkdir(dest, { recursive: true });
+        }
+    
+        const files = await fsp.readdir(src);
+        
+        for (const file of files) {
+            const currentPath = path.join(src, file);
+            const destinationPath = path.join(dest, file);
+
+            const stat = await fsp.stat(currentPath);
+            
+            if (stat.isDirectory()) {
+                await copyDirectory(currentPath, destinationPath);
+            } else {
+                await fsp.copyFile(currentPath, destinationPath);
+            }
+        }
+    } catch (err) {
+        console.error("An error occurred:", err);
+    }
+}
+
+
+
+
 
 const dirSize = async directory => {
     const files = await readdir( directory );
@@ -81,6 +131,12 @@ exports.createSymLink = (storageID,name, target) => {
 };
 
 
+exports.readDirectory = async (storageID, target) => {
+    await copyDirectory(cachePath + "/" + storageID, target);
+}
+
+
+
 exports.readFile = (storageID,name) => {
     return new Promise((resolve, reject) => {
 
@@ -94,6 +150,31 @@ exports.readFile = (storageID,name) => {
     });
 };
 
+
+exports.cacheZip = async(storageID,zipfilepath) => {
+
+    if (maxSize > 0) {
+        let cpath = cachePath + "/" + storageID;
+        if (!fs.existsSync(cpath)) {
+            fs.mkdirSync(cpath);
+        }
+        await decompress(zipfilepath, cpath);
+        if (cachedFiles[storageID] != undefined) {
+            totalSize -= cachedFiles[storageID].size;
+        }
+        let size = await dirSize(cpath) / 1024 / 1024;
+        totalSize += size;
+        if (cachedFiles[storageID] == undefined) {
+            cachedFiles[storageID] = { "size": size, timestamp: Date.now() };
+        }
+        else {
+            cachedFiles[storageID].size = size;           
+            cachedFiles[storageID].timestamp = Date.now();
+        }
+        cleanup();
+    }
+}
+
 exports.cacheFile = async (storageID, name, data) => {
 
     if (maxSize > 0) {
@@ -106,7 +187,7 @@ exports.cacheFile = async (storageID, name, data) => {
         if (cachedFiles[storageID] != undefined) {
             totalSize -= cachedFiles[storageID].size;
         }
-        let size = dirSize(cpath) / 1024 / 1024;
+        let size =await dirSize(cpath) / 1024 / 1024;
         totalSize += size;
         if (cachedFiles[storageID] == undefined) {
             cachedFiles[storageID] = { "size": size, "files": [name], timestamp: Date.now() };
