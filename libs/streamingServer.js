@@ -443,6 +443,7 @@ async function runStreamingServer(slot,sessionid, streamingLocation, renderType,
 
     commandLine.push(
         '--id', "test123",
+        '--initial-use-duration', '60',
         '--sc-port', port.toString(),
         '--model-search-directories', dirs
     );
