@@ -1,7 +1,7 @@
 node_modules
 caasTemp
 debug.log
-config/local.json
+config
 HE/ImportExport/x64
 HE/ImportExport/.vs
 HE/ImportExport/ImportExport.vcxproj.user
